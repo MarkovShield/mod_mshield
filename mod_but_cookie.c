@@ -56,11 +56,8 @@ but_add_session_cookie_to_headers(request_rec *r, mod_but_server_t *config, apr_
 		return STATUS_ERROR;
 	}
 
-	char salt[] = "13371337";
-	unsigned char hashedCookie[MOD_BUT_HASH_LENGTH];
-	apr_cpystrn(hashedCookie, cookiestr, sizeof(cookiestr));
 	ERRLOG_CRIT("FRAUD_DETECTION COOKIESTR Set-Cookie [%s]", cookiestr);
-	ERRLOG_CRIT("FRAUD_DETECTION HASHED-COOKIE Set-Cookie [%s]", &hashedCookie);
+	ERRLOG_CRIT("FRAUD_DETECTION UUID Set-Cookie [%s]", session->data->uuid);
 	apr_table_setn(headers, "Set-Cookie", cookiestr);
 	return STATUS_OK;
 }
