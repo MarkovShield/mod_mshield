@@ -14,13 +14,13 @@ static session_data_t *sessions;
 static cookie_t *cookies;
 
 static void
-but_shm_clear(session_data_t *session_data)
+mshield_shm_clear(session_data_t *session_data)
 {
 	memset(session_data, 0, sizeof(session_data_t));
 }
 
 static void
-but_cookie_clear(cookie_t *cookie)
+mshield_cookie_clear(cookie_t *cookie)
 {
 	apr_cpystrn(cookie->name, "empty", sizeof(cookie->name));
 	apr_cpystrn(cookie->value, "empty", sizeof(cookie->value));
@@ -35,7 +35,7 @@ but_cookie_clear(cookie_t *cookie)
  */
 
 apr_status_t
-but_shm_initialize(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s)
+mshield_shm_initialize(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s)
 {
 	apr_status_t status;
 	apr_pool_t *mypool;
@@ -117,7 +117,7 @@ get_session_by_index(int index)
 apr_status_t
 create_new_shm_session(request_rec *r, const char *sid, int *shmoffset)
 {
-	mod_mshield_server_t *config = ap_get_module_config(r->server->module_config, &but_module);
+	mod_mshield_server_t *config = ap_get_module_config(r->server->module_config, &mshield_module);
 
 	int i;
 	for (i = 0; i < MOD_MSHIELD_SESSION_COUNT; i++) {
@@ -125,8 +125,8 @@ create_new_shm_session(request_rec *r, const char *sid, int *shmoffset)
 
 		/* free this slot if it has reached it's timeout */
 		if (session_data->slot_used) {
-			if (but_shm_timeout(session_data, config->session_hard_timeout, config->session_inactivity_timeout)) {
-				but_shm_free(session_data);
+			if (mshield_shm_timeout(session_data, config->session_hard_timeout, config->session_inactivity_timeout)) {
+				mshield_shm_free(session_data);
 			}
 		}
 
@@ -159,12 +159,12 @@ create_new_shm_session(request_rec *r, const char *sid, int *shmoffset)
 }
 
 void
-but_shm_free(session_data_t *session_data)
+mshield_shm_free(session_data_t *session_data)
 {
 	if (session_data->cookiestore_index != -1) {
-		but_cookiestore_free(session_data->cookiestore_index);
+		mshield_cookiestore_free(session_data->cookiestore_index);
 	}
-	but_shm_clear(session_data);
+	mshield_shm_clear(session_data);
 }
 
 /*
@@ -173,7 +173,7 @@ but_shm_free(session_data_t *session_data)
  * Does not modify the session in any way.
  */
 int
-but_shm_timeout(session_data_t *session_data, int hard_timeout, int inactivity_timeout)
+mshield_shm_timeout(session_data_t *session_data, int hard_timeout, int inactivity_timeout)
 {
 	int now = (int)apr_time_sec(apr_time_now()); /* XXX make this a param and get time once per request */
 
@@ -186,7 +186,7 @@ but_shm_timeout(session_data_t *session_data, int hard_timeout, int inactivity_t
  * Cookie Store Functionality
  */
 apr_status_t
-but_shm_initialize_cookiestore(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s)
+mshield_shm_initialize_cookiestore(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s)
 {
 	apr_status_t status;
 	apr_pool_t *mypool;
@@ -212,7 +212,7 @@ but_shm_initialize_cookiestore(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptem
 
 	cookies = (cookie_t*)apr_shm_baseaddr_get(cs_shm_cookiestore);
 	for (i = 0; i < MOD_MSHIELD_COOKIESTORE_COUNT; i++) {
-		but_cookie_clear(&(cookies[i]));
+		mshield_cookie_clear(&(cookies[i]));
 	}
 
 	apr_pool_cleanup_register(mypool, NULL, shm_cleanup_cookiestore, apr_pool_cleanup_null);
@@ -308,7 +308,7 @@ store_cookie_into_session(request_rec *r, session_data_t *session_data, const ch
 				get_cookie_by_index(cookie->prev)->next = cookie->next;
 				get_cookie_by_index(cookie->next)->prev = cookie->prev;
 			}
-			but_cookie_clear(cookie);
+			mshield_cookie_clear(cookie);
 		}
 		return STATUS_OK;
 	}
@@ -345,16 +345,16 @@ store_cookie_into_session(request_rec *r, session_data_t *session_data, const ch
 }
 
 void
-but_cookiestore_free(int anchor)
+mshield_cookiestore_free(int anchor)
 {
 	cookie_t *c = get_cookie_by_index(anchor);
 
 	if (c->next == -1) {
-		but_cookie_clear(c);
+		mshield_cookie_clear(c);
 	} else {
 		int next_index = c->next;
-		but_cookie_clear(c);
-		but_cookiestore_free(next_index);
+		mshield_cookie_clear(c);
+		mshield_cookiestore_free(next_index);
 	}
 }
 
@@ -370,7 +370,7 @@ collect_cookies_from_cookiestore(request_rec *r, int anchor)
 	cookie_t *c;
 	const char *cookiestr = NULL;
 
-	dconfig = ap_get_module_config(r->per_dir_config, &but_module);
+	dconfig = ap_get_module_config(r->per_dir_config, &mshield_module);
 	if (!dconfig) {
 		ERRLOG_CRIT("Illegal directory config, no cookies added");
 		return NULL;

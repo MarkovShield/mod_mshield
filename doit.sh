@@ -1,4 +1,5 @@
+#!/bin/bash
 make
-/etc/init.d/apache_but stop
+/etc/init.d/apache_mshield stop
 #rm -rf /opt/applic/httpd/logs/*
-/etc/init.d/apache_but start
+/etc/init.d/apache_mshield start

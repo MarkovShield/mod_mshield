@@ -175,7 +175,7 @@ mod_mshield_find_cookie_try(request_rec *r)
  * We just cut in front of the __cookie_try; arguments following it
  * are silently discarded.  This is not a problem since the
  * __cookie_try is always appended without additional parameters,
- * but an improved version of this function could just strip out
+ * mshield an improved version of this function could just strip out
  * the __cookie_try=n and fix up the resulting URL.
  *
  * Note that this function will modify the original string.

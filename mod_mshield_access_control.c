@@ -8,13 +8,13 @@
  * Returns:
  * STATUS_ELOGIN	client not logged in yet
  * STATUS_OK		client is properly authorized or no authorization required
- * STATUS_EDENIED	client is properly authenticated, but not authorized
- * STATUS_ESTEPUP1	client is properly authenticated, but with too low auth_strength (1)
- * STATUS_ESTEPUP2	client is properly authenticated, but with too low auth_strength (2)
+ * STATUS_EDENIED	client is properly authenticated, mshield not authorized
+ * STATUS_ESTEPUP1	client is properly authenticated, mshield with too low auth_strength (1)
+ * STATUS_ESTEPUP2	client is properly authenticated, mshield with too low auth_strength (2)
  * STATUS_ERROR		internal error
  */
 apr_status_t
-but_access_control(request_rec *r, session_t *session, mod_mshield_server_t *config, mod_mshield_dir_t *dconfig)
+mshield_access_control(request_rec *r, session_t *session, mod_mshield_server_t *config, mod_mshield_dir_t *dconfig)
 {
 	if (!dconfig->logon_required) {
 		return STATUS_OK;
@@ -25,7 +25,7 @@ but_access_control(request_rec *r, session_t *session, mod_mshield_server_t *con
 	ERRLOG_INFO("MYLOGIN [%s]", r->uri);
 
 
-        /* check if login url here (fix for / problem by BUT) */
+        /* check if login url here (fix for / problem by MSHIELD) */
 /*GET*/ switch (mod_mshield_regexp_match(r, "(^/mylogin/login.html)|(^/webapp/mblogin/do_login)", r->uri)) {
              case STATUS_MATCH:
                                 ERRLOG_INFO("MYLOGIN FOUND");
@@ -52,7 +52,7 @@ but_access_control(request_rec *r, session_t *session, mod_mshield_server_t *con
 		if (config->service_list_enabled_on) {
 			ERRLOG_INFO("service list check is on, list is [%s]", session->data->service_list);
 /*GET*/			if (!apr_strnatcmp(session->data->service_list, "empty")) {
-				ERRLOG_CRIT("Service list check enabled but service list not set by login server");
+				ERRLOG_CRIT("Service list check enabled mshield service list not set by login server");
 				return STATUS_ERROR;
 			}
 

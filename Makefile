@@ -1,6 +1,6 @@
 #############################################
 #
-# mod_mshield Makefile V1.0 by BUT
+# mod_mshield Makefile V1.0 by MSHIELD
 #
 #############################################
 # $Id: Makefile 160 2011-02-01 16:45:08Z rblum $

@@ -105,7 +105,7 @@
 /********************************************************************
  * module declaration
  */
-module AP_MODULE_DECLARE_DATA but_module;
+module AP_MODULE_DECLARE_DATA mshield_module;
 
 
 /********************************************************************
@@ -149,7 +149,7 @@ typedef struct {
 	const char *authorized_logon_url;		/* Regexp from what r->uri LOGON=ok are accepted */
 	const char *url_after_renew;			/* Redirect URL after renew session */
 
-	int but_config_enabled_return_to_orig_url;	/* IF RETURN TO ORIG URL SHALL BE ENABLED/DISABLED */
+	int mshield_config_enabled_return_to_orig_url;	/* IF RETURN TO ORIG URL SHALL BE ENABLED/DISABLED */
 
 } mod_mshield_server_t;
 
@@ -241,14 +241,14 @@ apr_status_t mod_mshield_regexp_match_ex(request_rec *r, const char *pattern, in
 /********************************************************************
  * mod_mshield_cookie.c
  */
-apr_status_t but_add_session_cookie_to_headers(request_rec *r, mod_mshield_server_t *config, apr_table_t *headers, session_t *session);
-int but_add_to_headers_out_cb(void *data, const char *key, const char *value);
-int but_add_to_headers_in_cb(void *data, const char *key, const char *value);
+apr_status_t mshield_add_session_cookie_to_headers(request_rec *r, mod_mshield_server_t *config, apr_table_t *headers, session_t *session);
+int mshield_add_to_headers_out_cb(void *data, const char *key, const char *value);
+int mshield_add_to_headers_in_cb(void *data, const char *key, const char *value);
 
 /********************************************************************
  * mod_mshield_access_control.c
  */
-apr_status_t but_access_control(request_rec *r, session_t *session, mod_mshield_server_t *config, mod_mshield_dir_t *dconfig);
+apr_status_t mshield_access_control(request_rec *r, session_t *session, mod_mshield_server_t *config, mod_mshield_dir_t *dconfig);
 
 /********************************************************************
  * mod_mshield_response_filter.c
@@ -263,36 +263,36 @@ int mod_mshield_filter_request_cookies_cb(void *result, const char *key, const c
 /********************************************************************
  * mod_mshield_session.c
  */
-void but_session_init(session_t *session, request_rec *r, mod_mshield_server_t *config);
-int but_session_isnull(session_t *session);
-apr_status_t but_session_find(session_t *session, const char *session_name, const char *session_id);
-apr_status_t but_session_open(session_t *session, session_handle_t handle);
-apr_status_t but_session_create(session_t *session);
-void but_session_unlink(session_t *session);
-apr_status_t but_session_validate(session_t *session, int hard_timeout, int inactivity_timeout);
-apr_status_t but_session_renew(session_t *session);
-const char * but_session_get_cookies(session_t *session);
-apr_status_t but_session_set_cookie(session_t *session, const char *key, const char *value, int locid);
+void mshield_session_init(session_t *session, request_rec *r, mod_mshield_server_t *config);
+int mshield_session_isnull(session_t *session);
+apr_status_t mshield_session_find(session_t *session, const char *session_name, const char *session_id);
+apr_status_t mshield_session_open(session_t *session, session_handle_t handle);
+apr_status_t mshield_session_create(session_t *session);
+void mshield_session_unlink(session_t *session);
+apr_status_t mshield_session_validate(session_t *session, int hard_timeout, int inactivity_timeout);
+apr_status_t mshield_session_renew(session_t *session);
+const char * mshield_session_get_cookies(session_t *session);
+apr_status_t mshield_session_set_cookie(session_t *session, const char *key, const char *value, int locid);
 
 /********************************************************************
  * mod_mshield_shm.c
  */
-apr_status_t but_shm_initialize(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s);
+apr_status_t mshield_shm_initialize(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s);
 apr_status_t shm_cleanup(void *not_used);
-apr_status_t but_shm_initialize_cookiestore(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s);
+apr_status_t mshield_shm_initialize_cookiestore(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s);
 apr_status_t shm_cleanup_cookiestore(void *not_used);
 /* the following SHM functions are for session internal use only */
 session_data_t * get_session_by_index(int index);
-void but_shm_free(session_data_t *session_data);
-int but_shm_timeout(session_data_t *session_data, int hard_timeout, int inactivity_timeout);
+void mshield_shm_free(session_data_t *session_data);
+int mshield_shm_timeout(session_data_t *session_data, int hard_timeout, int inactivity_timeout);
 apr_status_t create_new_shm_session(request_rec *r, const char *sid, int *session_index);
 const char * collect_cookies_from_cookiestore(request_rec *r, int anchor);
-void but_cookiestore_free(int anchor);
+void mshield_cookiestore_free(int anchor);
 apr_status_t store_cookie_into_session(request_rec *r, session_data_t *session_data, const char *key, const char *value, int locid);
 
 /********************************************************************
  * mod_mshield_config.c
  */
-extern const command_rec but_cmds[];
+extern const command_rec mshield_cmds[];
 
 #endif /* MOD_MSHIELD_H */

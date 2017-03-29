@@ -150,7 +150,7 @@ SOURCE=..\..\build\win32\win32ver.awk
 InputPath=..\..\build\win32\win32ver.awk
 
 ".\mod_mshield.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	awk -f ../../build/win32/win32ver.awk mod_mshield.so "but_module for Apache" ../../include/ap_release.h > .\mod_mshield.rc
+	awk -f ../../build/win32/win32ver.awk mod_mshield.so "mshield_module for Apache" ../../include/ap_release.h > .\mod_mshield.rc
 
 # End Custom Build
 
@@ -161,7 +161,7 @@ InputPath=..\..\build\win32\win32ver.awk
 InputPath=..\..\build\win32\win32ver.awk
 
 ".\mod_mshield.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	awk -f ../../build/win32/win32ver.awk mod_mshield.so "but_module for Apache" ../../include/ap_release.h > .\mod_mshield.rc
+	awk -f ../../build/win32/win32ver.awk mod_mshield.so "mshield_module for Apache" ../../include/ap_release.h > .\mod_mshield.rc
 
 # End Custom Build
 

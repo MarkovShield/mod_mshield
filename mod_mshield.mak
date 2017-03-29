@@ -426,7 +426,7 @@ InputPath=..\..\build\win32\win32ver.awk
 ".\mod_mshield.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	<<tempfile.bat 
 	@echo off 
-	awk -f ../../build/win32/win32ver.awk mod_mshield.so "but_module for Apache" ../../include/ap_release.h > .\mod_mshield.rc
+	awk -f ../../build/win32/win32ver.awk mod_mshield.so "mshield_module for Apache" ../../include/ap_release.h > .\mod_mshield.rc
 << 
 	
 
@@ -437,7 +437,7 @@ InputPath=..\..\build\win32\win32ver.awk
 ".\mod_mshield.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	<<tempfile.bat 
 	@echo off 
-	awk -f ../../build/win32/win32ver.awk mod_mshield.so "but_module for Apache" ../../include/ap_release.h > .\mod_mshield.rc
+	awk -f ../../build/win32/win32ver.awk mod_mshield.so "mshield_module for Apache" ../../include/ap_release.h > .\mod_mshield.rc
 << 
 	
 

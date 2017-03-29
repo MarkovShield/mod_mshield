@@ -7,7 +7,7 @@
  * String is allocated from r->pool.
  */
 static const char *
-but_build_session_cookie(request_rec *r, mod_mshield_server_t *config, char *sid)
+mshield_build_session_cookie(request_rec *r, mod_mshield_server_t *config, char *sid)
 {
 	const char *cookie = NULL;
 	const char *cookiename = config->cookie_name;
@@ -47,11 +47,11 @@ but_build_session_cookie(request_rec *r, mod_mshield_server_t *config, char *sid
  * cookie containing the new session ID into headers.
  */
 apr_status_t
-but_add_session_cookie_to_headers(request_rec *r, mod_mshield_server_t *config, apr_table_t *headers, session_t *session)
+mshield_add_session_cookie_to_headers(request_rec *r, mod_mshield_server_t *config, apr_table_t *headers, session_t *session)
 {
 	const char *cookiestr;
 
-	cookiestr = but_build_session_cookie(r, config, session->data->session_id);
+	cookiestr = mshield_build_session_cookie(r, config, session->data->session_id);
 	if (!cookiestr) {
 		return STATUS_ERROR;
 	}
@@ -65,7 +65,7 @@ but_add_session_cookie_to_headers(request_rec *r, mod_mshield_server_t *config, 
 /* apr table iteration callback which adds all table elements to
  * the r->headers_out table. */
 int
-but_add_to_headers_out_cb(void *data, const char *key, const char *value) {
+mshield_add_to_headers_out_cb(void *data, const char *key, const char *value) {
 	apr_table_add(((request_rec*)data)->headers_out, key, value);
 	return TRUE;
 }
@@ -73,7 +73,7 @@ but_add_to_headers_out_cb(void *data, const char *key, const char *value) {
 /* apr table iteration callback which adds all table elements to
  * the r->headers_in table. */
 int
-but_add_to_headers_in_cb(void *data, const char *key, const char *value) {
+mshield_add_to_headers_in_cb(void *data, const char *key, const char *value) {
 	apr_table_add(((request_rec*)data)->headers_in, key, value);
 	return TRUE;
 }

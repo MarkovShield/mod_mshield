@@ -94,7 +94,7 @@ filter_response_cookie(request_rec *r, cookie_res *cr,
 	}
 
 	/* Store all other cookies to the cookie store. */
-/*SET*/	status = but_session_set_cookie(cr->session, cookie_name, cookie_value, dconfig->mod_mshield_location_id);
+/*SET*/	status = mshield_session_set_cookie(cr->session, cookie_name, cookie_value, dconfig->mod_mshield_location_id);
 	if (status != STATUS_OK) {
 		ERRLOG_CRIT("Error while storing cookie!");
 		cr->status = status;
@@ -175,7 +175,7 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
 
 			/* loop over location IDs in bclearance locid list */
 			for (bclearance = apr_strtok(bclearance, ",", &last); bclearance != NULL; bclearance = apr_strtok(NULL, ",", &last)) {
-/*SET*/				apr_status_t status = but_session_set_cookie(cr->session, bname, bvalue, atoi(bclearance));
+/*SET*/				apr_status_t status = mshield_session_set_cookie(cr->session, bname, bvalue, atoi(bclearance));
 				if (status != STATUS_OK) {
 					ERRLOG_CRIT("Error while storing cookie!");
 					cr->status = status;
@@ -197,7 +197,7 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
  *
  * HTTP/1.1 302 Found
  * Date: Mon, 22 Aug 2005 21:10:45 GMT
- * Set-Cookie: E2=jLllj33EsXhInvgW5KDkMtzB4YcqLy2Eawv1EAbY0K3NGUHczLF1oIrJ7bURyw1; domain=but.ch; path=/;
+ * Set-Cookie: E2=jLllj33EsXhInvgW5KDkMtzB4YcqLy2Eawv1EAbY0K3NGUHczLF1oIrJ7bURyw1; domain=mshield.ch; path=/;
  * Set-Cookie: TEST=ABC;
  * Set-Cookie: FREECOOKIE=123;
  * Location: /cgi/cgi-bin/printenv?__cookie_try=1
@@ -221,13 +221,13 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
 	mod_mshield_dir_t *dconfig;
 	char *cookie_name, *cookie_value;
 
-	config = ap_get_module_config(r->server->module_config, &but_module);
+	config = ap_get_module_config(r->server->module_config, &mshield_module);
 	if (!config) {
 		ERRLOG_CRIT("Illegal server configuration");
 		cr->status = STATUS_ERROR;
 		return FALSE;
 	}
-	dconfig = ap_get_module_config(r->per_dir_config, &but_module);
+	dconfig = ap_get_module_config(r->per_dir_config, &mshield_module);
 	if (!dconfig) {
 		ERRLOG_CRIT("Illegal directory configuration");
 		cr->status = STATUS_ERROR;
@@ -249,7 +249,7 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
 		ERRLOG_INFO("xxx-xxx Cookie Name [%s] and Value [%s]", cookie_name, cookie_value);
 /*SET*/		return filter_response_cookie_from_logon_url(r, cr, config, dconfig, cookie_name, cookie_value, value);
 	case STATUS_NOMATCH:
-		ERRLOG_INFO("xxx-xxx Found Cookie but not from Authorized LOGON URL");
+		ERRLOG_INFO("xxx-xxx Found Cookie mshield not from Authorized LOGON URL");
 /*SET*/		return filter_response_cookie(r, cr, config, dconfig, cookie_name, cookie_value, value);
 	case STATUS_ERROR:
 	default:

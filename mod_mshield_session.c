@@ -40,7 +40,7 @@ generate_session_id(request_rec *r)
  * Initialize session_t data structure with invalid session.
  */
 void
-but_session_init(session_t *session, request_rec *r, mod_mshield_server_t *config)
+mshield_session_init(session_t *session, request_rec *r, mod_mshield_server_t *config)
 {
 	session->handle = INVALID_SESSION_HANDLE;
 	session->data = NULL;
@@ -53,7 +53,7 @@ but_session_init(session_t *session, request_rec *r, mod_mshield_server_t *confi
  * session slot.
  */
 int
-but_session_isnull(session_t *session)
+mshield_session_isnull(session_t *session)
 {
 	return !session || !session->data || session->handle == INVALID_SESSION_HANDLE;
 }
@@ -63,7 +63,7 @@ but_session_isnull(session_t *session)
  * session is an initialized session_t.
  */
 apr_status_t
-but_session_find(session_t *session, const char *session_name, const char *session_id)
+mshield_session_find(session_t *session, const char *session_name, const char *session_id)
 {
 	int i;
 
@@ -86,7 +86,7 @@ but_session_find(session_t *session, const char *session_name, const char *sessi
  * session is an initialized session_t.
  */
 apr_status_t
-but_session_open(session_t *session, session_handle_t handle)
+mshield_session_open(session_t *session, session_handle_t handle)
 {
 	session->data = get_session_by_index(handle);
 	if (!session->data->slot_used) {
@@ -104,7 +104,7 @@ but_session_open(session_t *session, session_handle_t handle)
  * session is an initialized session_t.
  */
 apr_status_t
-but_session_create(session_t *session)
+mshield_session_create(session_t *session)
 {
 	apr_status_t status;
 	char *sid = NULL;
@@ -127,12 +127,12 @@ but_session_create(session_t *session)
  * session is a valid session which gets invalidated.
  */
 void
-but_session_unlink(session_t *session)
+mshield_session_unlink(session_t *session)
 {
-	if (but_session_isnull(session)) {
+	if (mshield_session_isnull(session)) {
 		return;
 	}
-	but_shm_free(session->data);
+	mshield_shm_free(session->data);
 	session->data = NULL;
 	session->handle = INVALID_SESSION_HANDLE;
 }
@@ -145,14 +145,14 @@ but_session_unlink(session_t *session)
  * STATUS_ENOEXIST	session reached a timeout or is invalid
  */
 apr_status_t
-but_session_validate(session_t *session, int hard_timeout, int inactivity_timeout)
+mshield_session_validate(session_t *session, int hard_timeout, int inactivity_timeout)
 {
-	if (but_session_isnull(session)) {
+	if (mshield_session_isnull(session)) {
 		return STATUS_ENOEXIST;
 	}
 	
-/*GET*/	if (but_shm_timeout(session->data, hard_timeout, inactivity_timeout)) {
-/*UNLINK*/	but_session_unlink(session);
+/*GET*/	if (mshield_shm_timeout(session->data, hard_timeout, inactivity_timeout)) {
+/*UNLINK*/	mshield_session_unlink(session);
 		return STATUS_ENOEXIST;
 	} else {
 /*SET*/		session->data->atime = (int)apr_time_sec(apr_time_now());
@@ -167,9 +167,9 @@ but_session_validate(session_t *session, int hard_timeout, int inactivity_timeou
  * Returns NULL if session is not a session.
  */
 const char *
-but_session_get_cookies(session_t *session)
+mshield_session_get_cookies(session_t *session)
 {
-	if (but_session_isnull(session)) {
+	if (mshield_session_isnull(session)) {
 		return NULL;
 	}
 	return collect_cookies_from_cookiestore(session->request, session->data->cookiestore_index);
@@ -181,9 +181,9 @@ but_session_get_cookies(session_t *session)
  * Returns STATUS_ENOEXIST if session does not exist.
  */
 apr_status_t
-but_session_set_cookie(session_t *session, const char *key, const char *value, int locid)
+mshield_session_set_cookie(session_t *session, const char *key, const char *value, int locid)
 {
-	if (but_session_isnull(session)) {
+	if (mshield_session_isnull(session)) {
 		return STATUS_ENOEXIST;
 	}
 	return store_cookie_into_session(session->request, session->data, key, value, locid);
@@ -197,18 +197,18 @@ but_session_set_cookie(session_t *session, const char *key, const char *value, i
  * Returns STATUS_ENOEXIST if session does not exist.
  */
 apr_status_t
-but_session_renew(session_t *session)
+mshield_session_renew(session_t *session)
 {
 	apr_status_t status;
 	session_data_t *old_data;
 
-	if (but_session_isnull(session)) {
+	if (mshield_session_isnull(session)) {
 		return STATUS_ENOEXIST;
 	}
 
 	old_data = session->data;
 
-	status = but_session_create(session);
+	status = mshield_session_create(session);
 	if (status != STATUS_OK) {
 		return status;
 	}
@@ -224,7 +224,7 @@ but_session_renew(session_t *session)
 	apr_cpystrn(session->data->redirect_url_after_login, old_data->redirect_url_after_login, sizeof(session->data->redirect_url_after_login));
 	old_data->cookiestore_index          = -1; /* moved to new session ctx */
 
-	but_shm_free(old_data);
+	mshield_shm_free(old_data);
 	return STATUS_OK;
 }
 

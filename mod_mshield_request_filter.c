@@ -18,7 +18,7 @@ mod_mshield_filter_request_cookies_cb(void *result, const char *key, const char 
 
 	char *qa, *cookiestr, *last;
 
-	mod_mshield_server_t *config = ap_get_module_config(r->server->module_config, &but_module);
+	mod_mshield_server_t *config = ap_get_module_config(r->server->module_config, &mshield_module);
 
 	if (!config) {
 		ERRLOG_CRIT("Cannot load configuration!");
