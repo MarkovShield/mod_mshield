@@ -1,6 +1,5 @@
-# README #
-
-### What is this repository for? ###
+# README 
+### What is this repository for? 
 
 * mod_but update for MarkovShield
 * Version
@@ -13,5 +12,6 @@
 * Dependencies
 * Database configuration
 * How to run tests
-* Deployment instructions
+* Deployment instruction
+
 
