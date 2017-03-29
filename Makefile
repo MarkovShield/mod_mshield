@@ -30,7 +30,8 @@ SRC= \
 all: mod_mshield
 
 mod_mshield: $(SRC)
-	$(APXS) $(APXSFLAGS) $(SRC)
+#	$(APXS) $(APXSFLAGS) $(SRC)
+	apxs $(APXSFLAGS) $(SRC)
 
 clean:
 	rm -rf *.la *.slo *.o *.lo .libs
