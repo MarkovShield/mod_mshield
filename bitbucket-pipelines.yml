@@ -9,5 +9,4 @@ pipelines:
   default:
     - step:
         script:
-          - chmod +x compile.sh
-          - ./compile.sh
+          - make
