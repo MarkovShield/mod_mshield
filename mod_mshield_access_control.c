@@ -1,6 +1,6 @@
-/* $Id: mod_but_access_control.c 147 2010-05-30 20:28:01Z ibuetler $ */
+/* $Id: mod_mshield_access_control.c 147 2010-05-30 20:28:01Z ibuetler $ */
 
-#include "mod_but.h"
+#include "mod_mshield.h"
 
 /*
  * Check request authorization.
@@ -14,19 +14,19 @@
  * STATUS_ERROR		internal error
  */
 apr_status_t
-but_access_control(request_rec *r, session_t *session, mod_but_server_t *config, mod_but_dir_t *dconfig)
+but_access_control(request_rec *r, session_t *session, mod_mshield_server_t *config, mod_mshield_dir_t *dconfig)
 {
 	if (!dconfig->logon_required) {
 		return STATUS_OK;
 	}
 
-	ERRLOG_INFO("MOD_BUT_LOGON_REQUIRED enabled, checking authentication and authorization");
-	ERRLOG_INFO("MOD_BUT_LOGON_REQUIRED dconfig [%d]", dconfig->logon_required);
+	ERRLOG_INFO("MOD_MSHIELD_LOGON_REQUIRED enabled, checking authentication and authorization");
+	ERRLOG_INFO("MOD_MSHIELD_LOGON_REQUIRED dconfig [%d]", dconfig->logon_required);
 	ERRLOG_INFO("MYLOGIN [%s]", r->uri);
 
 
         /* check if login url here (fix for / problem by BUT) */
-/*GET*/ switch (mod_but_regexp_match(r, "(^/mylogin/login.html)|(^/webapp/mblogin/do_login)", r->uri)) {
+/*GET*/ switch (mod_mshield_regexp_match(r, "(^/mylogin/login.html)|(^/webapp/mblogin/do_login)", r->uri)) {
              case STATUS_MATCH:
                                 ERRLOG_INFO("MYLOGIN FOUND");
 				return STATUS_OK;
@@ -57,7 +57,7 @@ but_access_control(request_rec *r, session_t *session, mod_but_server_t *config,
 			}
 
 			/* match URL against service list */
-/*GET*/			switch (mod_but_regexp_match(r, session->data->service_list, r->uri)) {
+/*GET*/			switch (mod_mshield_regexp_match(r, session->data->service_list, r->uri)) {
 			case STATUS_MATCH:
 				ERRLOG_INFO("service_list matched: pass through");
 				break;
@@ -76,16 +76,16 @@ but_access_control(request_rec *r, session_t *session, mod_but_server_t *config,
 		/*
 		 * User is authorized from the uri point of view: Need to check, if the user has the correct auth_level for the requesting uri
 		 */
-		ERRLOG_INFO("Authentication strength required [%d] session [%d]", dconfig->mod_but_auth_strength, session->data->auth_strength);
-/*GET*/		if (session->data->auth_strength >= dconfig->mod_but_auth_strength) {
+		ERRLOG_INFO("Authentication strength required [%d] session [%d]", dconfig->mod_mshield_auth_strength, session->data->auth_strength);
+/*GET*/		if (session->data->auth_strength >= dconfig->mod_mshield_auth_strength) {
 			ERRLOG_INFO("session auth_strength >= required auth_strength");
 			return STATUS_OK;
 		} else {
-			if (dconfig->mod_but_auth_strength == 1) {
+			if (dconfig->mod_mshield_auth_strength == 1) {
 				ERRLOG_INFO("redirect to login 1");
 				return STATUS_ESTEPUP1;
 			}
-			if (dconfig->mod_but_auth_strength == 2) {
+			if (dconfig->mod_mshield_auth_strength == 2) {
 				ERRLOG_INFO("redirect to login 2");
 				return STATUS_ESTEPUP2;
 			}

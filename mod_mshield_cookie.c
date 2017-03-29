@@ -1,13 +1,13 @@
-/* $Id: mod_but_cookie.c 147 2010-05-30 20:28:01Z ibuetler $ */
+/* $Id: mod_mshield_cookie.c 147 2010-05-30 20:28:01Z ibuetler $ */
 
-#include "mod_but.h"
+#include "mod_mshield.h"
 
 /*
  * Builds the session cookie from the given session ID and configuration.
  * String is allocated from r->pool.
  */
 static const char *
-but_build_session_cookie(request_rec *r, mod_but_server_t *config, char *sid)
+but_build_session_cookie(request_rec *r, mod_mshield_server_t *config, char *sid)
 {
 	const char *cookie = NULL;
 	const char *cookiename = config->cookie_name;
@@ -47,7 +47,7 @@ but_build_session_cookie(request_rec *r, mod_but_server_t *config, char *sid)
  * cookie containing the new session ID into headers.
  */
 apr_status_t
-but_add_session_cookie_to_headers(request_rec *r, mod_but_server_t *config, apr_table_t *headers, session_t *session)
+but_add_session_cookie_to_headers(request_rec *r, mod_mshield_server_t *config, apr_table_t *headers, session_t *session)
 {
 	const char *cookiestr;
 

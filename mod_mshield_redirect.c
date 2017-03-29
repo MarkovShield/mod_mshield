@@ -1,6 +1,6 @@
-/* $Id: mod_but_redirect.c 147 2010-05-30 20:28:01Z ibuetler $ */
+/* $Id: mod_mshield_redirect.c 147 2010-05-30 20:28:01Z ibuetler $ */
 
-#include "mod_but.h"
+#include "mod_mshield.h"
 
 /*
  * Redirect to a relative URI.  Adds a Location header to the request and
@@ -8,10 +8,10 @@
  *
  * This function directly returns HTTP error codes, so the correct way to
  * call it is:
- *    return mod_but_redirect_to_relurl(r, uri);
+ *    return mod_mshield_redirect_to_relurl(r, uri);
  */
 int
-mod_but_redirect_to_relurl(request_rec *r, const char *relurl)
+mod_mshield_redirect_to_relurl(request_rec *r, const char *relurl)
 {
 	const char *url, *host;
 	apr_port_t port;
@@ -28,10 +28,10 @@ mod_but_redirect_to_relurl(request_rec *r, const char *relurl)
 	 * If we still have CR/LF characters here, then that would be a bug
 	 * in the calling code which must be fixed.
 	 */
-	switch (mod_but_regexp_match(r, "[\r\n]", relurl)) {
+	switch (mod_mshield_regexp_match(r, "[\r\n]", relurl)) {
 	case STATUS_MATCH:
 		ERRLOG_CRIT("ATTACK: Target URL contains raw CR/LF characters [%s]", relurl);
-		ERRLOG_CRIT("This is a bug in mod_but - CR/LF chars should be encoded!");
+		ERRLOG_CRIT("This is a bug in mod_mshield - CR/LF chars should be encoded!");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	case STATUS_NOMATCH:
 		ERRLOG_INFO("Target URL does not contain CR/LF [%s]", relurl);
@@ -68,10 +68,10 @@ mod_but_redirect_to_relurl(request_rec *r, const char *relurl)
  *
  * This function directly returns HTTP error codes, so the correct way
  * to call it is:
- *    return mod_but_handle_shm_error(r);
+ *    return mod_mshield_handle_shm_error(r);
  */
 int
-mod_but_redirect_to_cookie_try(request_rec *r, mod_but_server_t *config)
+mod_mshield_redirect_to_cookie_try(request_rec *r, mod_mshield_server_t *config)
 {
 	int cookie_try, i;
 	char *target_uri;
@@ -80,18 +80,18 @@ mod_but_redirect_to_cookie_try(request_rec *r, mod_but_server_t *config)
 	 * Get cookie try argument and redirect to next cookie_try stage.
 	 * If cookie_try >= 3, redirect to the cookie refused error page.
 	 */
-	cookie_try = mod_but_find_cookie_try(r);
+	cookie_try = mod_mshield_find_cookie_try(r);
 	ERRLOG_INFO("Parsed cookie_try=[%d]", cookie_try);
 	if (cookie_try < 0) {
 		ERRLOG_CRIT("Cookie Test Error [%d]", cookie_try);
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 	if (cookie_try >= 3) {
-		return mod_but_redirect_to_relurl(r, config->client_refuses_cookies_url);
+		return mod_mshield_redirect_to_relurl(r, config->client_refuses_cookies_url);
 	}
 
 	cookie_try++;
-	ERRLOG_INFO("Redirecting to cookie test stage %s=%d", MOD_BUT_COOKIE_TRY, cookie_try);
+	ERRLOG_INFO("Redirecting to cookie test stage %s=%d", MOD_MSHIELD_COOKIE_TRY, cookie_try);
 
 	/*
 	 * Strip all GET parameters from r->unparsed_uri,
@@ -108,7 +108,7 @@ mod_but_redirect_to_cookie_try(request_rec *r, mod_but_server_t *config)
 		}
 	}
 	ERRLOG_INFO("r->uri=[%s] r->unparsed_uri=[%s] target_uri=[%s]", r->uri, r->unparsed_uri, target_uri);
-	return mod_but_redirect_to_relurl(r, apr_psprintf(r->pool, "%s?%s=%d", target_uri, MOD_BUT_COOKIE_TRY, cookie_try));
+	return mod_mshield_redirect_to_relurl(r, apr_psprintf(r->pool, "%s?%s=%d", target_uri, MOD_MSHIELD_COOKIE_TRY, cookie_try));
 }
 
 
@@ -118,10 +118,10 @@ mod_but_redirect_to_cookie_try(request_rec *r, mod_but_server_t *config)
  *
  * This function directly returns HTTP error codes, so the correct way
  * to call it is:
- *    return mod_but_handle_shm_error(r);
+ *    return mod_mshield_handle_shm_error(r);
  */
 int
-mod_but_redirect_to_shm_error(request_rec *r, mod_but_server_t *config)
+mod_mshield_redirect_to_shm_error(request_rec *r, mod_mshield_server_t *config)
 {
 	ERRLOG_CRIT("All SHM space used!");
 
@@ -129,11 +129,11 @@ mod_but_redirect_to_shm_error(request_rec *r, mod_but_server_t *config)
 	apr_table_unset(r->err_headers_out, "Set-Cookie");
 
 	if (config->all_shm_space_used_url == NULL) {
-		ERRLOG_INFO("MOD_BUT_ALL_SHM_SPACE_USED_URL not configured in httpd.conf");
+		ERRLOG_INFO("MOD_MSHIELD_ALL_SHM_SPACE_USED_URL not configured in httpd.conf");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 
-	return mod_but_redirect_to_relurl(r, config->all_shm_space_used_url);
+	return mod_mshield_redirect_to_relurl(r, config->all_shm_space_used_url);
 }
 
 
@@ -143,10 +143,10 @@ mod_but_redirect_to_shm_error(request_rec *r, mod_but_server_t *config)
  * Returns value of parameter __cookie_try or 0 if it was not found.
  */
 int
-mod_but_find_cookie_try(request_rec *r)
+mod_mshield_find_cookie_try(request_rec *r)
 {
 	char *p;
-	static const char *param_name = MOD_BUT_COOKIE_TRY;
+	static const char *param_name = MOD_MSHIELD_COOKIE_TRY;
 	ERRLOG_INFO("r->args: [%s]", r->args);
 
 	if (!r->args) {
@@ -181,10 +181,10 @@ mod_but_find_cookie_try(request_rec *r)
  * Note that this function will modify the original string.
  */
 char *
-mod_but_strip_cookie_try(char *relurl)
+mod_mshield_strip_cookie_try(char *relurl)
 {
 	char *p;
-	static const char *param_str = MOD_BUT_COOKIE_TRY "=";
+	static const char *param_str = MOD_MSHIELD_COOKIE_TRY "=";
 
 	if (relurl && (p = strstr(relurl, param_str))) {
 		p--;

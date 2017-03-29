@@ -1,13 +1,13 @@
-/* $Id: mod_but_session.c 147 2010-05-30 20:28:01Z ibuetler $ */
+/* $Id: mod_mshield_session.c 147 2010-05-30 20:28:01Z ibuetler $ */
 
-#include "mod_but.h"
+#include "mod_mshield.h"
 
 /*
  * Generate a new session ID.
  *
  * Note that apr_generate_random_bytes() blocks on Linux due to reading from
  * /dev/random.  FreeBSD /dev/random never blocks.  Solaris /dev/random does
- * not seem to block either.  To keep mod_but usable on Linux, we try to not
+ * not seem to block either.  To keep mod_mshield usable on Linux, we try to not
  * waste any randomness: only read as much as needed and use all bits.
  * On Linux, APR should be compiled to read from /dev/urandom by default.
  */
@@ -15,20 +15,20 @@ static char *
 generate_session_id(request_rec *r)
 {
 	apr_status_t rc;
-	unsigned char rnd[MOD_BUT_SIDBYTES];
-	char *sid = apr_pcalloc(r->pool, apr_base64_encode_len(MOD_BUT_SIDBYTES) + 1);
+	unsigned char rnd[MOD_MSHIELD_SIDBYTES];
+	char *sid = apr_pcalloc(r->pool, apr_base64_encode_len(MOD_MSHIELD_SIDBYTES) + 1);
 
 	if (!sid) {
 		ERRLOG_CRIT("FATAL: Out of memory");
 		return NULL;
 	}
 
-	if (APR_SUCCESS != (rc = apr_generate_random_bytes(rnd, MOD_BUT_SIDBYTES))) {
+	if (APR_SUCCESS != (rc = apr_generate_random_bytes(rnd, MOD_MSHIELD_SIDBYTES))) {
 		ERRLOG_CRIT("FATAL: apr_generate_random_bytes returned %d", rc);
 		return NULL;
 	}
 
-	if (0 >= apr_base64_encode_binary(sid, rnd, MOD_BUT_SIDBYTES)) {
+	if (0 >= apr_base64_encode_binary(sid, rnd, MOD_MSHIELD_SIDBYTES)) {
 		ERRLOG_CRIT("FATAL: apr_base64_encode failed");
 		return NULL;
 	}
@@ -40,7 +40,7 @@ generate_session_id(request_rec *r)
  * Initialize session_t data structure with invalid session.
  */
 void
-but_session_init(session_t *session, request_rec *r, mod_but_server_t *config)
+but_session_init(session_t *session, request_rec *r, mod_mshield_server_t *config)
 {
 	session->handle = INVALID_SESSION_HANDLE;
 	session->data = NULL;
@@ -68,7 +68,7 @@ but_session_find(session_t *session, const char *session_name, const char *sessi
 	int i;
 
 	/* loop over all sessions */
-	for (i = 0; i < MOD_BUT_SESSION_COUNT; i++) {
+	for (i = 0; i < MOD_MSHIELD_SESSION_COUNT; i++) {
 		session_data_t *session_data = get_session_by_index(i); /* XXX iterator in SHM code */
 		if (session_data->slot_used &&
 		    !apr_strnatcmp(session_data->session_id, session_id) &&   /* id is more likely to mismatch */

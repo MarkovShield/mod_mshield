@@ -1,6 +1,6 @@
-/* $Id: mod_but_regexp.c 147 2010-05-30 20:28:01Z ibuetler $ */
+/* $Id: mod_mshield_regexp.c 147 2010-05-30 20:28:01Z ibuetler $ */
 
-#include "mod_but.h"
+#include "mod_mshield.h"
 
 /*
  * Match a string against a regular expression without doing any captures.
@@ -11,9 +11,9 @@
  *	STATUS_ERROR	internal error when compiling or matching
  */
 apr_status_t
-mod_but_regexp_match(request_rec *r, const char *pattern, const char *subject)
+mod_mshield_regexp_match(request_rec *r, const char *pattern, const char *subject)
 {
-	return mod_but_regexp_match_ex(r, pattern, 0, subject);
+	return mod_mshield_regexp_match_ex(r, pattern, 0, subject);
 }
 
 /*
@@ -26,9 +26,9 @@ mod_but_regexp_match(request_rec *r, const char *pattern, const char *subject)
  *	STATUS_ERROR	internal error when compiling or matching
  */
 apr_status_t
-mod_but_regexp_imatch(request_rec *r, const char *pattern, const char *subject)
+mod_mshield_regexp_imatch(request_rec *r, const char *pattern, const char *subject)
 {
-	return mod_but_regexp_match_ex(r, pattern, PCRE_CASELESS, subject);
+	return mod_mshield_regexp_match_ex(r, pattern, PCRE_CASELESS, subject);
 }
 
 /*
@@ -42,7 +42,7 @@ mod_but_regexp_imatch(request_rec *r, const char *pattern, const char *subject)
  *	STATUS_ERROR	internal error when compiling or matching
  */
 apr_status_t
-mod_but_regexp_match_ex(request_rec *r, const char *pattern, int opts, const char *subject)
+mod_mshield_regexp_match_ex(request_rec *r, const char *pattern, int opts, const char *subject)
 {
 	pcre *re;
 	const char *error;

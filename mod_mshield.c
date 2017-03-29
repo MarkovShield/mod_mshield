@@ -1,9 +1,9 @@
-/* $Id: mod_but.c 163 2014-12-15 16:41:29Z ibuetler $ */
+/* $Id: mod_mshield.c 163 2014-12-15 16:41:29Z ibuetler $ */
 
-#include "mod_but.h"
+#include "mod_mshield.h"
 
 /*
- * This is the main file for mod_but.  Code directly called from
+ * This is the main file for mod_mshield.  Code directly called from
  * Apache should be here.  All the Apache module API glue is here.
  * We have to ensure that we are compliant with the Apache API
  * specifications.  Helper functions called from here should in
@@ -17,7 +17,7 @@
  * Failure to unlock will lead to Apache waiting for the lock forever.
  *
  * XXX Improve locking to allow for more parallelism.
- * This involves marking session slots busy during the time mod_but is doing it's
+ * This involves marking session slots busy during the time mod_mshield is doing it's
  * work, and only holding Giant while marking/unmarking slots as busy.
  */
 apr_global_mutex_t *but_mutex;
@@ -38,7 +38,7 @@ static apr_status_t
 but_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 {
 	request_rec *r = f->r;
-	mod_but_server_t *config;
+	mod_mshield_server_t *config;
 	session_t session;
 	cookie_res *cr;
 	apr_status_t status;
@@ -95,10 +95,10 @@ but_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 		cr->session = &session;
 		cr->status = STATUS_OK;
 		cr->headers = apr_table_make(r->pool, 0);
-/*SET*/		apr_table_do(mod_but_filter_response_cookies_cb, cr, r->headers_out, "Set-Cookie", NULL);
+/*SET*/		apr_table_do(mod_mshield_filter_response_cookies_cb, cr, r->headers_out, "Set-Cookie", NULL);
 		if (cr->status != STATUS_OK) {
 			if (cr->status == STATUS_ESHMFULL) {
-				status = mod_but_redirect_to_shm_error(r, config);
+				status = mod_mshield_redirect_to_shm_error(r, config);
 				apr_global_mutex_unlock(but_mutex);
 				return status;
 			}
@@ -127,7 +127,7 @@ but_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 /*RENEW*/		status = but_session_renew(&session);
 			if (status != STATUS_OK) {
 				if (status == STATUS_ESHMFULL) {
-					status = mod_but_redirect_to_shm_error(r, config);
+					status = mod_mshield_redirect_to_shm_error(r, config);
 					apr_global_mutex_unlock(but_mutex);
 					return status;
 				}
@@ -142,7 +142,7 @@ but_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 			}
 
 			/*
-			 * renew_mod_but_session returned the new session index we have to update in r->notes.
+			 * renew_mod_mshield_session returned the new session index we have to update in r->notes.
 			 */
 			session_handle_str = apr_itoa(r->pool, session.handle);
 			if (!session_handle_str) {
@@ -153,11 +153,11 @@ but_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 			apr_table_set(r->notes, "BUTSESS", session_handle_str);
 
 
-			// REDIRECT TO MOD_BUT_REDIRECT IF ORIG_URL HANDLING IS DISABLED
+			// REDIRECT TO MOD_MSHIELD_REDIRECT IF ORIG_URL HANDLING IS DISABLED
 	                if (!config->but_config_enabled_return_to_orig_url) {
-                        	ERRLOG_CRIT("REDIRECT TO ORIG URL IS DISABLED: REDIRECT TO MOD_BUT_REDIRECT [%s]", session.data->url);
-				ERRLOG_INFO("Redirect to MOD_BUT_REDIRECT if LOGON=ok");
-				r->status = mod_but_redirect_to_relurl(r, session.data->redirect_url_after_login);
+                        	ERRLOG_CRIT("REDIRECT TO ORIG URL IS DISABLED: REDIRECT TO MOD_MSHIELD_REDIRECT [%s]", session.data->url);
+				ERRLOG_INFO("Redirect to MOD_MSHIELD_REDIRECT if LOGON=ok");
+				r->status = mod_mshield_redirect_to_relurl(r, session.data->redirect_url_after_login);
 			 }
 		} /* must renew */
 	} /* have session */
@@ -173,12 +173,12 @@ but_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
  *	DECLINED	we have not handled the request, pass it on to next module
  *	HTTP_*		HTTP status codes for redirection or errors
  *
- * This is the most important function in mod_but. It is the core for handling
+ * This is the most important function in mod_mshield. It is the core for handling
  * requests from the Internet client. It implements:
  *
- * a) MOD_BUT session is required for the requesting  URL
+ * a) MOD_MSHIELD session is required for the requesting  URL
  * if a) is true
- *	a1) Check if the user is sending a MOD_BUT session
+ *	a1) Check if the user is sending a MOD_MSHIELD session
  *	a2) If an invalid session is sent -> redirect client to error page
  *	a3) If no session is sent -> create new session and go ahead
  *	a4) If an old session is sent -> redirect client ot error page
@@ -191,8 +191,8 @@ but_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 static int
 but_access_checker(request_rec *r)
 {
-	mod_but_dir_t *dconfig;
-	mod_but_server_t *config;
+	mod_mshield_dir_t *dconfig;
+	mod_mshield_server_t *config;
 	session_t session;
 	cookie_res *cr;
 	apr_status_t status;
@@ -203,7 +203,7 @@ but_access_checker(request_rec *r)
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 	if (!config->enabled) {
-		ERRLOG_INFO("mod_but is not enabled, skip request (DECLINED)");
+		ERRLOG_INFO("mod_mshield is not enabled, skip request (DECLINED)");
 		return DECLINED;
 	}
 
@@ -229,7 +229,7 @@ but_access_checker(request_rec *r)
 	/*
 	 * Session renewal?
 	 */
-	switch (mod_but_regexp_match(r, config->session_renew_url, r->uri)) {
+	switch (mod_mshield_regexp_match(r, config->session_renew_url, r->uri)) {
 	case STATUS_MATCH:
 		ERRLOG_INFO("Renew URL found [%s]", r->uri);
 /*CREATE*/	switch (but_session_create(&session)) {
@@ -239,11 +239,11 @@ but_access_checker(request_rec *r)
 				apr_global_mutex_unlock(but_mutex);
 				return HTTP_INTERNAL_SERVER_ERROR;
 			}
-			status = mod_but_redirect_to_relurl(r, config->url_after_renew); /* XXX make configurable; default URL */
+			status = mod_mshield_redirect_to_relurl(r, config->url_after_renew); /* XXX make configurable; default URL */
 			apr_global_mutex_unlock(but_mutex);
 			return status;
 		case STATUS_ESHMFULL:
-			status = mod_but_redirect_to_shm_error(r, config);
+			status = mod_mshield_redirect_to_shm_error(r, config);
 			apr_global_mutex_unlock(but_mutex);
 			return status;
 		case STATUS_ERROR:
@@ -261,14 +261,14 @@ but_access_checker(request_rec *r)
 	case STATUS_ERROR:
 	default:
 		apr_global_mutex_unlock(but_mutex);
-		ERRLOG_CRIT("Error while matching MOD_BUT_SESSION_RENEW_URL");
+		ERRLOG_CRIT("Error while matching MOD_MSHIELD_SESSION_RENEW_URL");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 
 	/*
 	 * Session free URL?
 	 */
-	switch (mod_but_regexp_match(r, config->session_free_url, r->uri)) {
+	switch (mod_mshield_regexp_match(r, config->session_free_url, r->uri)) {
 	case STATUS_MATCH:
 		apr_global_mutex_unlock(but_mutex);
 		ERRLOG_INFO("Session free URL [%s]", r->uri);
@@ -281,25 +281,25 @@ but_access_checker(request_rec *r)
 	case STATUS_ERROR:
 	default:
 		apr_global_mutex_unlock(but_mutex);
-		ERRLOG_CRIT("Error while matching MOD_BUT_SESSION_FREE_URL");
+		ERRLOG_CRIT("Error while matching MOD_MSHIELD_SESSION_FREE_URL");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 
 
 	/****************************** PART 2 *******************************************************
-	 * Check of the mod_but session
-	 *	a) mod_but session is not sent by client
-	 *	b) mod_but session sent is invalid
-	 *	c) mod_but session sent is ok
+	 * Check of the mod_mshield session
+	 *	a) mod_mshield session is not sent by client
+	 *	b) mod_mshield session sent is invalid
+	 *	c) mod_mshield session sent is ok
 	 * The code below will only be executed if the requesting URI
-	 * requires a mod_but session
+	 * requires a mod_mshield session
 	 */
 
 	/*
 	 * BUT-1 (coming from BUT-0) -> session is required
 	 * Here we will first parse the request headers for
 	 *
-	 *	a) MOD_BUT_SESSION (will be unset, because we don't want to have it in the backend)
+	 *	a) MOD_MSHIELD_SESSION (will be unset, because we don't want to have it in the backend)
 	 *	b) FREE COOKIES (will be accepted, if configured in httpd.conf)
 	 *	c) OTHER COOKIES (will be unset)
 	 */
@@ -317,7 +317,7 @@ but_access_checker(request_rec *r)
 	cr->r = r;
 	cr->status = STATUS_OK;
 	cr->headers = apr_table_make(r->pool, 0);
-	apr_table_do(mod_but_filter_request_cookies_cb, cr, r->headers_in, "Cookie", NULL);
+	apr_table_do(mod_mshield_filter_request_cookies_cb, cr, r->headers_in, "Cookie", NULL);
 	if (cr->status != STATUS_OK) {
 		apr_global_mutex_unlock(but_mutex);
 		ERRLOG_CRIT("Error while iterating Cookie headers.");
@@ -332,7 +332,7 @@ but_access_checker(request_rec *r)
 	 * and redirect to cookie try.
 	 */
 	if (!cr->sessionid) {
-		ERRLOG_INFO("Client did not send mod_but session");
+		ERRLOG_INFO("Client did not send mod_mshield session");
 /*CREATE*/	switch (but_session_create(&session)) {
 		case STATUS_OK:
 			/* session created, set cookie and redirect */
@@ -340,11 +340,11 @@ but_access_checker(request_rec *r)
 				apr_global_mutex_unlock(but_mutex);
 				return HTTP_INTERNAL_SERVER_ERROR;
 			}
-			status = mod_but_redirect_to_cookie_try(r, config);
+			status = mod_mshield_redirect_to_cookie_try(r, config);
 			apr_global_mutex_unlock(but_mutex);
 			return status;
 		case STATUS_ESHMFULL:
-			status = mod_but_redirect_to_shm_error(r, config);
+			status = mod_mshield_redirect_to_shm_error(r, config);
 			apr_global_mutex_unlock(but_mutex);
 			return status;
 		case STATUS_ERROR:
@@ -373,10 +373,10 @@ but_access_checker(request_rec *r)
 		ERRLOG_INFO("Session timed out or invalid");
 		if (!config->session_expired_url) {
 			apr_global_mutex_unlock(but_mutex);
-			ERRLOG_INFO("MOD_BUT_SESSION_TIMEOUT_URL not configured");
+			ERRLOG_INFO("MOD_MSHIELD_SESSION_TIMEOUT_URL not configured");
 			return HTTP_INTERNAL_SERVER_ERROR;
 		}
-		status = mod_but_redirect_to_relurl(r, config->session_expired_url);
+		status = mod_mshield_redirect_to_relurl(r, config->session_expired_url);
 		apr_global_mutex_unlock(but_mutex);
 		return status;
 
@@ -399,10 +399,10 @@ but_access_checker(request_rec *r)
 		ERRLOG_INFO("Session timed out.");
 		if (!config->session_expired_url) {
 			apr_global_mutex_unlock(but_mutex);
-			ERRLOG_INFO("MOD_BUT_SESSION_TIMEOUT_URL not configured");
+			ERRLOG_INFO("MOD_MSHIELD_SESSION_TIMEOUT_URL not configured");
 			return HTTP_INTERNAL_SERVER_ERROR;
 		}
-		status = mod_but_redirect_to_relurl(r, config->session_expired_url);
+		status = mod_mshield_redirect_to_relurl(r, config->session_expired_url);
 		apr_global_mutex_unlock(but_mutex);
 		return status;
 
@@ -414,19 +414,19 @@ but_access_checker(request_rec *r)
 	}
 
 	/*
-	 * If we are here, the client has sent a valid mod_but session
+	 * If we are here, the client has sent a valid mod_mshield session
 	 */
-	ERRLOG_INFO("Client has sent a valid mod_but session");
+	ERRLOG_INFO("Client has sent a valid mod_mshield session");
 
 	/*
 	 * We will first check, if the requesting URI asks for the session destroy function
 	 * This implements the "logout" functionality.
 	 */
-	switch (mod_but_regexp_match(r, config->session_destroy, r->uri)) {
+	switch (mod_mshield_regexp_match(r, config->session_destroy, r->uri)) {
 	case STATUS_MATCH:
 		ERRLOG_INFO("Session destroy URL matched, destroying session");
 /*UNLINK*/	but_session_unlink(&session);
-		status = mod_but_redirect_to_relurl(r, config->session_destroy_url);
+		status = mod_mshield_redirect_to_relurl(r, config->session_destroy_url);
 		apr_global_mutex_unlock(but_mutex);
 		return status;
 
@@ -464,7 +464,7 @@ but_access_checker(request_rec *r)
 	 * requesting URL contains the cookie_try parameter.
 	 * session.data->url was set before redirecting to cookie_try.
 	 */
-	if (mod_but_find_cookie_try(r) > 0) {
+	if (mod_mshield_find_cookie_try(r) > 0) {
 /*GET*/		if (!apr_strnatcmp(session.data->url, "empty")) {
 			apr_global_mutex_unlock(but_mutex);
 			ERRLOG_CRIT("Session contains no URL!");
@@ -472,7 +472,7 @@ but_access_checker(request_rec *r)
 		}
 
 		ERRLOG_INFO("Client session is valid and cookie test succeeded");
-/*GET*/		status = mod_but_redirect_to_relurl(r, session.data->url);
+/*GET*/		status = mod_mshield_redirect_to_relurl(r, session.data->url);
 		apr_global_mutex_unlock(but_mutex);
 		return status;
 	}
@@ -498,7 +498,7 @@ but_access_checker(request_rec *r)
 
 			if (dconfig->logon_server_url) {
 				/* login server is configured for this Location */
-				status = mod_but_redirect_to_relurl(r, dconfig->logon_server_url);
+				status = mod_mshield_redirect_to_relurl(r, dconfig->logon_server_url);
 				apr_global_mutex_unlock(but_mutex);
 				return status;
 			} else {
@@ -508,7 +508,7 @@ but_access_checker(request_rec *r)
 					ERRLOG_CRIT("Global logon server URL is not set");
 					return HTTP_INTERNAL_SERVER_ERROR;
 				}
-				status = mod_but_redirect_to_relurl(r, config->global_logon_server_url);
+				status = mod_mshield_redirect_to_relurl(r, config->global_logon_server_url);
 				apr_global_mutex_unlock(but_mutex);
 				return status;
 			}
@@ -525,7 +525,7 @@ but_access_checker(request_rec *r)
 				ERRLOG_CRIT("Service list error URL not set");
 				return HTTP_INTERNAL_SERVER_ERROR;
 			}
-			status = mod_but_redirect_to_relurl(r, config->service_list_error_url);
+			status = mod_mshield_redirect_to_relurl(r, config->service_list_error_url);
 			apr_global_mutex_unlock(but_mutex);
 			return status;
 
@@ -541,7 +541,7 @@ but_access_checker(request_rec *r)
 			ERRLOG_INFO("Storing original URL before logon [%s]", session.data->url);
 /*SET*/			session.data->redirect_on_auth_flag = 1;
 			ERRLOG_INFO("Setting redirect on auth flag to [%d]", session.data->redirect_on_auth_flag);
-			status = mod_but_redirect_to_relurl(r, config->global_logon_server_url_1);
+			status = mod_mshield_redirect_to_relurl(r, config->global_logon_server_url_1);
 			apr_global_mutex_unlock(but_mutex);
 			return status;
 
@@ -557,7 +557,7 @@ but_access_checker(request_rec *r)
 			ERRLOG_INFO("Storing original URL before logon [%s]", session.data->url);
 /*SET*/			session.data->redirect_on_auth_flag = 1;
 			ERRLOG_INFO("Setting redirect on auth flag to [%d]", session.data->redirect_on_auth_flag);
-			status = mod_but_redirect_to_relurl(r, config->global_logon_server_url_2);
+			status = mod_mshield_redirect_to_relurl(r, config->global_logon_server_url_2);
 			apr_global_mutex_unlock(but_mutex);
 			return status;
 
@@ -590,19 +590,19 @@ but_access_checker(request_rec *r)
 			ERRLOG_INFO("REDIRECT TO ORIG URL IS ENABLED: Redirect to [%s]", session.data->url);
 /*GET*/			if (!apr_strnatcmp(session.data->url, "empty")) {
 				ERRLOG_INFO("============ REDIRECT TO [/] because orig_url was empty ");
-				status = mod_but_redirect_to_relurl(r, "/");
+				status = mod_mshield_redirect_to_relurl(r, "/");
 				/* XXX make URL configurable: default rel URL */
 				apr_global_mutex_unlock(but_mutex);
 				return status;
 			} else {
 				ERRLOG_INFO("============ REDIRECT TO [%s] to orig_url", session.data->url);
-/*GET*/				status = mod_but_redirect_to_relurl(r, session.data->url);
+/*GET*/				status = mod_mshield_redirect_to_relurl(r, session.data->url);
 				apr_global_mutex_unlock(but_mutex);
 				return status;
 			}
                 } else {
                         ERRLOG_INFO("REDIRECT TO ORIG URL IS DISABLED: Redirect to = [%s]", session.data->redirect_url_after_login);
-/*GET*/                 //status = mod_but_redirect_to_relurl(r, session.data->redirect_url_after_login);
+/*GET*/                 //status = mod_mshield_redirect_to_relurl(r, session.data->redirect_url_after_login);
                         //apr_global_mutex_unlock(but_mutex);
                         //return status;
                 }
@@ -682,14 +682,14 @@ static int but_post_config(apr_pool_t *pconf, apr_pool_t *plog,
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 
-#ifdef MOD_BUT_SET_MUTEX_PERMS
+#ifdef MOD_MSHIELD_SET_MUTEX_PERMS
 	status = ap_unixd_set_global_mutex_perms(but_mutex);
 	//status = unixd_set_global_mutex_perms(but_mutex);
 	if (status != APR_SUCCESS) {
 		ERRLOG_SRV_CRIT("Failed to set mutex permissions.");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
-#endif /* MOD_BUT_SET_MUTEX_PERMS */
+#endif /* MOD_MSHIELD_SET_MUTEX_PERMS */
 
 	return OK;
 }
@@ -718,7 +718,7 @@ but_child_init(apr_pool_t *p, server_rec *s)
 static void
 but_insert_output_filter(request_rec *r)
 {
-	ap_add_output_filter("MOD_BUT_OUT", NULL, r, r->connection);
+	ap_add_output_filter("MOD_MSHIELD_OUT", NULL, r, r->connection);
 }
 
 
@@ -729,8 +729,8 @@ but_insert_output_filter(request_rec *r)
 static void *
 but_create_dir_conf(apr_pool_t *p, char *dummy)
 {
-	mod_but_dir_t *conf;
-	conf = (mod_but_dir_t *)apr_pcalloc(p, sizeof(mod_but_dir_t));
+	mod_mshield_dir_t *conf;
+	conf = (mod_mshield_dir_t *)apr_pcalloc(p, sizeof(mod_mshield_dir_t));
 	if (conf) {
 		conf->logon_server_url = NULL;
 	}
@@ -745,8 +745,8 @@ but_create_dir_conf(apr_pool_t *p, char *dummy)
 static void *
 but_create_server_conf(apr_pool_t *p, server_rec *s)
 {
-	mod_but_server_t *conf;
-	conf = (mod_but_server_t *)apr_pcalloc(p, sizeof(mod_but_server_t));
+	mod_mshield_server_t *conf;
+	conf = (mod_mshield_server_t *)apr_pcalloc(p, sizeof(mod_mshield_server_t));
 	if (conf) {
 		conf->client_refuses_cookies_url = NULL;
 		conf->cookie_name = NULL;
@@ -771,16 +771,16 @@ but_register_hooks(apr_pool_t *p)
 	ap_hook_access_checker(but_access_checker, NULL, NULL, APR_HOOK_FIRST);
 
 #if 0
-	ap_register_input_filter("MOD_BUT_IN", mod_but_input_filter, NULL, AP_FTYPE_CONTENT_SET);
-	ap_hook_insert_filter(mod_but_insert_input_filter, NULL, NULL, APR_HOOK_FIRST);
+	ap_register_input_filter("MOD_MSHIELD_IN", mod_mshield_input_filter, NULL, AP_FTYPE_CONTENT_SET);
+	ap_hook_insert_filter(mod_mshield_insert_input_filter, NULL, NULL, APR_HOOK_FIRST);
 #endif
 
-	ap_register_output_filter("MOD_BUT_OUT", but_output_filter, NULL, AP_FTYPE_CONTENT_SET);
+	ap_register_output_filter("MOD_MSHIELD_OUT", but_output_filter, NULL, AP_FTYPE_CONTENT_SET);
 	ap_hook_insert_filter(but_insert_output_filter, NULL, NULL, APR_HOOK_LAST);
 }
 
 /*
- * Declare mod_but module entry points.
+ * Declare mod_mshield module entry points.
  */
 module AP_MODULE_DECLARE_DATA but_module =
 {

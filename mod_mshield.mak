@@ -1,20 +1,20 @@
-# Microsoft Developer Studio Generated NMAKE File, Based on mod_but.dsp
+# Microsoft Developer Studio Generated NMAKE File, Based on mod_mshield.dsp
 !IF "$(CFG)" == ""
-CFG=mod_but - Win32 Release
-!MESSAGE No configuration specified. Defaulting to mod_but - Win32 Release.
+CFG=mod_mshield - Win32 Release
+!MESSAGE No configuration specified. Defaulting to mod_mshield - Win32 Release.
 !ENDIF 
 
-!IF "$(CFG)" != "mod_but - Win32 Release" && "$(CFG)" != "mod_but - Win32 Debug"
+!IF "$(CFG)" != "mod_mshield - Win32 Release" && "$(CFG)" != "mod_mshield - Win32 Debug"
 !MESSAGE Invalid configuration "$(CFG)" specified.
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "mod_but.mak" CFG="mod_but - Win32 Release"
+!MESSAGE NMAKE /f "mod_mshield.mak" CFG="mod_mshield - Win32 Release"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "mod_but - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "mod_but - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "mod_mshield - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "mod_mshield - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 !ERROR An invalid configuration is specified.
 !ENDIF 
@@ -25,7 +25,7 @@ NULL=
 NULL=nul
 !ENDIF 
 
-!IF  "$(CFG)" == "mod_but - Win32 Release"
+!IF  "$(CFG)" == "mod_mshield - Win32 Release"
 
 OUTDIR=.\Release
 INTDIR=.\Release
@@ -35,11 +35,11 @@ OutDir=.\Release
 
 !IF "$(RECURSE)" == "0" 
 
-ALL : ".\mod_but.rc" "$(OUTDIR)\mod_but.so"
+ALL : ".\mod_mshield.rc" "$(OUTDIR)\mod_mshield.so"
 
 !ELSE 
 
-ALL : "libhttpd - Win32 Release" "libaprutil - Win32 Release" "libapr - Win32 Release" ".\mod_but.rc" "$(OUTDIR)\mod_but.so"
+ALL : "libhttpd - Win32 Release" "libaprutil - Win32 Release" "libapr - Win32 Release" ".\mod_mshield.rc" "$(OUTDIR)\mod_mshield.so"
 
 !ENDIF 
 
@@ -48,28 +48,28 @@ CLEAN :"libapr - Win32 ReleaseCLEAN" "libaprutil - Win32 ReleaseCLEAN" "libhttpd
 !ELSE 
 CLEAN :
 !ENDIF 
-	-@erase "$(INTDIR)\mod_but.obj"
-	-@erase "$(INTDIR)\mod_but_src.idb"
-	-@erase "$(INTDIR)\mod_but_src.pdb"
-	-@erase "$(INTDIR)\mod_but_access.obj"
-	-@erase "$(INTDIR)\mod_but_authorization.obj"
-	-@erase "$(INTDIR)\mod_but_config.obj"
-	-@erase "$(INTDIR)\mod_but_cookiestore.obj"
-	-@erase "$(INTDIR)\mod_but_output_filter.obj"
-	-@erase "$(INTDIR)\mod_but_request_filter.obj"
-	-@erase "$(INTDIR)\mod_but_session.obj"
-	-@erase "$(INTDIR)\mod_but_shm.obj"
-	-@erase "$(OUTDIR)\mod_but.exp"
-	-@erase "$(OUTDIR)\mod_but.lib"
-	-@erase "$(OUTDIR)\mod_but.pdb"
-	-@erase "$(OUTDIR)\mod_but.so"
-	-@erase ".\mod_but.rc"
+	-@erase "$(INTDIR)\mod_mshield.obj"
+	-@erase "$(INTDIR)\mod_mshield_src.idb"
+	-@erase "$(INTDIR)\mod_mshield_src.pdb"
+	-@erase "$(INTDIR)\mod_mshield_access.obj"
+	-@erase "$(INTDIR)\mod_mshield_authorization.obj"
+	-@erase "$(INTDIR)\mod_mshield_config.obj"
+	-@erase "$(INTDIR)\mod_mshield_cookiestore.obj"
+	-@erase "$(INTDIR)\mod_mshield_output_filter.obj"
+	-@erase "$(INTDIR)\mod_mshield_request_filter.obj"
+	-@erase "$(INTDIR)\mod_mshield_session.obj"
+	-@erase "$(INTDIR)\mod_mshield_shm.obj"
+	-@erase "$(OUTDIR)\mod_mshield.exp"
+	-@erase "$(OUTDIR)\mod_mshield.lib"
+	-@erase "$(OUTDIR)\mod_mshield.pdb"
+	-@erase "$(OUTDIR)\mod_mshield.so"
+	-@erase ".\mod_mshield.rc"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
 CPP=cl.exe
-CPP_PROJ=/nologo /MD /W3 /Zi /O2 /I "../../include" /I "../../srclib/apr/include" /I "../../srclib/apr-util/include" /I "../../srclib/pcre" /I "../../srclib/openssl/inc32/openssl" /I "../../srclib/openssl/inc32" /I "../ssl" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "PROXY_DECLARE_EXPORT" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\mod_but_src" /FD /c 
+CPP_PROJ=/nologo /MD /W3 /Zi /O2 /I "../../include" /I "../../srclib/apr/include" /I "../../srclib/apr-util/include" /I "../../srclib/pcre" /I "../../srclib/openssl/inc32/openssl" /I "../../srclib/openssl/inc32" /I "../ssl" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "PROXY_DECLARE_EXPORT" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\mod_mshield_src" /FD /c
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -105,21 +105,21 @@ MTL=midl.exe
 MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
 RSC=rc.exe
 BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\mod_but.bsc" 
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\mod_mshield.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib ws2_32.lib mswsock.lib ssleay32.lib libeay32.lib /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\mod_but.pdb" /debug /machine:I386 /out:"$(OUTDIR)\mod_but.so" /implib:"$(OUTDIR)\mod_but.lib" /libpath:"../../srclib/openssl/out32dll" /libpath:"../../srclib/openssl/out32" /base:@..\..\os\win32\BaseAddr.ref,mod_but.so /opt:ref 
+LINK32_FLAGS=kernel32.lib ws2_32.lib mswsock.lib ssleay32.lib libeay32.lib /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\mod_mshield.pdb" /debug /machine:I386 /out:"$(OUTDIR)\mod_mshield.so" /implib:"$(OUTDIR)\mod_mshield.lib" /libpath:"../../srclib/openssl/out32dll" /libpath:"../../srclib/openssl/out32" /base:@..\..\os\win32\BaseAddr.ref,mod_mshield.so /opt:ref
 LINK32_OBJS= \
-	"$(INTDIR)\mod_but.obj" \
-	"$(INTDIR)\mod_but_access.obj" \
-	"$(INTDIR)\mod_but_authorization.obj" \
-	"$(INTDIR)\mod_but_config.obj" \
-	"$(INTDIR)\mod_but_cookiestore.obj" \
-	"$(INTDIR)\mod_but_output_filter.obj" \
-	"$(INTDIR)\mod_but_request_filter.obj" \
-	"$(INTDIR)\mod_but_session.obj" \
-	"$(INTDIR)\mod_but_shm.obj" \
+	"$(INTDIR)\mod_mshield.obj" \
+	"$(INTDIR)\mod_mshield_access.obj" \
+	"$(INTDIR)\mod_mshield_authorization.obj" \
+	"$(INTDIR)\mod_mshield_config.obj" \
+	"$(INTDIR)\mod_mshield_cookiestore.obj" \
+	"$(INTDIR)\mod_mshield_output_filter.obj" \
+	"$(INTDIR)\mod_mshield_request_filter.obj" \
+	"$(INTDIR)\mod_mshield_session.obj" \
+	"$(INTDIR)\mod_mshield_shm.obj" \
 	"..\ssl\Release\mod_ssl.obj" \
 	"..\ssl\Release\ssl_engine_config.obj" \
 	"..\ssl\Release\ssl_engine_dh.obj" \
@@ -148,12 +148,12 @@ LINK32_OBJS= \
 	"..\..\srclib\pcre\LibR\pcre.lib" \
 	"..\ssl\Release\mod_ssl.lib"
 
-"$(OUTDIR)\mod_but.so" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"$(OUTDIR)\mod_mshield.so" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
 
-!ELSEIF  "$(CFG)" == "mod_but - Win32 Debug"
+!ELSEIF  "$(CFG)" == "mod_mshield - Win32 Debug"
 
 OUTDIR=.\Debug
 INTDIR=.\Debug
@@ -163,11 +163,11 @@ OutDir=.\Debug
 
 !IF "$(RECURSE)" == "0" 
 
-ALL : ".\mod_but.rc" "$(OUTDIR)\mod_but.so"
+ALL : ".\mod_mshield.rc" "$(OUTDIR)\mod_mshield.so"
 
 !ELSE 
 
-ALL : "libhttpd - Win32 Debug" "libaprutil - Win32 Debug" "libapr - Win32 Debug" ".\mod_but.rc" "$(OUTDIR)\mod_but.so"
+ALL : "libhttpd - Win32 Debug" "libaprutil - Win32 Debug" "libapr - Win32 Debug" ".\mod_mshield.rc" "$(OUTDIR)\mod_mshield.so"
 
 !ENDIF 
 
@@ -176,28 +176,28 @@ CLEAN :"libapr - Win32 DebugCLEAN" "libaprutil - Win32 DebugCLEAN" "libhttpd - W
 !ELSE 
 CLEAN :
 !ENDIF 
-	-@erase "$(INTDIR)\mod_but.obj"
-	-@erase "$(INTDIR)\mod_but_src.idb"
-	-@erase "$(INTDIR)\mod_but_src.pdb"
-	-@erase "$(INTDIR)\mod_but_access.obj"
-	-@erase "$(INTDIR)\mod_but_authorization.obj"
-	-@erase "$(INTDIR)\mod_but_config.obj"
-	-@erase "$(INTDIR)\mod_but_cookiestore.obj"
-	-@erase "$(INTDIR)\mod_but_output_filter.obj"
-	-@erase "$(INTDIR)\mod_but_request_filter.obj"
-	-@erase "$(INTDIR)\mod_but_session.obj"
-	-@erase "$(INTDIR)\mod_but_shm.obj"
-	-@erase "$(OUTDIR)\mod_but.exp"
-	-@erase "$(OUTDIR)\mod_but.lib"
-	-@erase "$(OUTDIR)\mod_but.pdb"
-	-@erase "$(OUTDIR)\mod_but.so"
-	-@erase ".\mod_but.rc"
+	-@erase "$(INTDIR)\mod_mshield.obj"
+	-@erase "$(INTDIR)\mod_mshield_src.idb"
+	-@erase "$(INTDIR)\mod_mshield_src.pdb"
+	-@erase "$(INTDIR)\mod_mshield_access.obj"
+	-@erase "$(INTDIR)\mod_mshield_authorization.obj"
+	-@erase "$(INTDIR)\mod_mshield_config.obj"
+	-@erase "$(INTDIR)\mod_mshield_cookiestore.obj"
+	-@erase "$(INTDIR)\mod_mshield_output_filter.obj"
+	-@erase "$(INTDIR)\mod_mshield_request_filter.obj"
+	-@erase "$(INTDIR)\mod_mshield_session.obj"
+	-@erase "$(INTDIR)\mod_mshield_shm.obj"
+	-@erase "$(OUTDIR)\mod_mshield.exp"
+	-@erase "$(OUTDIR)\mod_mshield.lib"
+	-@erase "$(OUTDIR)\mod_mshield.pdb"
+	-@erase "$(OUTDIR)\mod_mshield.so"
+	-@erase ".\mod_mshield.rc"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
 CPP=cl.exe
-CPP_PROJ=/nologo /MDd /W3 /GX /Zi /Od /I "../../include" /I "../../srclib/apr/include" /I "../../srclib/apr-util/include" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "PROXY_DECLARE_EXPORT" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\mod_but_src" /FD /c 
+CPP_PROJ=/nologo /MDd /W3 /GX /Zi /Od /I "../../include" /I "../../srclib/apr/include" /I "../../srclib/apr-util/include" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "PROXY_DECLARE_EXPORT" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\mod_mshield_src" /FD /c
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -233,21 +233,21 @@ MTL=midl.exe
 MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
 RSC=rc.exe
 BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\mod_but.bsc" 
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\mod_mshield.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib ws2_32.lib mswsock.lib ssleay32.lib libeay32.lib /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\mod_but.pdb" /debug /machine:I386 /out:"$(OUTDIR)\mod_but.so" /implib:"$(OUTDIR)\mod_but.lib" /base:@..\..\os\win32\BaseAddr.ref,mod_but.so 
+LINK32_FLAGS=kernel32.lib ws2_32.lib mswsock.lib ssleay32.lib libeay32.lib /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\mod_mshield.pdb" /debug /machine:I386 /out:"$(OUTDIR)\mod_mshield.so" /implib:"$(OUTDIR)\mod_mshield.lib" /base:@..\..\os\win32\BaseAddr.ref,mod_mshield.so
 LINK32_OBJS= \
-	"$(INTDIR)\mod_but.obj" \
-	"$(INTDIR)\mod_but_access.obj" \
-	"$(INTDIR)\mod_but_authorization.obj" \
-	"$(INTDIR)\mod_but_config.obj" \
-	"$(INTDIR)\mod_but_cookiestore.obj" \
-	"$(INTDIR)\mod_but_output_filter.obj" \
-	"$(INTDIR)\mod_but_request_filter.obj" \
-	"$(INTDIR)\mod_but_session.obj" \
-	"$(INTDIR)\mod_but_shm.obj" \
+	"$(INTDIR)\mod_mshield.obj" \
+	"$(INTDIR)\mod_mshield_access.obj" \
+	"$(INTDIR)\mod_mshield_authorization.obj" \
+	"$(INTDIR)\mod_mshield_config.obj" \
+	"$(INTDIR)\mod_mshield_cookiestore.obj" \
+	"$(INTDIR)\mod_mshield_output_filter.obj" \
+	"$(INTDIR)\mod_mshield_request_filter.obj" \
+	"$(INTDIR)\mod_mshield_session.obj" \
+	"$(INTDIR)\mod_mshield_shm.obj" \
 	"..\ssl\Release\mod_ssl.obj" \
 	"..\ssl\Release\ssl_engine_config.obj" \
 	"..\ssl\Release\ssl_engine_dh.obj" \
@@ -276,7 +276,7 @@ LINK32_OBJS= \
 	"..\..\srclib\pcre\LibR\pcre.lib" \
 	"..\ssl\Release\mod_ssl.lib"
 
-"$(OUTDIR)\mod_but.so" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"$(OUTDIR)\mod_mshield.so" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
@@ -285,61 +285,61 @@ LINK32_OBJS= \
 
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
-!IF EXISTS("mod_but.dep")
-!INCLUDE "mod_but.dep"
+!IF EXISTS("mod_mshield.dep")
+!INCLUDE "mod_mshield.dep"
 !ELSE 
-!MESSAGE Warning: cannot find "mod_but.dep"
+!MESSAGE Warning: cannot find "mod_mshield.dep"
 !ENDIF 
 !ENDIF 
 
 
-!IF "$(CFG)" == "mod_but - Win32 Release" || "$(CFG)" == "mod_but - Win32 Debug"
-SOURCE=.\mod_but.c
+!IF "$(CFG)" == "mod_mshield - Win32 Release" || "$(CFG)" == "mod_mshield - Win32 Debug"
+SOURCE=.\mod_mshield.c
 
-"$(INTDIR)\mod_but.obj" : $(SOURCE) "$(INTDIR)"
-
-
-SOURCE=.\mod_but_access.c
-
-"$(INTDIR)\mod_but_access.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\mod_mshield.obj" : $(SOURCE) "$(INTDIR)"
 
 
-SOURCE=.\mod_but_authorization.c
+SOURCE=.\mod_mshield_access.c
 
-"$(INTDIR)\mod_but_authorization.obj" : $(SOURCE) "$(INTDIR)"
-
-
-SOURCE=.\mod_but_config.c
-
-"$(INTDIR)\mod_but_config.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\mod_mshield_access.obj" : $(SOURCE) "$(INTDIR)"
 
 
-SOURCE=.\mod_but_cookiestore.c
+SOURCE=.\mod_mshield_authorization.c
 
-"$(INTDIR)\mod_but_cookiestore.obj" : $(SOURCE) "$(INTDIR)"
-
-
-SOURCE=.\mod_but_output_filter.c
-
-"$(INTDIR)\mod_but_output_filter.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\mod_mshield_authorization.obj" : $(SOURCE) "$(INTDIR)"
 
 
-SOURCE=.\mod_but_request_filter.c
+SOURCE=.\mod_mshield_config.c
 
-"$(INTDIR)\mod_but_request_filter.obj" : $(SOURCE) "$(INTDIR)"
-
-
-SOURCE=.\mod_but_session.c
-
-"$(INTDIR)\mod_but_session.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\mod_mshield_config.obj" : $(SOURCE) "$(INTDIR)"
 
 
-SOURCE=.\mod_but_shm.c
+SOURCE=.\mod_mshield_cookiestore.c
 
-"$(INTDIR)\mod_but_shm.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\mod_mshield_cookiestore.obj" : $(SOURCE) "$(INTDIR)"
 
 
-!IF  "$(CFG)" == "mod_but - Win32 Release"
+SOURCE=.\mod_mshield_output_filter.c
+
+"$(INTDIR)\mod_mshield_output_filter.obj" : $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=.\mod_mshield_request_filter.c
+
+"$(INTDIR)\mod_mshield_request_filter.obj" : $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=.\mod_mshield_session.c
+
+"$(INTDIR)\mod_mshield_session.obj" : $(SOURCE) "$(INTDIR)"
+
+
+SOURCE=.\mod_mshield_shm.c
+
+"$(INTDIR)\mod_mshield_shm.obj" : $(SOURCE) "$(INTDIR)"
+
+
+!IF  "$(CFG)" == "mod_mshield - Win32 Release"
 
 "libapr - Win32 Release" : 
    cd ".\..\..\srclib\apr"
@@ -351,7 +351,7 @@ SOURCE=.\mod_but_shm.c
    $(MAKE) /$(MAKEFLAGS) /F ".\libapr.mak" CFG="libapr - Win32 Release" RECURSE=1 CLEAN 
    cd "..\..\modules\proxy"
 
-!ELSEIF  "$(CFG)" == "mod_but - Win32 Debug"
+!ELSEIF  "$(CFG)" == "mod_mshield - Win32 Debug"
 
 "libapr - Win32 Debug" : 
    cd ".\..\..\srclib\apr"
@@ -365,7 +365,7 @@ SOURCE=.\mod_but_shm.c
 
 !ENDIF 
 
-!IF  "$(CFG)" == "mod_but - Win32 Release"
+!IF  "$(CFG)" == "mod_mshield - Win32 Release"
 
 "libaprutil - Win32 Release" : 
    cd ".\..\..\srclib\apr-util"
@@ -377,7 +377,7 @@ SOURCE=.\mod_but_shm.c
    $(MAKE) /$(MAKEFLAGS) /F ".\libaprutil.mak" CFG="libaprutil - Win32 Release" RECURSE=1 CLEAN 
    cd "..\..\modules\proxy"
 
-!ELSEIF  "$(CFG)" == "mod_but - Win32 Debug"
+!ELSEIF  "$(CFG)" == "mod_mshield - Win32 Debug"
 
 "libaprutil - Win32 Debug" : 
    cd ".\..\..\srclib\apr-util"
@@ -391,7 +391,7 @@ SOURCE=.\mod_but_shm.c
 
 !ENDIF 
 
-!IF  "$(CFG)" == "mod_but - Win32 Release"
+!IF  "$(CFG)" == "mod_mshield - Win32 Release"
 
 "libhttpd - Win32 Release" : 
    cd ".\..\.."
@@ -403,7 +403,7 @@ SOURCE=.\mod_but_shm.c
    $(MAKE) /$(MAKEFLAGS) /F ".\libhttpd.mak" CFG="libhttpd - Win32 Release" RECURSE=1 CLEAN 
    cd ".\modules\proxy"
 
-!ELSEIF  "$(CFG)" == "mod_but - Win32 Debug"
+!ELSEIF  "$(CFG)" == "mod_mshield - Win32 Debug"
 
 "libhttpd - Win32 Debug" : 
    cd ".\..\.."
@@ -419,25 +419,25 @@ SOURCE=.\mod_but_shm.c
 
 SOURCE=..\..\build\win32\win32ver.awk
 
-!IF  "$(CFG)" == "mod_but - Win32 Release"
+!IF  "$(CFG)" == "mod_mshield - Win32 Release"
 
 InputPath=..\..\build\win32\win32ver.awk
 
-".\mod_but.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+".\mod_mshield.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	<<tempfile.bat 
 	@echo off 
-	awk -f ../../build/win32/win32ver.awk mod_but.so "but_module for Apache" ../../include/ap_release.h > .\mod_but.rc
+	awk -f ../../build/win32/win32ver.awk mod_mshield.so "but_module for Apache" ../../include/ap_release.h > .\mod_mshield.rc
 << 
 	
 
-!ELSEIF  "$(CFG)" == "mod_but - Win32 Debug"
+!ELSEIF  "$(CFG)" == "mod_mshield - Win32 Debug"
 
 InputPath=..\..\build\win32\win32ver.awk
 
-".\mod_but.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+".\mod_mshield.rc" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	<<tempfile.bat 
 	@echo off 
-	awk -f ../../build/win32/win32ver.awk mod_but.so "but_module for Apache" ../../include/ap_release.h > .\mod_but.rc
+	awk -f ../../build/win32/win32ver.awk mod_mshield.so "but_module for Apache" ../../include/ap_release.h > .\mod_mshield.rc
 << 
 	
 

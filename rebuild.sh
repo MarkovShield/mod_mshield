@@ -1,6 +1,6 @@
 #!/bin/sh
 # $Id: rebuild.sh 117 2009-08-06 15:00:50Z droethli $
-# Rebuilds mod_but for development.
+# Rebuilds mod_mshield for development.
 
 function findbinary() {
 	defloc="$1"
@@ -19,5 +19,5 @@ function findbinary() {
 
 apxs=`findbinary /opt/applic/httpd/bin/apxs "$APXS"`
 
-make APXS="$apxs" APXSFLAGS="-c -i -a -Wc,-O0 -Wc,-Wall -Wc,-DMOD_BUT_SESSION_COUNT=10 -Wc,-DMOD_BUT_COOKIESTORE_COUNT=30"
+make APXS="$apxs" APXSFLAGS="-c -i -a -Wc,-O0 -Wc,-Wall -Wc,-DMOD_MSHIELD_SESSION_COUNT=10 -Wc,-DMOD_MSHIELD_COOKIESTORE_COUNT=30"
 

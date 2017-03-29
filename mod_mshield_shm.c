@@ -1,6 +1,6 @@
-/* $Id: mod_but_shm.c 147 2010-05-30 20:28:01Z ibuetler $ */
+/* $Id: mod_mshield_shm.c 147 2010-05-30 20:28:01Z ibuetler $ */
 
-#include "mod_but.h"
+#include "mod_mshield.h"
 
 /*
  * This code will fail miserably with a multithreaded MPM.
@@ -31,7 +31,7 @@ but_cookie_clear(cookie_t *cookie)
 }
 
 /*****************************************************************************
- * SHM Core for MOD_BUT Session Handling
+ * SHM Core for MOD_MSHIELD Session Handling
  */
 
 apr_status_t
@@ -47,7 +47,7 @@ but_shm_initialize(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_re
 		return status;
 	}
 
-	size = (apr_size_t)MOD_BUT_SESSION_COUNT * sizeof(session_data_t);
+	size = (apr_size_t)MOD_MSHIELD_SESSION_COUNT * sizeof(session_data_t);
 	ERRLOG_SRV_INFO("(SHM) Size of the shared memory allocation: %d kBytes", size/1024);
 
 	status = apr_shm_create(&cs_shm, size, tmpnam(NULL), p);
@@ -61,7 +61,7 @@ but_shm_initialize(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_re
 	sessions = (session_data_t*)apr_shm_baseaddr_get(cs_shm);
 	memset(sessions, 0, size);
 
-	ERRLOG_SRV_INFO("(SHM) Execution of mod_but_shm_initialize was successful");
+	ERRLOG_SRV_INFO("(SHM) Execution of mod_mshield_shm_initialize was successful");
 	apr_pool_cleanup_register(mypool, NULL, shm_cleanup, apr_pool_cleanup_null);
 	return OK;
 }
@@ -76,14 +76,14 @@ apr_status_t
 shm_cleanup(void *not_used)
 {
 	apr_status_t status = APR_SUCCESS;
-	ap_log_error(PC_LOG_INFO, NULL, "mod_but_shm.c: (SHM) Cleaning shared memory");
+	ap_log_error(PC_LOG_INFO, NULL, "mod_mshield_shm.c: (SHM) Cleaning shared memory");
 
 	if (cs_shm) {
 		status = apr_shm_destroy(cs_shm);
 		if (status != APR_SUCCESS) {
-			ap_log_error(PC_LOG_INFO, NULL, "mod_but_shm.c: (SHM) Failed to destroy shared memory");
+			ap_log_error(PC_LOG_INFO, NULL, "mod_mshield_shm.c: (SHM) Failed to destroy shared memory");
 		} else {
-			ap_log_error(PC_LOG_INFO, NULL, "mod_but_shm.c: (SHM) Successfully destroyed shared memory");
+			ap_log_error(PC_LOG_INFO, NULL, "mod_mshield_shm.c: (SHM) Successfully destroyed shared memory");
 		}
 		cs_shm = NULL;
 	}
@@ -117,10 +117,10 @@ get_session_by_index(int index)
 apr_status_t
 create_new_shm_session(request_rec *r, const char *sid, int *shmoffset)
 {
-	mod_but_server_t *config = ap_get_module_config(r->server->module_config, &but_module);
+	mod_mshield_server_t *config = ap_get_module_config(r->server->module_config, &but_module);
 
 	int i;
-	for (i = 0; i < MOD_BUT_SESSION_COUNT; i++) {
+	for (i = 0; i < MOD_MSHIELD_SESSION_COUNT; i++) {
 		session_data_t *session_data = get_session_by_index(i);
 
 		/* free this slot if it has reached it's timeout */
@@ -139,7 +139,7 @@ create_new_shm_session(request_rec *r, const char *sid, int *shmoffset)
 			/* Store r->unparsed_uri to prevent HTTP Response Splitting attacks;
 			 * strip __cookie_try in case the user has a bookmark containing
 			 * a __cookie_try argument - otherwise we get a redirection loop */
-			apr_cpystrn(session_data->url, mod_but_strip_cookie_try(r->unparsed_uri), sizeof(session_data->url));
+			apr_cpystrn(session_data->url, mod_mshield_strip_cookie_try(r->unparsed_uri), sizeof(session_data->url));
 			apr_cpystrn(session_data->service_list, config->service_list_cookie_value, sizeof(session_data->service_list));
 			session_data->ctime = (int)apr_time_sec(apr_time_now());
 			session_data->atime = session_data->ctime;
@@ -199,7 +199,7 @@ but_shm_initialize_cookiestore(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptem
 		return status;
 	}
 
-	size = (apr_size_t)MOD_BUT_COOKIESTORE_COUNT * sizeof(cookie_t);
+	size = (apr_size_t)MOD_MSHIELD_COOKIESTORE_COUNT * sizeof(cookie_t);
 	ERRLOG_SRV_INFO("(SHM COOKIESTORE) Size of the shared cookiestore memory allocation: %d kBytes", size/1024);
 
 	status = apr_shm_create(&cs_shm_cookiestore, size, tmpnam(NULL), p);
@@ -211,7 +211,7 @@ but_shm_initialize_cookiestore(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptem
 	}
 
 	cookies = (cookie_t*)apr_shm_baseaddr_get(cs_shm_cookiestore);
-	for (i = 0; i < MOD_BUT_COOKIESTORE_COUNT; i++) {
+	for (i = 0; i < MOD_MSHIELD_COOKIESTORE_COUNT; i++) {
 		but_cookie_clear(&(cookies[i]));
 	}
 
@@ -223,15 +223,15 @@ apr_status_t
 shm_cleanup_cookiestore(void *not_used)
 {
 	apr_status_t status = APR_SUCCESS;
-	ap_log_error(PC_LOG_INFO, NULL, "mod_but_shm.c: (SHM COOKIESTORE) Cleaning shared cookiestore memory and RMM by shm_cleanup_cookiestore");
+	ap_log_error(PC_LOG_INFO, NULL, "mod_mshield_shm.c: (SHM COOKIESTORE) Cleaning shared cookiestore memory and RMM by shm_cleanup_cookiestore");
 
 	if (cs_shm_cookiestore) {
 		status = apr_shm_destroy(cs_shm_cookiestore);
 		if (status != APR_SUCCESS) {
-			ap_log_error(PC_LOG_INFO, NULL, "mod_but_shm.c: (SHM COOKIESTORE) Failed to destroy shared cookiestore memory");
+			ap_log_error(PC_LOG_INFO, NULL, "mod_mshield_shm.c: (SHM COOKIESTORE) Failed to destroy shared cookiestore memory");
 			return status;
 		} else {
-			ap_log_error(PC_LOG_INFO, NULL, "mod_but_shm.c: (SHM COOKIESTORE) Successfully destroyed shared cookiestore memory");
+			ap_log_error(PC_LOG_INFO, NULL, "mod_mshield_shm.c: (SHM COOKIESTORE) Successfully destroyed shared cookiestore memory");
 		}
 		cs_shm_cookiestore = NULL;
 	}
@@ -270,7 +270,7 @@ static int
 find_empty_cookiestore_slot() {
 	int i;
 
-	for (i = 0; i < MOD_BUT_COOKIESTORE_COUNT; i++) {
+	for (i = 0; i < MOD_MSHIELD_COOKIESTORE_COUNT; i++) {
 		cookie_t *c = get_cookie_by_index(i);
 		if (!c->slot_used) {
 			c->slot_used = 1;
@@ -366,7 +366,7 @@ but_cookiestore_free(int anchor)
 const char *
 collect_cookies_from_cookiestore(request_rec *r, int anchor)
 {
-	mod_but_dir_t *dconfig;
+	mod_mshield_dir_t *dconfig;
 	cookie_t *c;
 	const char *cookiestr = NULL;
 
@@ -378,7 +378,7 @@ collect_cookies_from_cookiestore(request_rec *r, int anchor)
 
 	for (c = get_cookie_by_index(anchor);;
 	     c = get_cookie_by_index(c->next)) {
-		if (c->location_id == dconfig->mod_but_location_id) {
+		if (c->location_id == dconfig->mod_mshield_location_id) {
 			if (!cookiestr) {
 				cookiestr = apr_psprintf(r->pool, "%s=%s", c->name, c->value);
 			} else {

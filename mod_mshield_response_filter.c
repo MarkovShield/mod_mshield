@@ -1,6 +1,6 @@
-/* $Id: mod_but_response_filter.c 147 2010-05-30 20:28:01Z ibuetler $ */
+/* $Id: mod_mshield_response_filter.c 147 2010-05-30 20:28:01Z ibuetler $ */
 
-#include "mod_but.h"
+#include "mod_mshield.h"
 
 /*
  * Parse Set-Cookie string into cookie name and value.
@@ -24,7 +24,7 @@ parse_cookie(request_rec *r, const char *cookiestr, char **pname, char **pvalue)
 
 
 /*
- * Parse Set-Cookie string containing MOD_BUT_BACKEND_SESSION command.
+ * Parse Set-Cookie string containing MOD_MSHIELD_BACKEND_SESSION command.
  * cookiestr does not include the Set-Cookie: header name, only the content.
  * We need the raw cookie data because the command cookie syntax contains
  * semicolons (in violation of cookie specs).
@@ -70,14 +70,14 @@ parse_cookie_backend_session(request_rec *r, const char *cookiestr,
  */
 static int
 filter_response_cookie(request_rec *r, cookie_res *cr,
-		mod_but_server_t *config, mod_but_dir_t *dconfig,
+		mod_mshield_server_t *config, mod_mshield_dir_t *dconfig,
 		char *cookie_name, char *cookie_value, const char *cookiestr)
 {
 	apr_status_t status;
 
 	/* Add free cookies back into to final response. */
 	if (config->session_store_free_cookies) {
-		switch (mod_but_regexp_match(r, config->session_store_free_cookies,
+		switch (mod_mshield_regexp_match(r, config->session_store_free_cookies,
 			apr_pstrcat(r->pool, cookie_name, "=", cookie_value, NULL))) { /* XXX do we really want to match the cookie value as well? */
 		case STATUS_MATCH:
 			ERRLOG_INFO("Found free cookie [%s] [%s]", cookie_name, cookie_value);
@@ -94,7 +94,7 @@ filter_response_cookie(request_rec *r, cookie_res *cr,
 	}
 
 	/* Store all other cookies to the cookie store. */
-/*SET*/	status = but_session_set_cookie(cr->session, cookie_name, cookie_value, dconfig->mod_but_location_id);
+/*SET*/	status = but_session_set_cookie(cr->session, cookie_name, cookie_value, dconfig->mod_mshield_location_id);
 	if (status != STATUS_OK) {
 		ERRLOG_CRIT("Error while storing cookie!");
 		cr->status = status;
@@ -111,7 +111,7 @@ filter_response_cookie(request_rec *r, cookie_res *cr,
  */
 int
 filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
-		mod_but_server_t *config, mod_but_dir_t *dconfig,
+		mod_mshield_server_t *config, mod_mshield_dir_t *dconfig,
 		char *cookie_name, char *cookie_value, const char *cookiestr)
 {
 	/* LOGON=ok */
@@ -133,7 +133,7 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
 	if (cr->must_renew) {
 		ERRLOG_INFO("Handle Special Cookie (AUTH_STRENGTH) because LOGON=ok found");
 		/* Authentication strength */
-		if (!apr_strnatcmp(cookie_name, "MOD_BUT_AUTH_STRENGTH")) { /* XXX make cookie name configurable */
+		if (!apr_strnatcmp(cookie_name, "MOD_MSHIELD_AUTH_STRENGTH")) { /* XXX make cookie name configurable */
 			int auth_strength = atoi(cookie_value);
 			if ((auth_strength >= 0) || (auth_strength <= 2)) {
 /*SET*/				cr->session->data->auth_strength = auth_strength;
@@ -152,10 +152,10 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
 		}
 
 		/* Redirect URL cookie */
-		ERRLOG_INFO("Handle Special Cookie (MOD_BUT_REDIRECT) because LOGON=ok found");
-	    if (!apr_strnatcmp(cookie_name, "MOD_BUT_REDIRECT")) { /* XXX make cookie name configurable */
+		ERRLOG_INFO("Handle Special Cookie (MOD_MSHIELD_REDIRECT) because LOGON=ok found");
+	    if (!apr_strnatcmp(cookie_name, "MOD_MSHIELD_REDIRECT")) { /* XXX make cookie name configurable */
 /*SET*/		apr_cpystrn(cr->session->data->redirect_url_after_login, cookie_value, sizeof(cr->session->data->redirect_url_after_login));
-            ERRLOG_INFO("xxx-xxx Found MOD_BUT_REDIRECT [%s]", cookie_value);
+            ERRLOG_INFO("xxx-xxx Found MOD_MSHIELD_REDIRECT [%s]", cookie_value);
 			return TRUE;
 		}
 
@@ -164,12 +164,12 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
 		/* DLS support: allow login servers to set cookies for other location IDs.
 		 * We use cookiestr for parsing because of the semicolon separator used in
 		 * the login service command cookie protocol specification. */
-		ERRLOG_INFO("Handle Special Cookie (MOD_BUT_BACKEND_SESSION) because LOGON=ok found");
-		if (!apr_strnatcmp(cookie_name, "MOD_BUT_BACKEND_SESSION")) { /* XXX make cookie name configurable */
+		ERRLOG_INFO("Handle Special Cookie (MOD_MSHIELD_BACKEND_SESSION) because LOGON=ok found");
+		if (!apr_strnatcmp(cookie_name, "MOD_MSHIELD_BACKEND_SESSION")) { /* XXX make cookie name configurable */
 			char *bname, *bvalue, *bclearance;
 			char *last;
 
-			ERRLOG_INFO("Found MOD_BUT_BACKEND_SESSION [%s]", cookiestr);
+			ERRLOG_INFO("Found MOD_MSHIELD_BACKEND_SESSION [%s]", cookiestr);
 			parse_cookie_backend_session(r, cookiestr, &bname, &bvalue, &bclearance);
 			ERRLOG_INFO("Parsed bname [%s] bvalue [%s] bclearance [%s]", bname, bvalue, bclearance);
 
@@ -213,12 +213,12 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
  * Sets ((cookie_res*)result)->status to signal error conditions.
  */
 int
-mod_but_filter_response_cookies_cb(void *result, const char *key, const char *value)
+mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char *value)
 {
 	cookie_res *cr = (cookie_res*)result;
 	request_rec *r = cr->r;
-	mod_but_server_t *config;
-	mod_but_dir_t *dconfig;
+	mod_mshield_server_t *config;
+	mod_mshield_dir_t *dconfig;
 	char *cookie_name, *cookie_value;
 
 	config = ap_get_module_config(r->server->module_config, &but_module);
@@ -243,7 +243,7 @@ mod_but_filter_response_cookies_cb(void *result, const char *key, const char *va
 		return TRUE;
 	}
 
-	switch (mod_but_regexp_match(r, config->authorized_logon_url, r->uri)) {
+	switch (mod_mshield_regexp_match(r, config->authorized_logon_url, r->uri)) {
 	case STATUS_MATCH:
 		ERRLOG_INFO("xxx-xxx Trusted Cookie from Authorized LOGON URL");
 		ERRLOG_INFO("xxx-xxx Cookie Name [%s] and Value [%s]", cookie_name, cookie_value);
@@ -253,7 +253,7 @@ mod_but_filter_response_cookies_cb(void *result, const char *key, const char *va
 /*SET*/		return filter_response_cookie(r, cr, config, dconfig, cookie_name, cookie_value, value);
 	case STATUS_ERROR:
 	default:
-		ERRLOG_CRIT("xxx-xxx DEFAULT mod_but_filter_response_cookies_cb");
+		ERRLOG_CRIT("xxx-xxx DEFAULT mod_mshield_filter_response_cookies_cb");
 		cr->status = STATUS_ERROR;
 		return FALSE;
 	}
