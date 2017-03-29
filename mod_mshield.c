@@ -676,7 +676,7 @@ static int mshield_post_config(apr_pool_t *pconf, apr_pool_t *plog,
 	 * depending on OS and locking mechanism of choice, the file
 	 * may or may not be actually created.
 	 */
-	status = apr_global_mutex_create(&mshield_mutex, tmpnam(NULL), APR_LOCK_DEFAULT, pconf);
+	status = apr_global_mutex_create(&mshield_mutex, NULL, APR_LOCK_DEFAULT, pconf);
 	if (status != APR_SUCCESS) {
 		ERRLOG_SRV_CRIT("Failed to create mutex.");
 		return HTTP_INTERNAL_SERVER_ERROR;
