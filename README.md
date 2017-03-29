@@ -54,11 +54,17 @@ include_directories(
 Change these paths to once from your OS, if you are not using macOS and Brew.
 
 ### How to compile
+Recommended (**make sure `apxs` is in your path**):
+```bash
+make
+```
 
+Alternative:
 ```bash
 ./do_compile.sh
 ```
-Alternative do it the manual way:
+
+Another alternative: Do it the manual way:
 ```bash
 cd ../mod_mshield/
 apxs -c mod_mshield.c
