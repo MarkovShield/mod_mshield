@@ -48,9 +48,9 @@ mshield_shm_initialize(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, serve
 	}
 
 	size = (apr_size_t)MOD_MSHIELD_SESSION_COUNT * sizeof(session_data_t);
-	ERRLOG_SRV_INFO("(SHM) Size of the shared memory allocation: %d kBytes", size/1024);
+	ERRLOG_SRV_INFO("(SHM) Size of the shared memory allocation: %lu kBytes", size/1024);
 
-	status = apr_shm_create(&cs_shm, size, tmpnam(NULL), p);
+	status = apr_shm_create(&cs_shm, size, NULL, p);
 	if (status != APR_SUCCESS) {
 		ERRLOG_SRV_INFO("(SHM) Failed to create shared memory");
 		return status;
@@ -200,9 +200,9 @@ mshield_shm_initialize_cookiestore(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *
 	}
 
 	size = (apr_size_t)MOD_MSHIELD_COOKIESTORE_COUNT * sizeof(cookie_t);
-	ERRLOG_SRV_INFO("(SHM COOKIESTORE) Size of the shared cookiestore memory allocation: %d kBytes", size/1024);
+	ERRLOG_SRV_INFO("(SHM COOKIESTORE) Size of the shared cookiestore memory allocation: %lu kBytes", size/1024);
 
-	status = apr_shm_create(&cs_shm_cookiestore, size, tmpnam(NULL), p);
+	status = apr_shm_create(&cs_shm_cookiestore, size, NULL, p);
 	if (status != APR_SUCCESS) {
 		ERRLOG_SRV_INFO("(SHM COOKIESTORE) Failed to create shared cookiestore memory");
 		return status;

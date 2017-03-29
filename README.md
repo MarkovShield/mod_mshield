@@ -33,17 +33,18 @@ In order to compile this module, you will need the following packages installed:
 * `apr`
 * `apr-utils`
 * `httpd`
+* `pcre`
 
 ##### macOS
 If you are using macOS, just install there dependencies via Brew:
 ```bash
-brew install apr apr-util homebrew/apache/httpd24
+brew install apr apr-util homebrew/apache/httpd24 pcre
 ```
 **Hint for later usage:** The httpd path is `/usr/local/Cellar/httpd24/2.4.25`
 
 #### httpd, apr, apr-util header files
 This module needs some header file from httpd, apr and apr-utils. By default these header files are linked in the CMakeLists.txt file:
-```bash
+```
 include_directories(
     /usr/local/Cellar/httpd24/2.4.25/include/httpd/ 
     /usr/local/Cellar/apr-util/1.5.4_4/libexec/include/apr-1/ 

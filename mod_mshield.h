@@ -105,7 +105,7 @@
 /********************************************************************
  * module declaration
  */
-module AP_MODULE_DECLARE_DATA mshield_module;
+extern module AP_MODULE_DECLARE_DATA mshield_module;
 
 
 /********************************************************************

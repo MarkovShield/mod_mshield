@@ -12,8 +12,7 @@ APXS=/opt/applic/httpd/bin/apxs
 # APXSFLAGS=-c -i -a -Wc,-O2 -Wc,-Wall -I /root/httpd-2.2.14/srclib/pcre/
 # CentOS APXSFLAGS=-c -i -a -Wc,-O2 -Wc,-Wall -I /usr/include
 # APXSFLAGS=-c -i -a -Wc,-O2 -Wc,-Wall,-DMOD_MSHIELD_SESSION_COUNT=10 -Wc,-DMOD_MSHIELD_COOKIESTORE_COUNT=30
-APXSFLAGS=-I /opt/applic/pcre-8.39/include -c -i -a -Wc,-O0 -Wc ,-Wall -Wc, -DMOD_MSHIELD_SESSION_COUNT=10 -Wc, -DMOD_MSHIELD_COOKIESTORE_COUNT=30 -Wc
-
+APXSFLAGS=-I /opt/applic/pcre-8.39/include -v -c -i -a -Wc,-O0 -Wc ,-Wall -Wc, -DMOD_MSHIELD_SESSION_COUNT=10 -Wc, -DMOD_MSHIELD_COOKIESTORE_COUNT=30 -Wc
 
 SRC= \
 	mod_mshield.c \
