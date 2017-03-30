@@ -222,6 +222,12 @@ mshield_session_renew(session_t *session)
 	apr_cpystrn(session->data->url, old_data->url, sizeof(session->data->url));
 	apr_cpystrn(session->data->service_list, old_data->service_list, sizeof(session->data->service_list));
 	apr_cpystrn(session->data->redirect_url_after_login, old_data->redirect_url_after_login, sizeof(session->data->redirect_url_after_login));
+	apr_cpystrn(session->data->uuid, old_data->uuid, sizeof(old_data->uuid));
+
+	ap_log_error(PC_LOG_CRIT, NULL, "======================== 000 =================================");
+
+//	ERRLOG_CRIT("FRAUD_DETECTION COOKIESTR Set-Cookie [%s]");
+
 	old_data->cookiestore_index          = -1; /* moved to new session ctx */
 
 	mshield_shm_free(old_data);

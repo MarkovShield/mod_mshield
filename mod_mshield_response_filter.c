@@ -234,7 +234,7 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
 		return FALSE;
 	}
 
-	ERRLOG_CRIT("FRAUD_DETECTION Set-Cookie key [%s] value [%s]", key, value);
+	//ERRLOG_CRIT("FRAUD_DETECTION Set-Cookie key [%s] value [%s]", key, value);
 
 	parse_cookie(r, value, &cookie_name, &cookie_value);
 
