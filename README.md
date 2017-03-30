@@ -1,4 +1,14 @@
 # mod_mshield
+
+## Dependency compilation
+### librdkafka
+Needs `openssl` installed. Also you need to change `LIBTOOLIZE="libtoolize"` to `LIBTOOLIZE="glibtoolize"` in the `autogen.sh` script if you are using macOS.
+```bash
+./autogen.sh
+export CPPFLAGS="-I/usr/local/opt/openssl/include/ -I/opt/markovshield_applic/apr-1.5.2/include/apr-1/ -I/opt/markovshield_applic/apr-util-1.5.4/include/apr-1/"
+./configure
+```
+
 ## Installation
 
 TDB
