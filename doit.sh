@@ -1,5 +1,5 @@
 #!/bin/bash
-make
-/etc/init.d/apache_mshield stop
-#rm -rf /opt/applic/httpd/logs/*
-/etc/init.d/apache_mshield start
+sudo /opt/applic/httpd/bin/apachectl -k stop
+make -f Makefile.ivan
+rm -rf /opt/applic/httpd/logs/*
+sudo /opt/applic/httpd/bin/apachectl -k start
