@@ -56,8 +56,8 @@ mshield_add_session_cookie_to_headers(request_rec *r, mod_mshield_server_t *conf
 		return STATUS_ERROR;
 	}
 
-	//ERRLOG_CRIT("FRAUD_DETECTION COOKIESTR Set-Cookie [%s]", cookiestr);
-	//ERRLOG_CRIT("FRAUD_DETECTION UUID Set-Cookie [%s]", session->data->uuid);
+	ERRLOG_CRIT("FRAUD === SESSION [%s] === UUID [%s]", cookiestr, session->data->uuid);
+
 	apr_table_setn(headers, "Set-Cookie", cookiestr);
 	return STATUS_OK;
 }

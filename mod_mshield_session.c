@@ -32,6 +32,7 @@ generate_session_id(request_rec *r)
 		ERRLOG_CRIT("FATAL: apr_base64_encode failed");
 		return NULL;
 	}
+	ap_log_error(PC_LOG_CRIT, NULL, "FRAUD === GENERATE SID === [%s]", sid);
 
 	return sid;
 }
@@ -224,10 +225,7 @@ mshield_session_renew(session_t *session)
 	apr_cpystrn(session->data->redirect_url_after_login, old_data->redirect_url_after_login, sizeof(session->data->redirect_url_after_login));
 	apr_cpystrn(session->data->uuid, old_data->uuid, sizeof(old_data->uuid));
 
-	ap_log_error(PC_LOG_CRIT, NULL, "======================== 000 =================================");
-
-//	ERRLOG_CRIT("FRAUD_DETECTION COOKIESTR Set-Cookie [%s]");
-
+	ap_log_error(PC_LOG_CRIT, NULL, "FRAUD === UUID         === [%s]", session->data->uuid);
 	old_data->cookiestore_index          = -1; /* moved to new session ctx */
 
 	mshield_shm_free(old_data);
