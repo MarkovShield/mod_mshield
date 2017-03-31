@@ -155,7 +155,7 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 
 			// REDIRECT TO MOD_MSHIELD_REDIRECT IF ORIG_URL HANDLING IS DISABLED
 	                if (!config->mshield_config_enabled_return_to_orig_url) {
-                        	ERRLOG_CRIT("REDIRECT TO ORIG URL IS DISABLED: REDIRECT TO MOD_MSHIELD_REDIRECT [%s]", session.data->url);
+                        	ERRLOG_INFO("REDIRECT TO ORIG URL IS DISABLED: REDIRECT TO MOD_MSHIELD_REDIRECT [%s]", session.data->url);
 				ERRLOG_INFO("Redirect to MOD_MSHIELD_REDIRECT if LOGON=ok");
 				r->status = mod_mshield_redirect_to_relurl(r, session.data->redirect_url_after_login);
 			 }
