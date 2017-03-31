@@ -39,6 +39,7 @@ mshield_config_enabled(cmd_parms *cmd, void *dummy, int arg)
 	conf->service_list_error_url = MOD_MSHIELD_SERVICE_LIST_ERROR_URL;
 	conf->authorized_logon_url = MOD_MSHIELD_AUTHORIZED_LOGON_URL;
 	conf->url_after_renew = MOD_MSHIELD_URL_AFTER_RENEW;
+	conf->username = MOD_MSHIELD_USERNAME;
 	return OK;
 }
 
@@ -325,7 +326,15 @@ mshield_config_url_after_renew(cmd_parms *cmd, void *dummy, const char *arg)
         return OK;
 }
 
-
+const char *
+mshield_config_username(cmd_parms *cmd, void *dummy, const char *arg)
+{
+	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+	if (arg) {
+		conf->username = arg;
+	}
+	return OK;
+}
 const command_rec mshield_cmds[] =
 {
 	/* global configuration */
@@ -364,6 +373,7 @@ const command_rec mshield_cmds[] =
 	AP_INIT_FLAG( "MOD_MSHIELD_LOGON_REQUIRED",   ap_set_flag_slot,   (void*)APR_OFFSETOF(mod_mshield_dir_t, logon_required),        OR_ALL, "Logon requred for this directory?"),
 	AP_INIT_TAKE1("MOD_MSHIELD_LOCATION_ID",      ap_set_int_slot,    (void*)APR_OFFSETOF(mod_mshield_dir_t, mod_mshield_location_id),   OR_ALL, "Unique location ID for this directory"),
 	AP_INIT_TAKE1("MOD_MSHIELD_AUTH_STRENGTH",    ap_set_int_slot,    (void*)APR_OFFSETOF(mod_mshield_dir_t, mod_mshield_auth_strength), OR_ALL, "Authentication strength required for this directory"),
+	AP_INIT_TAKE1("MOD_MSHIELD_USERNAME",                 mshield_config_username,                     NULL, RSRC_CONF, "Configure mod_mshield Username"),
 	{ NULL }
 };
 

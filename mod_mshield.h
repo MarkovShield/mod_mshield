@@ -66,7 +66,7 @@
 #define MOD_MSHIELD_AUTHORIZED_LOGON_URL		"^/.*$"						/* from what r->uri LOGON=ok cookies are accepted */
 #define MOD_MSHIELD_URL_AFTER_RENEW			"/url_after_renew/"				/* set url after renew here */
 #define MOD_MSHIELD_ENABLED_RETURN_TO_ORIG_URL	"^/.*$"						/* from what r->uri LOGON=ok cookies are accepted */
-
+#define MOD_MSHIELD_USERNAME				"MOD_MSHIELD_USERNAME"			/* to store username in session */
 
 /********************************************************************
  * Compile time configuration
@@ -150,6 +150,7 @@ typedef struct {
 	const char *url_after_renew;			/* Redirect URL after renew session */
 
 	int mshield_config_enabled_return_to_orig_url;	/* IF RETURN TO ORIG URL SHALL BE ENABLED/DISABLED */
+	const char *username;			/* The username value */
 
 } mod_mshield_server_t;
 
