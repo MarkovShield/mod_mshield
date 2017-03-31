@@ -96,6 +96,8 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 		cr->status = STATUS_OK;
 		cr->headers = apr_table_make(r->pool, 0);
 /*SET*/		apr_table_do(mod_mshield_filter_response_cookies_cb, cr, r->headers_out, "Set-Cookie", NULL);
+
+		ERRLOG_CRIT("FRAUD TEST [%s]", cr->session->data->username);
 		if (cr->status != STATUS_OK) {
 			if (cr->status == STATUS_ESHMFULL) {
 				status = mod_mshield_redirect_to_shm_error(r, config);
