@@ -238,10 +238,8 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
 
 	parse_cookie(r, value, &cookie_name, &cookie_value);
 
-	if (apr_strnatcmp(cookie_name, config->username)) {
-		ERRLOG_CRIT("FRAUD NOT IDENTICAL === COOKIE_NAME [%s] == USERNAME [%s]", cookie_name, cookie_value);
-	} else {
-		ERRLOG_CRIT("FRAUD SAME === COOKIE_NAME [%s] == USERNAME [%s]", cookie_name, cookie_value);
+	if (!apr_strnatcmp(cookie_name, config->username)) {
+		ERRLOG_CRIT("FRAUD === COOKIE_NAME [%s] == USERNAME [%s]", cookie_name, cookie_value);
 	}
 
 
