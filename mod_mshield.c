@@ -122,7 +122,7 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 			apr_status_t status;
 
 			ERRLOG_INFO("=============================== START RENEW SESSION ====================================");
-			ERRLOG_CRIT("Renewing session after login.");
+			ERRLOG_INFO("Renewing session after login.");
 			//ERRLOG_CRIT("Add session cookie to headers [%s]", session);
 /*RENEW*/		status = mshield_session_renew(&session);
 			if (status != STATUS_OK) {

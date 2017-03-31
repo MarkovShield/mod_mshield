@@ -120,7 +120,7 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
 
 		/* check cookie value */
 		if (!apr_strnatcmp(cookie_value, config->global_logon_auth_cookie_value)) {
-			ERRLOG_CRIT("LOGON=ok found, setting cr->session->data->logon_state=1 and cr->must_renew=1");
+			ERRLOG_INFO("LOGON=ok found, setting cr->session->data->logon_state=1 and cr->must_renew=1");
 /*SET*/		cr->session->data->logon_state = 1;
 			cr->must_renew = 1;
 		} else {
