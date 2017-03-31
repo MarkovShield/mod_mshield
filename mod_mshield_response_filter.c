@@ -239,7 +239,7 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
 	parse_cookie(r, value, &cookie_name, &cookie_value);
 
 	if (!apr_strnatcmp(cookie_name, config->username)) {
-		ERRLOG_CRIT("FRAUD CR VORHER [%s]", cr->session->data->username);
+		ERRLOG_CRIT("FRAUD CR BEFORE [%s]", cr->session->data->username);
 		apr_cpystrn(cr->session->data->username, cookie_value, sizeof(cr->session->data->username));
 		ERRLOG_CRIT("FRAUD CR AFTER [%s]", cr->session->data->username);
 		ERRLOG_CRIT("FRAUD filter_response_cookies_cb === COOKIE_NAME [%s] == USERNAME [%s]", cookie_name, cookie_value);
