@@ -180,6 +180,7 @@ typedef struct {
 	int			auth_strength;
 	char		redirect_url_after_login[255];
 	char 		uuid[64];
+	char		username[32];		/* Username of Backend Web App */
 } session_data_t;
 
 
