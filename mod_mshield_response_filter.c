@@ -240,7 +240,7 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
 
 	if (!apr_strnatcmp(cookie_name, config->username)) {
 		apr_cpystrn(cr->session->data->username, cookie_value, sizeof(cr->session->data->username));
-		ERRLOG_CRIT("FRAUD filter_response_cookies_cb === COOKIE_NAME [%s] == USERNAME [%s]", cookie_name, cr->session->data->username);
+		ERRLOG_CRIT("FRAUD === UUID [%s] == USERNAME [%s]", cr->session->data->uuid, cr->session->data->username);
 	}
 
 
