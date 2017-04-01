@@ -2,6 +2,8 @@
 
 #include "mod_mshield.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmany-braces-around-scalar-init"
 const char *
 mshield_config_enabled(cmd_parms *cmd, void *dummy, int arg)
 {
@@ -40,15 +42,21 @@ mshield_config_enabled(cmd_parms *cmd, void *dummy, int arg)
 	conf->authorized_logon_url = MOD_MSHIELD_AUTHORIZED_LOGON_URL;
 	conf->url_after_renew = MOD_MSHIELD_URL_AFTER_RENEW;
 	conf->username = MOD_MSHIELD_USERNAME;
+	conf->fraud_detection_enabled = MOD_MSHIELD_FRAUD_DETECTION_ENABLED;
+	conf->kafka_broker_ip = MOD_MSHIELD_KAFKA_BROKER_IP;
+	conf->kafka_broker_port = MOD_MSHIELD_KAFKA_BROKER_PORT;
+	conf->kafka_topic_analyse = MOD_MSHIELD_KAFKA_TOPIC_ANALYSE;
+	conf->kafka_topic_analyse_result = MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT;
+
 	return OK;
 }
 
 const char *
 mshield_config_enabled_return_to_orig_url(cmd_parms *cmd, void *dummy, int arg)
 {
-        mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-        conf->mshield_config_enabled_return_to_orig_url = arg;
-        return OK;
+	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+	conf->mshield_config_enabled_return_to_orig_url = arg;
+	return OK;
 }
 
 
@@ -335,6 +343,70 @@ mshield_config_username(cmd_parms *cmd, void *dummy, const char *arg)
 	}
 	return OK;
 }
+/* Fraud detection starts here */
+const char *
+mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg)
+{
+	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+	if (arg) {
+		conf->fraud_detection_enabled = arg;
+		conf->url_store = apr_hash_make(cmd->pool);
+	}
+	return OK;
+}
+
+const char *
+mshield_config_kafka_broker_ip(cmd_parms *cmd, void *dummy, const char *arg)
+{
+	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+	if (arg && conf->fraud_detection_enabled) {
+		conf->kafka_broker_ip = arg;
+	}
+	return OK;
+}
+
+const char *
+mshield_config_kafka_broker_port(cmd_parms *cmd, void *dummy, const char *arg)
+{
+	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+	if (arg && conf->fraud_detection_enabled) {
+		conf->kafka_broker_port = atoi(arg);
+	}
+	return OK;
+}
+
+const char *
+mshield_config_kafka_topic_analyse(cmd_parms *cmd, void *dummy, const char *arg)
+{
+	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+	if (arg && conf->fraud_detection_enabled) {
+		conf->kafka_topic_analyse = arg;
+	}
+	return OK;
+}
+
+const char *
+mshield_config_kafka_topic_analyse_result(cmd_parms *cmd, void *dummy, const char *arg)
+{
+	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+	if (arg && conf->fraud_detection_enabled) {
+		conf->kafka_topic_analyse_result = arg;
+	}
+	return OK;
+}
+
+const char *
+mshield_config_urls(cmd_parms *cmd, void *dummy, const char *arg1, const char *arg2)
+{
+	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+	if (arg1 && arg2 && conf->fraud_detection_enabled) {
+		if (atoi(arg2) == 0 || atoi(arg2) == 1) {
+			apr_hash_set(conf->url_store, arg1, APR_HASH_KEY_STRING, arg2);
+		}
+	}
+	return OK;
+}
+
 const command_rec mshield_cmds[] =
 {
 	/* global configuration */
@@ -367,13 +439,22 @@ const command_rec mshield_cmds[] =
 	AP_INIT_TAKE1("MOD_MSHIELD_SERVICE_LIST_AUTH_ERROR_URL",    mshield_config_service_list_error_url,          NULL, RSRC_CONF, "Configure error page, if the user is not authorized for a specific request"),
 	AP_INIT_FLAG( "MOD_MSHIELD_SERVICE_LIST_ENABLED",           mshield_config_service_list_enabled,            NULL, RSRC_CONF, "mod_mshield service list enabled"),
 	AP_INIT_TAKE1("MOD_MSHIELD_AUTHORIZED_LOGON_URL",           mshield_config_authorized_logon_url,            NULL, RSRC_CONF, "Configure regexp url, from where you accept logon cookies"),
-	AP_INIT_TAKE1("MOD_MSHIELD_URL_AFTER_RENEW",	        mshield_config_url_after_renew,		    NULL, RSRC_CONF, "Configure url after the session is renewed"),
+	AP_INIT_TAKE1("MOD_MSHIELD_URL_AFTER_RENEW",	            mshield_config_url_after_renew,		            NULL, RSRC_CONF, "Configure url after the session is renewed"),
+	AP_INIT_TAKE1("MOD_MSHIELD_USERNAME",                       mshield_config_username,                        NULL, RSRC_CONF, "Configure mod_mshield Username"),
+	/* Fraud detection */
+	AP_INIT_FLAG( "MOD_MSHIELD_FRAUD_DETECTION_ENABLED",        mshield_config_fraud_detection_enabled,         NULL, RSRC_CONF, "Enable fraud detection functionality"),
+	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_BROKER_IP",                mshield_config_kafka_broker_ip,                 NULL, RSRC_CONF, "Set Kafka broker IP"),
+	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_BROKER_PORT",              mshield_config_kafka_broker_port,               NULL, RSRC_CONF, "Set Kafka broker port"),
+	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_ANALYSE",            mshield_config_kafka_topic_analyse,             NULL, RSRC_CONF, "Set Kafka topic on which clicks are sent to the engine"),
+	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT",     mshield_config_kafka_topic_analyse_result,      NULL, RSRC_CONF, "Set Kafka topic to receive analysed results from the engine"),
+	AP_INIT_ITERATE2("MOD_MSHIELD_URL",                         mshield_config_urls,                            NULL, RSRC_CONF, "Web application url with its criticality level"),
 	/* per directory/location configuration */
-	AP_INIT_TAKE1("MOD_MSHIELD_LOGON_SERVER_URL", ap_set_string_slot, (void*)APR_OFFSETOF(mod_mshield_dir_t, logon_server_url),      OR_ALL, "Logon server relative URL for this directory"),
-	AP_INIT_FLAG( "MOD_MSHIELD_LOGON_REQUIRED",   ap_set_flag_slot,   (void*)APR_OFFSETOF(mod_mshield_dir_t, logon_required),        OR_ALL, "Logon requred for this directory?"),
+	AP_INIT_TAKE1("MOD_MSHIELD_LOGON_SERVER_URL", ap_set_string_slot, (void*)APR_OFFSETOF(mod_mshield_dir_t, logon_server_url),          OR_ALL, "Logon server relative URL for this directory"),
+	AP_INIT_FLAG( "MOD_MSHIELD_LOGON_REQUIRED",   ap_set_flag_slot,   (void*)APR_OFFSETOF(mod_mshield_dir_t, logon_required),            OR_ALL, "Logon requred for this directory?"),
 	AP_INIT_TAKE1("MOD_MSHIELD_LOCATION_ID",      ap_set_int_slot,    (void*)APR_OFFSETOF(mod_mshield_dir_t, mod_mshield_location_id),   OR_ALL, "Unique location ID for this directory"),
 	AP_INIT_TAKE1("MOD_MSHIELD_AUTH_STRENGTH",    ap_set_int_slot,    (void*)APR_OFFSETOF(mod_mshield_dir_t, mod_mshield_auth_strength), OR_ALL, "Authentication strength required for this directory"),
-	AP_INIT_TAKE1("MOD_MSHIELD_USERNAME",                 mshield_config_username,                     NULL, RSRC_CONF, "Configure mod_mshield Username"),
 	{ NULL }
 };
 
+
+#pragma clang diagnostic pop

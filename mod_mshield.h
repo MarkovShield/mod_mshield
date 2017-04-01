@@ -67,6 +67,11 @@
 #define MOD_MSHIELD_URL_AFTER_RENEW			"/url_after_renew/"				/* set url after renew here */
 #define MOD_MSHIELD_ENABLED_RETURN_TO_ORIG_URL	"^/.*$"						/* from what r->uri LOGON=ok cookies are accepted */
 #define MOD_MSHIELD_USERNAME				"MOD_MSHIELD_USERNAME"			/* to store username in session */
+#define MOD_MSHIELD_FRAUD_DETECTION_ENABLED		0						/* by default the fraud detection functionality is off */
+#define MOD_MSHIELD_KAFKA_BROKER_IP             "127.0.0.1"					/* set the kafka broker IP */
+#define MOD_MSHIELD_KAFKA_BROKER_PORT           9092						/* set the kafka broker port */
+#define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE         "mshield-analyse"			/* set Kafka topic on which clicks are sent to the engine */
+#define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT  "mshield-analyse-result"	/* set Kafka topic to receive analysed results from the engine */
 
 /********************************************************************
  * Compile time configuration
@@ -151,7 +156,13 @@ typedef struct {
 
 	int mshield_config_enabled_return_to_orig_url;	/* IF RETURN TO ORIG URL SHALL BE ENABLED/DISABLED */
 	const char *username;			/* The username value */
-
+	/* fraud detection stuff */
+	int         fraud_detection_enabled;      /* Enable or disable fraud detection functionality */
+	const char  *kafka_broker_ip;             /* Set the IP of the Kafka broker */
+	int         kafka_broker_port;            /* Set the port of the Kafka broker */
+	const char  *kafka_topic_analyse;         /* Set the kafka topic on which clicks are sent to the engine */
+	const char  *kafka_topic_analyse_result;  /* Set the kafka topic on which analysed results from the engine comes back */
+	apr_hash_t* url_store;			  /* url store for web application urls and its criticality */
 } mod_mshield_server_t;
 
 typedef struct {
