@@ -1,54 +1,92 @@
 # mod_mshield
 
-## Dependency compilation
-### librdkafka
-Needs `openssl` installed. Also you need to change `LIBTOOLIZE="libtoolize"` to `LIBTOOLIZE="glibtoolize"` in the `autogen.sh` script if you are using macOS.
+## Installation
+
+### Prerequisites
+On Linux (Debian based):
 ```bash
-./autogen.sh
-export CPPFLAGS="-I/usr/local/opt/openssl/include/ -I/opt/markovshield_applic/apr-1.5.2/include/apr-1/ -I/opt/markovshield_applic/apr-util-1.5.4/include/apr-1/"
-./configure
+apt-get install librdkafka1
+```
+On macOS:
+```bash
+brew insall librdkafka
 ```
 
-## Installation
-(BUT)
+### Installation itself
+```bash
+cd /opt/source/
+git clone git@bitbucket.org:markovshield/mod_mshield.git
 
-TDB
+```
 
 ## Configuration
 
-In `httpd.conf` or any other vhost configuration file, add the following lines and configure them depending on your setup:
+In `httpd.conf` load the module:
 ```bash
 LoadModule mshield_module modules/mod_mshield.so
 
-MOD_MSHIELD_FRAUD_DETECTION_ENABLED     Off
-MOD_MSHIELD_KAFKA_BROKER                127.0.0.1:9092
-MOD_MSHIELD_KAFKA_TOPIC_ANALYSE         mshield-analyse
-MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT  mshield-analyse-result
+# Place your mod_mshield configuration directives in the following file:
+Include conf/extra/httpd-preauth.conf
 ```
-(shown here are the default values)
-
-For the URL criticality level definitions, use the following format (`0` = non-critical, `1` = critical): 
+The next step is to configure mod_mshield depending on your needs. Therefore create another configuration file called `conf/extra/httpd-preauth.conf` and add the following lines:
 ```bash
-MOD_MSHIELD_URL "/public_data" 0
-MOD_MSHIELD_URL "profile" 1
+#################################################################################
+#   Web Pre-Auth using Apache Module MOD_MSHIELD
+#################################################################################
+
+MOD_MSHIELD_ENABLED                         On
+MOD_MSHIELD_CLIENT_REFUSES_COOKIES_URL      /error/refused_cookies.html
+MOD_MSHIELD_COOKIE_NAME                     LIVECD
+MOD_MSHIELD_COOKIE_PATH                     /
+MOD_MSHIELD_COOKIE_SECURE                   Off
+MOD_MSHIELD_COOKIE_HTTPONLY                 Off
+MOD_MSHIELD_SESSION_FREE_URL                '(^\*\$)|(^/\$)|(^/error/)|(^/renew)|(^/favicon\.ico\$)|(^/info)|(^/en/)|(^/de/)|(^/static/)'
+MOD_MSHIELD_SESSION_HARD_TIMEOUT            18800
+MOD_MSHIELD_SESSION_TIMEOUT_URL             /renew/renew.html
+MOD_MSHIELD_SESSION_RENEW_URL               '^/renew'
+MOD_MSHIELD_URL_AFTER_RENEW                 '/'
+MOD_MSHIELD_SESSION_INACTIVITY_TIMEOUT      14400
+MOD_MSHIELD_ALL_SHM_SPACE_USED_URL          /error/session_shm_used.html
+MOD_MSHIELD_SESSION_DESTROY                 '^/private/logout/'
+MOD_MSHIELD_SESSION_DESTROY_URL             /logout/index.html
+MOD_MSHIELD_AUTHORIZATION_ENABLED           On
+MOD_MSHIELD_GLOBAL_LOGON_SERVER_URL         /login/login.html
+MOD_MSHIELD_GLOBAL_LOGON_AUTH_COOKIE_NAME   LOGON
+MOD_MSHIELD_GLOBAL_LOGON_AUTH_COOKIE_VALUE  ok
+MOD_MSHIELD_AUTHORIZED_LOGON_URL            '^/login/'
+MOD_MSHIELD_ENABLED_RETURN_TO_ORIG_URL      Off
+
+MOD_MSHIELD_FRAUD_DETECTION_ENABLED         On
+MOD_MSHIELD_KAFKA_BROKER                    127.0.0.1:9092
+MOD_MSHIELD_KAFKA_TOPIC_ANALYSE             mshield-analyse
+MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT      mshield-analyse-result
+
+# Place your URL ratings in the following config file:
+Include conf/extra/mod_mshield_url_rating.conf
+
+<Location /private>
+    MOD_MSHIELD_LOGON_REQUIRED      On
+    ProxyPass                       http://localhost:8888/
+</Location>
+
+<Location /private/chat>
+    MOD_MSHIELD_LOGON_REQUIRED  On
+    MOD_MSHIELD_LOGON_SERVER_URL    /login/login2.html
+    ProxyPass   http://localhost:8888/
+</Location>
+
+<Location /private/request-header>
+    MOD_MSHIELD_LOGON_REQUIRED  On
+    MOD_MSHIELD_LOGON_SERVER_URL    /login/login1.html
+    ProxyPass   http://localhost:8888/
+</Location>
 ```
-
-## Known bugs
-
-### librdkafka.so.1
-Bug:
+Finally for the URL criticality level definitions, create another file `conf/extra/mod_mshield_url_rating.conf`. Use the following format (`0` = non-critical, `1` = critical):
 ```bash
-╭─root@HLKali  /opt/source/mod_mshield  ‹develop*› 
-╰─$ /etc/init.d/apache_but stop
-=================================
-STOPPING LANDING PAGE WEB SERVER
-=================================
-httpd: Syntax error on line 101 of /opt/applic/httpd/conf/httpd.conf: Cannot load modules/mod_mshield.so into server: librdkafka.so.1: cannot open shared object file: No such file or directory
-httpd (no pid file) not running
-```
-Workaround:
-```bash
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+MOD_MSHIELD_URL "/public" 0
+MOD_MSHIELD_URL "/private" 1
+MOD_MSHIELD_URL "/private/chat" 1
+MOD_MSHIELD_URL "/private/request-header" 1
 ```
 
 ## Development
@@ -74,7 +112,6 @@ If you are using macOS, just install there dependencies via Brew:
 ```bash
 brew install apr apr-util homebrew/apache/httpd24 pcre
 ```
-**Hint for later usage:** The httpd path is `/usr/local/Cellar/httpd24/2.4.25`
 
 #### httpd, apr, apr-util header files
 This module needs some header file from httpd, apr and apr-utils. By default these header files are linked in the CMakeLists.txt file:
@@ -109,12 +146,41 @@ apxs -c mod_mshield.c
 * The absolute path for apxs on macOS: `/usr/local/Cellar/httpd24/2.4.25/bin/apxs`
 
 ### Test module in httpd
+In the Hacking-Lab VM:
 ```bash
-cd /opt/markovshield_applic/httpd/bin
-sudo ./httpd -f /opt/markovshield_applic/httpd/conf/httpd.conf -e debug -DFOREGROUND
+/etc/init.d/apache_but restart
+```
+
+On your development system:
+```bash
+cd /opt/applic/httpd/bin
+sudo ./httpd -f /opt/applic/httpd/conf/httpd.conf -e debug -DFOREGROUND
 ```
 
 ### Cleanup compilation stuff
 ```bash
 make clean
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+# OLD Stuff
+
+## Dependency compilation
+### librdkafka
+Needs `openssl` installed. Also you need to change `LIBTOOLIZE="libtoolize"` to `LIBTOOLIZE="glibtoolize"` in the `autogen.sh` script if you are using macOS.
+```bash
+./autogen.sh
+export CPPFLAGS="-I/usr/local/opt/openssl/include/ -I/opt/markovshield_applic/apr-1.5.2/include/apr-1/ -I/opt/markovshield_applic/apr-util-1.5.4/include/apr-1/"
+./configure
 ```

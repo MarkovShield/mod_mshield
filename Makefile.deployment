@@ -10,8 +10,6 @@ APXSFLAGS=-I /opt/applic/pcre-8.39/include -v -c -i -a -Wc,-O0 -Wc ,-Wall -Wc, -
 
 LIBS =-lrdkafka -lz -lpthread -lrt
 
-LIBDIRS =-Llibrdkafka/src
-
 SRC= \
 	mod_mshield.c \
 	mod_mshield_regexp.c \
