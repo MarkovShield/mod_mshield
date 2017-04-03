@@ -9,5 +9,6 @@ pipelines:
   default:
     - step:
         script:
+          - git config --global http.sslVerify false
           - git submodule update --init
           - make
