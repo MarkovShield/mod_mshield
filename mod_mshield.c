@@ -20,6 +20,7 @@
  * This involves marking session slots busy during the time mod_mshield is doing it's
  * work, and only holding Giant while marking/unmarking slots as busy.
  */
+apr_global_mutex_t *mshield_mutex;
 char *mutex_filename;
 
 /*

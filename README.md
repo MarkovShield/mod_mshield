@@ -18,7 +18,7 @@ TDB
 
 In `httpd.conf` or any other vhost configuration file, add the following lines and configure them depending on your setup:
 ```bash
-LoadModule mshield_module modules/mod_mshield_playground.so
+LoadModule mshield_module modules/mod_mshield.so
 
 MOD_MSHIELD_FRAUD_DETECTION_ENABLED     Off
 MOD_MSHIELD_KAFKA_BROKER                127.0.0.1:9092
