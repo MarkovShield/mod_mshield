@@ -45,6 +45,10 @@
  *  ToDo Philip: Clean up..
  */
 
+#ifndef KAFKA_DEBUG_LOG_LEVEL
+#define KAFKA_DEBUG_LOG_LEVEL APLOG_DEBUG
+#endif
+
 #ifdef NDEBUG
 #define DEBUG(p, format, args...)
 #else
