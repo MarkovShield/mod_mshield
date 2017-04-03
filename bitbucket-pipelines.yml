@@ -9,9 +9,11 @@ pipelines:
   default:
     - step:
         script:
-          - pwd
-          - ls -la
           - git config --global http.sslVerify false
           - git submodule update --init
-          - ls -la librdkafka/
+          - cd librdkafka/
+          - ./configure
+          - make
+          - make install
+          - cd ../
           - make
