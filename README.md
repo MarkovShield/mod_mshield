@@ -21,8 +21,7 @@ In `httpd.conf` or any other vhost configuration file, add the following lines a
 LoadModule mshield_module modules/mod_mshield_playground.so
 
 MOD_MSHIELD_FRAUD_DETECTION_ENABLED     Off
-MOD_MSHIELD_KAFKA_BROKER_IP             127.0.0.1
-MOD_MSHIELD_KAFKA_BROKER_PORT           9092
+MOD_MSHIELD_KAFKA_BROKER                127.0.0.1:9092
 MOD_MSHIELD_KAFKA_TOPIC_ANALYSE         mshield-analyse
 MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT  mshield-analyse-result
 ```
@@ -37,6 +36,12 @@ MOD_MSHIELD_URL "profile" 1
 ## Development
 
 ### Prerequisites
+
+#### Git
+Also clone the submodule librdkafka:
+```bash
+git submodule update --init
+```
 
 #### Dependent packages
 In order to compile this module, you will need the following packages installed:

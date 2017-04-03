@@ -20,7 +20,6 @@
  * This involves marking session slots busy during the time mod_mshield is doing it's
  * work, and only holding Giant while marking/unmarking slots as busy.
  */
-apr_global_mutex_t *mshield_mutex;
 char *mutex_filename;
 
 /*
@@ -190,6 +189,8 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
  * if a) is false
  *	b1) Check
  */
+
+// ToDo Philip: Place kafka_produce() calls in the right spots in mshield_access_checker().
 static int
 mshield_access_checker(request_rec *r)
 {
@@ -578,6 +579,9 @@ mshield_access_checker(request_rec *r)
 	 * the request.
 	 */
 
+    // ToDo Philip: Extract login data from here and send it to Kafka
+    kafka_produce(r->pool, &config->kafka, config->kafka.topic_analyse, RD_KAFKA_PARTITION_UA, "Test Request auf /blub");
+
 	/*
 	 * This is the redirection to the original protected URL function after login.
 	 * If the user was successfully authenticated and the session_data->redirect_on_auth_flag is 1,
@@ -693,7 +697,28 @@ static int mshield_post_config(apr_pool_t *pconf, apr_pool_t *plog,
 	}
 #endif /* MOD_MSHIELD_SET_MUTEX_PERMS */
 
+	//ToDo Philip: Add kafka connection setup here (via function call). Really needed? -> Guess there's no setup needed...
+/*    mod_mshield_server_t *conf = ap_get_module_config(s->module_config, &mshield_module);
+    if(conf->fraud_detection_enabled) {
+
+        //status = ;
+        if (status != APR_SUCCESS) {
+            ERRLOG_SRV_CRIT("Failed to setup kafka connection.");
+            return HTTP_INTERNAL_SERVER_ERROR;
+        }
+    }*/
+
 	return OK;
+}
+
+static void
+kafka_child_init(apr_pool_t *p, server_rec *s)
+{
+    mod_mshield_server_t *config;
+    config = ap_get_module_config(s->module_config, &mshield_module);
+    if (config) {
+        apr_pool_cleanup_register(p, config, kafka_cleanup, kafka_cleanup);
+    }
 }
 
 /*
@@ -771,6 +796,8 @@ mshield_register_hooks(apr_pool_t *p)
 	ap_hook_post_config(mshield_post_config, NULL, cfgPost, APR_HOOK_MIDDLE);
 	ap_hook_child_init(mshield_child_init, NULL, NULL, APR_HOOK_MIDDLE);
 	ap_hook_access_checker(mshield_access_checker, NULL, NULL, APR_HOOK_FIRST);
+
+    ap_hook_child_init(kafka_child_init, NULL, NULL, APR_HOOK_MIDDLE);
 
 #if 0
 	ap_register_input_filter("MOD_MSHIELD_IN", mod_mshield_input_filter, NULL, AP_FTYPE_CONTENT_SET);

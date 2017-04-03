@@ -14,6 +14,7 @@ mshield_config_enabled(cmd_parms *cmd, void *dummy, int arg)
 	 */
 	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
 	conf->enabled = arg;
+    conf->pool = cmd->pool;
 	conf->client_refuses_cookies_url = MOD_MSHIELD_COOKIE_REFUSE_URL;
 	conf->cookie_name = MOD_MSHIELD_COOKIE_NAME;
 	conf->cookie_domain = MOD_MSHIELD_COOKIE_DOMAIN;
@@ -43,10 +44,6 @@ mshield_config_enabled(cmd_parms *cmd, void *dummy, int arg)
 	conf->url_after_renew = MOD_MSHIELD_URL_AFTER_RENEW;
 	conf->username = MOD_MSHIELD_USERNAME;
 	conf->fraud_detection_enabled = MOD_MSHIELD_FRAUD_DETECTION_ENABLED;
-	conf->kafka_broker_ip = MOD_MSHIELD_KAFKA_BROKER_IP;
-	conf->kafka_broker_port = MOD_MSHIELD_KAFKA_BROKER_PORT;
-	conf->kafka_topic_analyse = MOD_MSHIELD_KAFKA_TOPIC_ANALYSE;
-	conf->kafka_topic_analyse_result = MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT;
 
 	return OK;
 }
@@ -351,26 +348,22 @@ mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg)
 	if (arg) {
 		conf->fraud_detection_enabled = arg;
 		conf->url_store = apr_hash_make(cmd->pool);
+		conf->kafka.broker = MOD_MSHIELD_KAFKA_BROKER;
+		conf->kafka.topic_analyse = MOD_MSHIELD_KAFKA_TOPIC_ANALYSE;
+		conf->kafka.topic_analyse_result = MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT;
+		conf->kafka.rk = NULL;
+		conf->kafka.conf.global = apr_hash_make(cmd->pool);
+		conf->kafka.conf.topic = apr_hash_make(cmd->pool);
 	}
 	return OK;
 }
 
 const char *
-mshield_config_kafka_broker_ip(cmd_parms *cmd, void *dummy, const char *arg)
+mshield_config_kafka_broker(cmd_parms *cmd, void *dummy, const char *arg)
 {
 	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
 	if (arg && conf->fraud_detection_enabled) {
-		conf->kafka_broker_ip = arg;
-	}
-	return OK;
-}
-
-const char *
-mshield_config_kafka_broker_port(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg && conf->fraud_detection_enabled) {
-		conf->kafka_broker_port = atoi(arg);
+		conf->kafka.broker = arg;
 	}
 	return OK;
 }
@@ -380,7 +373,7 @@ mshield_config_kafka_topic_analyse(cmd_parms *cmd, void *dummy, const char *arg)
 {
 	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
 	if (arg && conf->fraud_detection_enabled) {
-		conf->kafka_topic_analyse = arg;
+		conf->kafka.topic_analyse = arg;
 	}
 	return OK;
 }
@@ -390,7 +383,7 @@ mshield_config_kafka_topic_analyse_result(cmd_parms *cmd, void *dummy, const cha
 {
 	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
 	if (arg && conf->fraud_detection_enabled) {
-		conf->kafka_topic_analyse_result = arg;
+		conf->kafka.topic_analyse_result = arg;
 	}
 	return OK;
 }
@@ -443,8 +436,7 @@ const command_rec mshield_cmds[] =
 	AP_INIT_TAKE1("MOD_MSHIELD_USERNAME",                       mshield_config_username,                        NULL, RSRC_CONF, "Configure mod_mshield Username"),
 	/* Fraud detection */
 	AP_INIT_FLAG( "MOD_MSHIELD_FRAUD_DETECTION_ENABLED",        mshield_config_fraud_detection_enabled,         NULL, RSRC_CONF, "Enable fraud detection functionality"),
-	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_BROKER_IP",                mshield_config_kafka_broker_ip,                 NULL, RSRC_CONF, "Set Kafka broker IP"),
-	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_BROKER_PORT",              mshield_config_kafka_broker_port,               NULL, RSRC_CONF, "Set Kafka broker port"),
+	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_BROKER",                   mshield_config_kafka_broker,                    NULL, RSRC_CONF, "Set Kafka broker IP and port (syntax: 127.0.0.1:9092"),
 	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_ANALYSE",            mshield_config_kafka_topic_analyse,             NULL, RSRC_CONF, "Set Kafka topic on which clicks are sent to the engine"),
 	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT",     mshield_config_kafka_topic_analyse_result,      NULL, RSRC_CONF, "Set Kafka topic to receive analysed results from the engine"),
 	AP_INIT_ITERATE2("MOD_MSHIELD_URL",                         mshield_config_urls,                            NULL, RSRC_CONF, "Web application url with its criticality level"),

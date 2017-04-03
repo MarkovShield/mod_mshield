@@ -28,10 +28,14 @@
 #include "ap_config.h"
 #include "apr_optional.h"
 #include "apr_base64.h"
+#include "apr_anylock.h"
+#include "ap_mpm.h"
 
 #include "mod_mshield_debug.h"
 #include "mod_mshield_errno.h"
 #include "mod_mshield_compat.h"
+
+#include "librdkafka/rdkafka.h"
 
 
 /********************************************************************
@@ -68,8 +72,7 @@
 #define MOD_MSHIELD_ENABLED_RETURN_TO_ORIG_URL	"^/.*$"						/* from what r->uri LOGON=ok cookies are accepted */
 #define MOD_MSHIELD_USERNAME				"MOD_MSHIELD_USERNAME"			/* to store username in session */
 #define MOD_MSHIELD_FRAUD_DETECTION_ENABLED		0						/* by default the fraud detection functionality is off */
-#define MOD_MSHIELD_KAFKA_BROKER_IP             "127.0.0.1"					/* set the kafka broker IP */
-#define MOD_MSHIELD_KAFKA_BROKER_PORT           9092						/* set the kafka broker port */
+#define MOD_MSHIELD_KAFKA_BROKER             "127.0.0.1:9092"					/* set the kafka broker IP and port */
 #define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE         "mshield-analyse"			/* set Kafka topic on which clicks are sent to the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT  "mshield-analyse-result"	/* set Kafka topic to receive analysed results from the engine */
 
@@ -111,11 +114,23 @@
  * module declaration
  */
 extern module AP_MODULE_DECLARE_DATA mshield_module;
-
+extern apr_global_mutex_t *mshield_mutex;
 
 /********************************************************************
  * configuration structures
  */
+
+typedef struct {
+    struct {
+        apr_hash_t *global;
+        apr_hash_t *topic;
+    } conf;
+    const char  *topic_analyse;         /* Set the kafka topic on which clicks are sent to the engine */
+    const char  *topic_analyse_result;  /* Set the kafka topic on which analysed results from the engine comes back */
+    const char  *broker;             /* Set the IP of the Kafka broker */
+    rd_kafka_t  *rk;                          /* Kafka handle */
+} mod_mshield_kafka_t;
+
 typedef struct {
 	int enabled;					/* [On, Off] switch for enable/disable mod_mshield */
 	const char *client_refuses_cookies_url;		/* Error URL, if the client refuses our mod_mshield cookie */
@@ -157,12 +172,10 @@ typedef struct {
 	int mshield_config_enabled_return_to_orig_url;	/* IF RETURN TO ORIG URL SHALL BE ENABLED/DISABLED */
 	const char *username;			/* The username value */
 	/* fraud detection stuff */
-	int         fraud_detection_enabled;      /* Enable or disable fraud detection functionality */
-	const char  *kafka_broker_ip;             /* Set the IP of the Kafka broker */
-	int         kafka_broker_port;            /* Set the port of the Kafka broker */
-	const char  *kafka_topic_analyse;         /* Set the kafka topic on which clicks are sent to the engine */
-	const char  *kafka_topic_analyse_result;  /* Set the kafka topic on which analysed results from the engine comes back */
-	apr_hash_t* url_store;			  /* url store for web application urls and its criticality */
+	apr_pool_t *pool;
+	int        fraud_detection_enabled;      /* Enable or disable fraud detection functionality */
+    mod_mshield_kafka_t kafka;
+	apr_hash_t *url_store;			  /* url store for web application urls and its criticality */
 } mod_mshield_server_t;
 
 typedef struct {
@@ -309,5 +322,12 @@ apr_status_t store_cookie_into_session(request_rec *r, session_data_t *session_d
  * mod_mshield_config.c
  */
 extern const command_rec mshield_cmds[];
+
+/********************************************************************
+ * mod_mshield_kafka.c
+ */
+//void kafka_child_init(apr_pool_t *p, server_rec *s);
+apr_status_t kafka_cleanup(void *arg);
+void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, int32_t partition, char *msg);
 
 #endif /* MOD_MSHIELD_H */

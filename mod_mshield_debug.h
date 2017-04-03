@@ -40,4 +40,16 @@
 #define ERRLOG_INFO(f, ...)	ERRLOG_REQ_INFO(f, ##__VA_ARGS__)
 #define ERRLOG_CRIT(f, ...)	ERRLOG_REQ_CRIT(f, ##__VA_ARGS__)
 
+/*
+ * Some old logger stuff from the mod-apache-kafka integration
+ *  ToDo Philip: Clean up..
+ */
+
+#ifdef NDEBUG
+#define DEBUG(p, format, args...)
+#else
+#define DEBUG(p, format, args...) ap_log_perror(APLOG_MARK, KAFKA_DEBUG_LOG_LEVEL, 0, p, "[kafka] %s(%d): "format, __FILE__, __LINE__, ##args)
+#endif
+#define ERROR(p, format, args...) ap_log_perror(APLOG_MARK, APLOG_ERR, 0, p, "[kafka] %s(%d): "format, __FILE__, __LINE__, ##args)
+
 #endif /* MOD_MSHIELD_DEBUG_H */
