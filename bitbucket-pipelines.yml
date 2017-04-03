@@ -13,4 +13,5 @@ pipelines:
           - ls -la
           - git config --global http.sslVerify false
           - git submodule update --init
+          - ls -la librdkafka/
           - make
