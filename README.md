@@ -33,6 +33,24 @@ MOD_MSHIELD_URL "/public_data" 0
 MOD_MSHIELD_URL "profile" 1
 ```
 
+## Known bugs
+
+### librdkafka.so.1
+Bug:
+```bash
+╭─root@HLKali  /opt/source/mod_mshield  ‹develop*› 
+╰─$ /etc/init.d/apache_but stop
+=================================
+STOPPING LANDING PAGE WEB SERVER
+=================================
+httpd: Syntax error on line 101 of /opt/applic/httpd/conf/httpd.conf: Cannot load modules/mod_mshield.so into server: librdkafka.so.1: cannot open shared object file: No such file or directory
+httpd (no pid file) not running
+```
+Workaround:
+```bash
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+```
+
 ## Development
 
 ### Prerequisites
