@@ -16,7 +16,8 @@ brew insall librdkafka
 ```bash
 cd /opt/source/
 git clone git@bitbucket.org:markovshield/mod_mshield.git
-
+cd mod_mshield && git checkout develop
+make -f Makefile.deployment
 ```
 
 ## Configuration
@@ -81,12 +82,28 @@ Include conf/extra/mod_mshield_url_rating.conf
     ProxyPass   http://localhost:8888/
 </Location>
 ```
-Finally for the URL criticality level definitions, create another file `conf/extra/mod_mshield_url_rating.conf`. Use the following format (`0` = non-critical, `1` = critical):
+For the URL criticality level definitions, create another file `conf/extra/mod_mshield_url_rating.conf`. Use the following format (`0` = non-critical, `1` = critical):
 ```bash
-MOD_MSHIELD_URL "/public" 0
-MOD_MSHIELD_URL "/private" 1
-MOD_MSHIELD_URL "/private/chat" 1
-MOD_MSHIELD_URL "/private/request-header" 1
+#################################################################################
+#   MOD_MSHIELD url ratings
+#################################################################################
+
+MOD_MSHIELD_URL /public 0
+MOD_MSHIELD_URL /private 1
+MOD_MSHIELD_URL /private/chat 1
+MOD_MSHIELD_URL /private/request-header 1
+```
+
+Finally restart apache httpd in order to apply the new module and its configuration:
+```bash
+/etc/init.d/apache_but restart
+```
+
+## Debugging
+
+### Apache logs
+```bash
+tail -f /opt/applic/httpd/logs/error_log
 ```
 
 ## Development

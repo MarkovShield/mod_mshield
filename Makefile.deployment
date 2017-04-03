@@ -26,7 +26,7 @@ SRC= \
 all: mod_mshield
 
 mod_mshield: $(SRC)
-	$(APXS) $(APXSFLAGS) $(SRC) $(LIBS) $(LIBDIRS)
+	$(APXS) $(APXSFLAGS) $(SRC) $(LIBS)
 
 clean:
 	rm -rf *.la *.slo *.o *.lo .libs
