@@ -9,4 +9,5 @@ pipelines:
   default:
     - step:
         script:
+          - git submodule update --init
           - make
