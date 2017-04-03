@@ -191,7 +191,6 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
  *	b1) Check
  */
 
-// ToDo Philip: Place kafka_produce() calls in the right spots in mshield_access_checker().
 static int
 mshield_access_checker(request_rec *r)
 {
