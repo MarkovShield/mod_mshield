@@ -56,6 +56,7 @@ MOD_MSHIELD_GLOBAL_LOGON_AUTH_COOKIE_NAME   LOGON
 MOD_MSHIELD_GLOBAL_LOGON_AUTH_COOKIE_VALUE  ok
 MOD_MSHIELD_AUTHORIZED_LOGON_URL            '^/login/'
 MOD_MSHIELD_ENABLED_RETURN_TO_ORIG_URL      Off
+MOD_MSHIELD_USERNAME                        MOD_MSHIELD_USERNAME
 
 MOD_MSHIELD_FRAUD_DETECTION_ENABLED         On
 MOD_MSHIELD_KAFKA_BROKER                    127.0.0.1:9092
@@ -104,6 +105,16 @@ Finally restart apache httpd in order to apply the new module and its configurat
 ### Apache logs
 ```bash
 tail -f /opt/applic/httpd/logs/error_log
+```
+
+### Test kafka connection
+Listen on topic (e.g. `mshield-analyse`):
+```bash
+kafkacat -C -b 192.168.56.50 -t mshield-analyse
+```
+Post something to the topic (e.g. `mshield-analyse`):
+```bash
+echo "Hallo" | kafkacat -P -b 192.168.56.50 -t mshield-analyse
 ```
 
 ## Development
