@@ -8,14 +8,16 @@
 #define MOD_MSHIELD_DEBUG_H
 
 /* log level shortcuts */
+#define PC_LOG_DEBUG	APLOG_MARK,APLOG_DEBUG,0
 #define PC_LOG_INFO		APLOG_MARK,APLOG_INFO,0
 #define PC_LOG_CRIT		APLOG_MARK,APLOG_CRIT,0
 
 /*
- * Convenience logging shortcuts - they assume request_rec *r or server_rec *s
+ * Convenience logging shortcuts - they assume request_rec *r, server_rec *s or apr_pool_t *p
  * are available, depending on variant.
  *
- * *_INFO are used for printf debugging
+ * ToDo Philip: Change the old _INFO to be the new DEBUG and insert INFO logs here needed.
+ * *_INFO and DEBUG_GENERAL are used for printf debugging
  * *_CRIT are used for error messages
  *
  * Example:
@@ -29,31 +31,19 @@
  *    [Thu May 29 11:26:18 2008] [crit] [client 127.0.0.1] mod_mshield_example.c:21: Failed to copy foo to bar
  */
 
-#define ERRLOG_REQ(l, f, ...)	ap_log_rerror(l, r, "[%s] %s:%d: " f, apr_table_get(r->subprocess_env, "UNIQUE_ID"), __FILE__, __LINE__, ##__VA_ARGS__)
-#define ERRLOG_REQ_INFO(f, ...)	ERRLOG_REQ(PC_LOG_INFO, f, ##__VA_ARGS__)
-#define ERRLOG_REQ_CRIT(f, ...)	ERRLOG_REQ(PC_LOG_CRIT, f, ##__VA_ARGS__)
+#define ERRLOG_REQ(level, format, ...)	    ap_log_rerror(level, r, "[%s] %s:%d: " format, apr_table_get(r->subprocess_env, "UNIQUE_ID"), __FILE__, __LINE__, ##__VA_ARGS__)
+#define ERRLOG_REQ_INFO(format, ...)        ERRLOG_REQ(PC_LOG_DEBUG, format, ##__VA_ARGS__)
+#define ERRLOG_REQ_CRIT(format, ...)        ERRLOG_REQ(PC_LOG_CRIT, format, ##__VA_ARGS__)
 
-#define ERRLOG_SRV(l, f, ...)	ap_log_error(l, s, "%s:%d: " f, __FILE__, __LINE__, ##__VA_ARGS__)
-#define ERRLOG_SRV_INFO(f, ...)	ERRLOG_SRV(PC_LOG_INFO, f, ##__VA_ARGS__)
-#define ERRLOG_SRV_CRIT(f, ...)	ERRLOG_SRV(PC_LOG_CRIT, f, ##__VA_ARGS__)
+#define ERRLOG_SRV(level, format, ...)	    ap_log_error(level, s, "%s:%d: " format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define ERRLOG_SRV_INFO(format, ...)	    ERRLOG_SRV(PC_LOG_DEBUG, format, ##__VA_ARGS__)
+#define ERRLOG_SRV_CRIT(format, ...)	    ERRLOG_SRV(PC_LOG_CRIT, format, ##__VA_ARGS__)
 
-#define ERRLOG_INFO(f, ...)	ERRLOG_REQ_INFO(f, ##__VA_ARGS__)
-#define ERRLOG_CRIT(f, ...)	ERRLOG_REQ_CRIT(f, ##__VA_ARGS__)
+#define ERRLOG_INFO(format, ...)	        ERRLOG_REQ_INFO(format, ##__VA_ARGS__)
+#define ERRLOG_CRIT(format, ...)	        ERRLOG_REQ_CRIT(format, ##__VA_ARGS__)
 
-/*
- * Some old logger stuff from the mod-apache-kafka integration
- *  ToDo Philip: Clean up..
- */
+#define DEBUG_GENERAL(p, format, ...)   ap_log_perror(PC_LOG_DEBUG, p, "DEBUG: %s(%d): " format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define ERROR_GENERAL(p, format, ...)   ap_log_perror(PC_LOG_CRIT, p, "ERROR: %s(%d): " format, __FILE__, __LINE__, ##__VA_ARGS__)
 
-#ifndef KAFKA_DEBUG_LOG_LEVEL
-#define KAFKA_DEBUG_LOG_LEVEL APLOG_DEBUG
-#endif
-
-#ifdef NDEBUG
-#define DEBUG(p, format, args...)
-#else
-#define DEBUG(p, format, args...) ap_log_perror(APLOG_MARK, KAFKA_DEBUG_LOG_LEVEL, 0, p, "[kafka] %s(%d): "format, __FILE__, __LINE__, ##args)
-#endif
-#define ERROR(p, format, args...) ap_log_perror(APLOG_MARK, APLOG_ERR, 0, p, "[kafka] %s(%d): "format, __FILE__, __LINE__, ##args)
 
 #endif /* MOD_MSHIELD_DEBUG_H */
