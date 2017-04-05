@@ -327,8 +327,7 @@ extern const command_rec mshield_cmds[];
 /********************************************************************
  * mod_mshield_kafka.c
  */
-//void kafka_child_init(apr_pool_t *p, server_rec *s);
-apr_status_t kafka_cleanup(void *arg);
+apr_status_t kafka_cleanup(void *s);
 void kafka_produce(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, const char *topic, int32_t partition, char *msg);
 
 #endif /* MOD_MSHIELD_H */

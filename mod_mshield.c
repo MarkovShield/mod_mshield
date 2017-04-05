@@ -714,10 +714,8 @@ static int mshield_post_config(apr_pool_t *pconf, apr_pool_t *plog,
 static void
 kafka_child_init(apr_pool_t *p, server_rec *s)
 {
-    mod_mshield_server_t *config;
-    config = ap_get_module_config(s->module_config, &mshield_module);
-    if (config) {
-        apr_pool_cleanup_register(p, config, kafka_cleanup, kafka_cleanup);
+    if (s) {
+        apr_pool_cleanup_register(p, s, kafka_cleanup, kafka_cleanup);
     }
 }
 

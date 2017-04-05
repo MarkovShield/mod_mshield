@@ -30,11 +30,11 @@ static apr_status_t kafka_connect(apr_pool_t *p, request_rec *r, mod_mshield_kaf
         void *value = NULL;
         apr_hash_this(hash, &property, NULL, &value);
         if (value) {
-            ERRLOG_GENERAL_DEBUG("global configration: %s = %s", (char *)property, (char *)value);
+            ERRLOG_REQ_INFO("global configration: %s = %s", (char *)property, (char *)value);
 
             if (rd_kafka_conf_set(conf, (char *)property, (char *)value,
                                   tmp, sizeof(tmp)) != RD_KAFKA_CONF_OK) {
-                ERRLOG_GENERAL_DEBUG("Kafka config: %s", tmp);
+                ERRLOG_REQ_INFO("Kafka config: %s", tmp);
                 rd_kafka_conf_destroy(conf);
                 return APR_EINIT;
             }
@@ -51,7 +51,7 @@ static apr_status_t kafka_connect(apr_pool_t *p, request_rec *r, mod_mshield_kaf
     }
     conf = NULL;
 
-    ERRLOG_GENERAL_DEBUG("Created Kafka producer");
+    ERRLOG_REQ_INFO("Created Kafka producer");
 
     rd_kafka_set_log_level(kafka->rk, 0);
 
@@ -63,7 +63,7 @@ static apr_status_t kafka_connect(apr_pool_t *p, request_rec *r, mod_mshield_kaf
         return APR_EINIT;
     }
 
-    ERRLOG_GENERAL_DEBUG("Add Kafka brokers: %s", brokers);
+    ERRLOG_REQ_INFO("Add Kafka brokers: %s", brokers);
 
     return APR_SUCCESS;
 }
@@ -88,7 +88,7 @@ static rd_kafka_topic_t *kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_
     rd_kafka_topic_t *rkt;
     rkt = (rd_kafka_topic_t *)kafka->rk_topic_analyse;
     if (rkt) {
-        ERRLOG_GENERAL_DEBUG("Fetching topic handle: Got rkt from kafka->rk_topic_analyse");
+        ERRLOG_REQ_INFO("Fetching topic handle: Got rkt from kafka->rk_topic_analyse");
         return rkt;
     }
     /* Configuration topic */
@@ -106,7 +106,7 @@ static rd_kafka_topic_t *kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_
         apr_hash_this(hash, &property, NULL, &value);
         if (value) {
             char err[512];
-            ERRLOG_GENERAL_DEBUG("topic configration: %s = %s", (char *)property, (char *)value);
+            ERRLOG_REQ_INFO("topic configration: %s = %s", (char *)property, (char *)value);
 
             if (rd_kafka_topic_conf_set(topic_conf, (char *)property, (char *)value,
                                         err, sizeof(err)) != RD_KAFKA_CONF_OK) {
@@ -127,7 +127,7 @@ static rd_kafka_topic_t *kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_
     }
     topic_conf = NULL;
 
-    ERRLOG_GENERAL_DEBUG("Created Kafka topic: %s", topic);
+    ERRLOG_REQ_INFO("Created Kafka topic: %s", topic);
 
     kafka->rk_topic_analyse = (const void *)rkt;
 
@@ -143,7 +143,7 @@ void kafka_produce(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
 {
     rd_kafka_topic_t *rkt = kafka_topic_connect(p, r, kafka, topic);
     if (rkt) {
-        ERRLOG_GENERAL_DEBUG("produce: (%s:%i) %s", topic, partition, msg);
+        ERRLOG_REQ_INFO("produce: (%s:%i) %s", topic, partition, msg);
 
         /* Produce send */
         if (rd_kafka_produce(rkt, partition, RD_KAFKA_MSG_F_COPY,
@@ -162,17 +162,20 @@ void kafka_produce(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
 }
 
 /*
- * Cleanes up kafka stuff when apache is shutting down
+ * Cleans up kafka stuff when apache is shutting down
  */
 apr_status_t kafka_cleanup(void *arg)
 {
-    mod_mshield_server_t *config = (mod_mshield_server_t *)arg;
+    server_rec *s = arg;
+    mod_mshield_server_t *config;
+    config = ap_get_module_config(s->module_config, &mshield_module);
+
     apr_pool_t *p = config->pool;
     if (!config) {
         return APR_SUCCESS;
     }
 
-    ERRLOG_GENERAL_DEBUG("kafka_cleanup");
+    ERRLOG_SRV_INFO("kafka_cleanup");
 
     apr_status_t rv;
     if ((rv = apr_global_mutex_lock(mshield_mutex)) != APR_SUCCESS) {
@@ -180,32 +183,32 @@ apr_status_t kafka_cleanup(void *arg)
     }
 
     if (config->kafka.rk) {
-        ERRLOG_GENERAL_DEBUG("Poll to handle delivery reports");
+        ERRLOG_SRV_INFO("Poll to handle delivery reports");
         rd_kafka_poll(config->kafka.rk, 0);
 
-        ERRLOG_GENERAL_DEBUG("Wait for messages to be delivered");
+        ERRLOG_SRV_INFO("Wait for messages to be delivered");
         while (rd_kafka_outq_len(config->kafka.rk) > 0) {
             rd_kafka_poll(config->kafka.rk, 10);
         }
 
-        ERRLOG_GENERAL_DEBUG("Destroy topic");
+        ERRLOG_SRV_INFO("Destroy topic");
         apr_hash_index_t *hash = apr_hash_first(config->pool, config->kafka.conf.topic);
         while (hash) {
             const void *topic = NULL;
             void *rkt = NULL;
             apr_hash_this(hash, &topic, NULL, &rkt);
             if (rkt) {
-                ERRLOG_GENERAL_DEBUG("kafka topic = %s", (char *)topic);
+                ERRLOG_SRV_INFO("kafka topic = %s", (char *)topic);
                 rd_kafka_topic_destroy((rd_kafka_topic_t *)rkt);
             }
             hash = apr_hash_next(hash);
         }
 
-        ERRLOG_GENERAL_DEBUG("Destroy producer handle");
+        ERRLOG_SRV_INFO("Destroy producer handle");
         rd_kafka_destroy(config->kafka.rk);
         config->kafka.rk = NULL;
 
-        ERRLOG_GENERAL_DEBUG("Let backgournd threds clean up");
+        ERRLOG_SRV_INFO("Let backgournd threds clean up");
         int32_t i = 5;
         while (i-- > 0 && rd_kafka_wait_destroyed(500) == -1) {
             ;
@@ -214,7 +217,7 @@ apr_status_t kafka_cleanup(void *arg)
 
     apr_global_mutex_unlock(mshield_mutex);
 
-    ERRLOG_GENERAL_DEBUG("terminated cleanly");
+    ERRLOG_SRV_INFO("terminated cleanly");
 
     return APR_SUCCESS;
 }

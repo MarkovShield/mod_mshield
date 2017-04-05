@@ -13,10 +13,9 @@
 #define PC_LOG_CRIT		APLOG_MARK,APLOG_CRIT,0
 
 /*
- * Convenience logging shortcuts - they assume request_rec *r, server_rec *s or apr_pool_t *p
+ * Convenience logging shortcuts - they assume request_rec *r or server_rec *s
  * are available, depending on variant.
  *
- * ToDo Philip: Change the old _INFO to be the new DEBUG and insert INFO logs here needed.
  * *_INFO and DEBUG_GENERAL are used for printf debugging
  * *_CRIT are used for error messages
  *
@@ -41,10 +40,5 @@
 
 #define ERRLOG_INFO(format, ...)	        ERRLOG_REQ_INFO(format, ##__VA_ARGS__)
 #define ERRLOG_CRIT(format, ...)	        ERRLOG_REQ_CRIT(format, ##__VA_ARGS__)
-
-#define ERRLOG_GENERAL(level, format, ...)   ap_log_perror(level, p, "[%s] %s:%d: " format, __FILE__, __LINE__, ##__VA_ARGS__)
-#define ERRLOG_GENERAL_DEBUG(format, ...)        ERRLOG_GENERAL(PC_LOG_DEBUG, format, ##__VA_ARGS__)
-#define ERRLOG_GENERAL_ERROR(format, ...)        ERRLOG_GENERAL(PC_LOG_CRIT, format, ##__VA_ARGS__)
-
 
 #endif /* MOD_MSHIELD_DEBUG_H */
