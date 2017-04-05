@@ -126,6 +126,7 @@ typedef struct {
         apr_hash_t *topic;
     } conf;
     const char  *topic_analyse;         /* Set the kafka topic on which clicks are sent to the engine */
+    const char  *rk_topic_analyse;
     const char  *topic_analyse_result;  /* Set the kafka topic on which analysed results from the engine comes back */
     const char  *broker;             /* Set the IP of the Kafka broker */
     rd_kafka_t  *rk;                          /* Kafka handle */
@@ -328,6 +329,6 @@ extern const command_rec mshield_cmds[];
  */
 //void kafka_child_init(apr_pool_t *p, server_rec *s);
 apr_status_t kafka_cleanup(void *arg);
-void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, int32_t partition, char *msg);
+void kafka_produce(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, const char *topic, int32_t partition, char *msg);
 
 #endif /* MOD_MSHIELD_H */

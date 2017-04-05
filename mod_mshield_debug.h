@@ -42,8 +42,9 @@
 #define ERRLOG_INFO(format, ...)	        ERRLOG_REQ_INFO(format, ##__VA_ARGS__)
 #define ERRLOG_CRIT(format, ...)	        ERRLOG_REQ_CRIT(format, ##__VA_ARGS__)
 
-#define DEBUG_GENERAL(p, format, ...)   ap_log_perror(PC_LOG_DEBUG, p, "DEBUG: %s(%d): " format, __FILE__, __LINE__, ##__VA_ARGS__)
-#define ERROR_GENERAL(p, format, ...)   ap_log_perror(PC_LOG_CRIT, p, "ERROR: %s(%d): " format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define ERRLOG_GENERAL(level, format, ...)   ap_log_perror(level, p, "[%s] %s:%d: " format, __FILE__, __LINE__, ##__VA_ARGS__)
+#define ERRLOG_GENERAL_DEBUG(format, ...)        ERRLOG_GENERAL(PC_LOG_DEBUG, format, ##__VA_ARGS__)
+#define ERRLOG_GENERAL_ERROR(format, ...)        ERRLOG_GENERAL(PC_LOG_CRIT, format, ##__VA_ARGS__)
 
 
 #endif /* MOD_MSHIELD_DEBUG_H */

@@ -580,7 +580,7 @@ mshield_access_checker(request_rec *r)
 	 */
 
     // ToDo Philip: Extract login data from here and send it to Kafka
-    kafka_produce(r->pool, &config->kafka, config->kafka.topic_analyse, RD_KAFKA_PARTITION_UA, "Test Request auf /blub");
+    kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_analyse, RD_KAFKA_PARTITION_UA, "Test vom Modul");
 
 	/*
 	 * This is the redirection to the original protected URL function after login.
