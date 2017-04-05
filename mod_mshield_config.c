@@ -40,7 +40,7 @@ mshield_config_enabled(cmd_parms *cmd, void *dummy, int arg) {
     conf->service_list_error_url = MOD_MSHIELD_SERVICE_LIST_ERROR_URL;
     conf->authorized_logon_url = MOD_MSHIELD_AUTHORIZED_LOGON_URL;
     conf->url_after_renew = MOD_MSHIELD_URL_AFTER_RENEW;
-    conf->username = MOD_MSHIELD_USERNAME;
+    conf->username_value = MOD_MSHIELD_USERNAME_VALUE;
     conf->fraud_detection_enabled = MOD_MSHIELD_FRAUD_DETECTION_ENABLED;
 
     return OK;
@@ -301,10 +301,10 @@ mshield_config_url_after_renew(cmd_parms *cmd, void *dummy, const char *arg) {
 }
 
 const char *
-mshield_config_username(cmd_parms *cmd, void *dummy, const char *arg) {
+mshield_config_username_value(cmd_parms *cmd, void *dummy, const char *arg) {
     mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
     if (arg) {
-        conf->username = arg;
+        conf->username_value = arg;
     }
     return OK;
 }
@@ -397,7 +397,7 @@ const command_rec mshield_cmds[] =
 	AP_INIT_FLAG( "MOD_MSHIELD_SERVICE_LIST_ENABLED",           mshield_config_service_list_enabled,            NULL, RSRC_CONF, "mod_mshield service list enabled"),
 	AP_INIT_TAKE1("MOD_MSHIELD_AUTHORIZED_LOGON_URL",           mshield_config_authorized_logon_url,            NULL, RSRC_CONF, "Configure regexp url, from where you accept logon cookies"),
 	AP_INIT_TAKE1("MOD_MSHIELD_URL_AFTER_RENEW",	            mshield_config_url_after_renew,		            NULL, RSRC_CONF, "Configure url after the session is renewed"),
-	AP_INIT_TAKE1("MOD_MSHIELD_USERNAME",                       mshield_config_username,                        NULL, RSRC_CONF, "Configure mod_mshield Username"),
+	AP_INIT_TAKE1("MOD_MSHIELD_USERNAME_VALUE",                 mshield_config_username_value,                  NULL, RSRC_CONF, "Configure mod_mshield Username"),
 	/* Fraud detection */
 	AP_INIT_FLAG( "MOD_MSHIELD_FRAUD_DETECTION_ENABLED",        mshield_config_fraud_detection_enabled,         NULL, RSRC_CONF, "Enable fraud detection functionality"),
 	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_BROKER",                   mshield_config_kafka_broker,                    NULL, RSRC_CONF, "Set Kafka broker IP and port (syntax: 127.0.0.1:9092"),

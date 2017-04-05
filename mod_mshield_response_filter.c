@@ -117,7 +117,8 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
         /* check cookie value */
         if (!apr_strnatcmp(cookie_value, config->global_logon_auth_cookie_value)) {
             ERRLOG_INFO("LOGON=ok found, setting cr->session->data->logon_state=1 and cr->must_renew=1");
-/*SET*/        cr->session->data->logon_state = 1;
+            /*SET*/
+            cr->session->data->logon_state = 1;
             cr->must_renew = 1;
         } else {
             ERRLOG_CRIT("Ignoring LOGON cookie with value [%s], expected [%s]", cookie_value,
@@ -133,9 +134,11 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
         if (!apr_strnatcmp(cookie_name, "MOD_MSHIELD_AUTH_STRENGTH")) { /* XXX make cookie name configurable */
             int auth_strength = atoi(cookie_value);
             if ((auth_strength >= 0) || (auth_strength <= 2)) {
-/*SET*/                cr->session->data->auth_strength = auth_strength;
+                /*SET*/
+                cr->session->data->auth_strength = auth_strength;
             } else {
-/*SET*/                cr->session->data->auth_strength = 0;
+                /*SET*/
+                cr->session->data->auth_strength = 0;
             }
             return TRUE;
         }
@@ -144,14 +147,16 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
         ERRLOG_INFO("Handle Special Cookie (Service List Cookie) because LOGON=ok found");
         if (!apr_strnatcmp(cookie_name, config->service_list_cookie_name)) {
             ERRLOG_INFO("Found Service List Cookie [%s]", cookie_value);
-/*SET*/            apr_cpystrn(cr->session->data->service_list, cookie_value, sizeof(cr->session->data->service_list));
+            /*SET*/
+            apr_cpystrn(cr->session->data->service_list, cookie_value, sizeof(cr->session->data->service_list));
             return TRUE;
         }
 
         /* Redirect URL cookie */
         ERRLOG_INFO("Handle Special Cookie (MOD_MSHIELD_REDIRECT) because LOGON=ok found");
         if (!apr_strnatcmp(cookie_name, "MOD_MSHIELD_REDIRECT")) { /* XXX make cookie name configurable */
-/*SET*/        apr_cpystrn(cr->session->data->redirect_url_after_login, cookie_value,
+            /*SET*/
+            apr_cpystrn(cr->session->data->redirect_url_after_login, cookie_value,
                            sizeof(cr->session->data->redirect_url_after_login));
             ERRLOG_INFO("xxx-xxx Found MOD_MSHIELD_REDIRECT [%s]", cookie_value);
             return TRUE;
@@ -174,7 +179,8 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
             /* loop over location IDs in bclearance locid list */
             for (bclearance = apr_strtok(bclearance, ",", &last);
                  bclearance != NULL; bclearance = apr_strtok(NULL, ",", &last)) {
-/*SET*/                apr_status_t status = mshield_session_set_cookie(cr->session, bname, bvalue, atoi(bclearance));
+                /*SET*/
+                apr_status_t status = mshield_session_set_cookie(cr->session, bname, bvalue, atoi(bclearance));
                 if (status != STATUS_OK) {
                     ERRLOG_CRIT("Error while storing cookie!");
                     cr->status = status;
@@ -232,13 +238,17 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
         return FALSE;
     }
 
-    //ERRLOG_CRIT("FRAUD === Set-Cookie key [%s] value [%s]", key, value);
-
     parse_cookie(r, value, &cookie_name, &cookie_value);
 
-    if (!apr_strnatcmp(cookie_name, config->username)) {
+    /*
+     * Set the username for the session.
+     * Source for the username is the MOD_MSHIELD_USERNAME_VALUE value from the LS logon ok cookie.
+     */
+    if (!apr_strnatcmp(cookie_name, config->username_value)) {
         apr_cpystrn(cr->session->data->username, cookie_value, sizeof(cr->session->data->username));
-        ERRLOG_CRIT("FRAUD LOG == UUID [%s] == USERNAME [%s]", cr->session->data->uuid, cr->session->data->username);
+        ERRLOG_CRIT("FRAUD-ENGINE: Received USERNAME [%s] for UUID [%s]", cr->session->data->username, cr->session->data->uuid);
+        //ToDo Philip: Publish this information to a Kafka topic.
+
     }
 
 
@@ -251,10 +261,12 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
         case STATUS_MATCH:
             ERRLOG_INFO("xxx-xxx Trusted Cookie from Authorized LOGON URL");
             ERRLOG_INFO("xxx-xxx Cookie Name [%s] and Value [%s]", cookie_name, cookie_value);
-/*SET*/        return filter_response_cookie_from_logon_url(r, cr, config, dconfig, cookie_name, cookie_value, value);
+            /*SET*/
+            return filter_response_cookie_from_logon_url(r, cr, config, dconfig, cookie_name, cookie_value, value);
         case STATUS_NOMATCH:
             ERRLOG_INFO("xxx-xxx Found Cookie mshield not from Authorized LOGON URL");
-/*SET*/        return filter_response_cookie(r, cr, config, dconfig, cookie_name, cookie_value, value);
+            /*SET*/
+            return filter_response_cookie(r, cr, config, dconfig, cookie_name, cookie_value, value);
         case STATUS_ERROR:
         default:
             ERRLOG_CRIT("xxx-xxx DEFAULT mod_mshield_filter_response_cookies_cb");

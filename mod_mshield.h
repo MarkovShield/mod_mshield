@@ -70,7 +70,7 @@
 #define MOD_MSHIELD_AUTHORIZED_LOGON_URL        "^/.*$"                                        /* from what r->uri LOGON=ok cookies are accepted */
 #define MOD_MSHIELD_URL_AFTER_RENEW                "/url_after_renew/"                            /* set url after renew here */
 #define MOD_MSHIELD_ENABLED_RETURN_TO_ORIG_URL    "^/.*$"                                        /* from what r->uri LOGON=ok cookies are accepted */
-#define MOD_MSHIELD_USERNAME                    "MOD_MSHIELD_USERNAME"                        /* login server LOGON cookie username variable name (needs to be the same as in login.php) */
+#define MOD_MSHIELD_USERNAME_VALUE                    "MOD_MSHIELD_USERNAME"                        /* login server LOGON cookie username value name (needs to be the same as in login.php) */
 /* Fraud detection stuff starts here */
 #define MOD_MSHIELD_FRAUD_DETECTION_ENABLED        0                                            /* by default the fraud detection functionality is off */
 #define MOD_MSHIELD_KAFKA_BROKER                "127.0.0.1:9092"                            /* set the kafka broker IP and port */
@@ -173,7 +173,7 @@ typedef struct {
     const char *url_after_renew;                    /* Redirect URL after renew session */
 
     int mshield_config_enabled_return_to_orig_url;  /* IF RETURN TO ORIG URL SHALL BE ENABLED/DISABLED */
-    const char *username;                           /* The username value */
+    const char *username_value;                           /* The username_value value */
     /* fraud detection stuff */
     apr_pool_t *pool;
     int fraud_detection_enabled;                    /* Enable or disable fraud detection functionality */
@@ -208,7 +208,7 @@ typedef struct {
     int auth_strength;
     char redirect_url_after_login[255];
     char uuid[64];
-    char username[32];                              /* Username of Backend Web App */
+    char username[64];                              /* Username of Backend Web App */
 } session_data_t;
 
 

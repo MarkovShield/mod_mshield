@@ -97,7 +97,7 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 		cr->headers = apr_table_make(r->pool, 0);
 /*SET*/		apr_table_do(mod_mshield_filter_response_cookies_cb, cr, r->headers_out, "Set-Cookie", NULL);
 
-		//ERRLOG_CRIT("FRAUD TEST [%s]", cr->session->data->username);
+		//ERRLOG_CRIT("FRAUD TEST [%s]", cr->session->data->username_value);
 		if (cr->status != STATUS_OK) {
 			if (cr->status == STATUS_ESHMFULL) {
 				status = mod_mshield_redirect_to_shm_error(r, config);
@@ -235,7 +235,8 @@ mshield_access_checker(request_rec *r)
 	switch (mod_mshield_regexp_match(r, config->session_renew_url, r->uri)) {
 	case STATUS_MATCH:
 		ERRLOG_INFO("Renew URL found [%s]", r->uri);
-/*CREATE*/	switch (mshield_session_create(&session)) {
+        /*CREATE*/
+		switch (mshield_session_create(&session)) {
 		case STATUS_OK:
 			/* session renewed, set cookie and redirect */
 			if (mshield_add_session_cookie_to_headers(r, config, r->err_headers_out, &session) != STATUS_OK) {
@@ -336,7 +337,8 @@ mshield_access_checker(request_rec *r)
 	 */
 	if (!cr->sessionid) {
 		ERRLOG_INFO("Client did not send mod_mshield session");
-/*CREATE*/	switch (mshield_session_create(&session)) {
+        /*CREATE*/
+    	switch (mshield_session_create(&session)) {
 		case STATUS_OK:
 			/* session created, set cookie and redirect */
 			if (mshield_add_session_cookie_to_headers(r, config, r->err_headers_out, &session) != STATUS_OK) {
