@@ -343,7 +343,7 @@ void mshield_shm_free(session_data_t *session_data);
 
 int mshield_shm_timeout(session_data_t *session_data, int hard_timeout, int inactivity_timeout);
 
-apr_status_t create_new_shm_session(request_rec *r, const char *sid, int *session_index);
+apr_status_t create_new_shm_session(request_rec *r, const char *sid, const char *uuid, int *session_index);
 
 const char *collect_cookies_from_cookiestore(request_rec *r, int anchor);
 

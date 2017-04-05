@@ -366,10 +366,12 @@ mshield_access_checker(request_rec *r)
 	 */
 
 	/* Initialize the session struct. */
+    // ToDo Philip: Add UUID fist time here?
 	mshield_session_init(&session, r, config);
 
 	/* Look up the session. */
-/*FIND*/switch (mshield_session_find(&session, config->cookie_name, cr->sessionid)) {
+    /*FIND*/
+    switch (mshield_session_find(&session, config->cookie_name, cr->sessionid)) {
 	case STATUS_OK:
 		break;
 
@@ -393,7 +395,8 @@ mshield_access_checker(request_rec *r)
 	}
 
 	/* Validate the session, time it out if necessary, updating atime. */
-/*UNLINK,SET*/switch (mshield_session_validate(&session,
+    /*UNLINK,SET*/
+    switch (mshield_session_validate(&session,
 			config->session_hard_timeout,
 			config->session_inactivity_timeout)) {
 	case STATUS_OK:
@@ -430,7 +433,8 @@ mshield_access_checker(request_rec *r)
 	switch (mod_mshield_regexp_match(r, config->session_destroy, r->uri)) {
 	case STATUS_MATCH:
 		ERRLOG_INFO("Session destroy URL matched, destroying session");
-/*UNLINK*/	mshield_session_unlink(&session);
+        /*UNLINK*/
+    	mshield_session_unlink(&session);
 		status = mod_mshield_redirect_to_relurl(r, config->session_destroy_url);
 		apr_global_mutex_unlock(mshield_mutex);
 		return status;
@@ -581,8 +585,6 @@ mshield_access_checker(request_rec *r)
 	 * the request.
 	 */
 
-    // ToDo Philip: Extract login data from here and send it to Kafka
-    kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_analyse, RD_KAFKA_PARTITION_UA, "Test vom Modul");
 
 	/*
 	 * This is the redirection to the original protected URL function after login.
@@ -621,8 +623,6 @@ mshield_access_checker(request_rec *r)
 
 
 
-
-
 	/* Add cookies from cookie store to request headers. */
 /*GET*/	if (session.data->cookiestore_index != -1) {
 /*GET*/		const char *cookie = mshield_session_get_cookies(&session);
@@ -630,6 +630,10 @@ mshield_access_checker(request_rec *r)
 			apr_table_set(r->headers_in, "Cookie", cookie);
 		}
 	}
+
+    // ToDo Philip: Extract login data from here and send it to Kafka
+    kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_analyse, RD_KAFKA_PARTITION_UA, "Test vom Modul");
+
 
 	apr_global_mutex_unlock(mshield_mutex);
 

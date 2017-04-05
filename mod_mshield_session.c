@@ -100,14 +100,20 @@ apr_status_t
 mshield_session_create(session_t *session) {
 	apr_status_t status;
 	char *sid = NULL;
+    char *uuid = NULL;
 
 	sid = generate_session_id(session->request);
 	if (!sid) {
 		return STATUS_ERROR;
 	}
     ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new SID [%s]", sid);
+    uuid = generate_session_id(session->request);
+    if (!uuid) {
+        return STATUS_ERROR;
+    }
+    ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new UUID [%s]", uuid);
 
-	status = create_new_shm_session(session->request, sid, &session->handle);
+	status = create_new_shm_session(session->request, sid, uuid, &session->handle);
 	if (status != STATUS_OK) {
 		return status;
 	}
