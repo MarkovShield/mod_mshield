@@ -199,6 +199,7 @@ mshield_access_checker(request_rec *r)
 	session_t session;
 	cookie_res *cr;
 	apr_status_t status;
+    char *uuid;
 
 	config = ap_get_module_config(r->server->module_config, &mshield_module);
 	if (!config) {
@@ -228,14 +229,13 @@ mshield_access_checker(request_rec *r)
     /****************************** PART 0 *******************************************************
 	 * First of all, set the unknown user a new UUID
 	 */
-
-    char *uuid = NULL;
-
-    uuid = generate_uuid(&session);
     if (!uuid) {
-        return STATUS_ERROR;
+        uuid = generate_uuid(&session);
+        if (!uuid) {
+            return STATUS_ERROR;
+        }
+        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new UUID [%s]", uuid);
     }
-    ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new UUID [%s]", uuid);
 
 	/****************************** PART 1 *******************************************************
 	 * Handle special URLs which do not require a session.
