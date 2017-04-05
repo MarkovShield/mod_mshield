@@ -126,7 +126,7 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 			ERRLOG_INFO("=============================== START RENEW SESSION ====================================");
 			ERRLOG_INFO("Renewing session after login.");
 			//ERRLOG_CRIT("Add session cookie to headers [%s]", session);
-/*RENEW*/		status = mshield_session_renew(&session);
+/*RENEW*/		status = mshield_session_renew(&session, session.data->uuid);
 			if (status != STATUS_OK) {
 				if (status == STATUS_ESHMFULL) {
 					status = mod_mshield_redirect_to_shm_error(r, config);
@@ -225,6 +225,18 @@ mshield_access_checker(request_rec *r)
 
 	ERRLOG_INFO("Request %s", r->uri);
 
+    /****************************** PART 0 *******************************************************
+	 * First of all, set the unknown user a new UUID
+	 */
+
+    char *uuid = NULL;
+
+    uuid = generate_uuid(&session);
+    if (!uuid) {
+        return STATUS_ERROR;
+    }
+    ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new UUID [%s]", uuid);
+
 	/****************************** PART 1 *******************************************************
 	 * Handle special URLs which do not require a session.
 	 */
@@ -236,7 +248,7 @@ mshield_access_checker(request_rec *r)
 	case STATUS_MATCH:
 		ERRLOG_INFO("Renew URL found [%s]", r->uri);
         /*CREATE*/
-		switch (mshield_session_create(&session)) {
+		switch (mshield_session_create(&session, uuid)) {
 		case STATUS_OK:
 			/* session renewed, set cookie and redirect */
 			if (mshield_add_session_cookie_to_headers(r, config, r->err_headers_out, &session) != STATUS_OK) {
@@ -338,7 +350,7 @@ mshield_access_checker(request_rec *r)
 	if (!cr->sessionid) {
 		ERRLOG_INFO("Client did not send mod_mshield session");
         /*CREATE*/
-    	switch (mshield_session_create(&session)) {
+    	switch (mshield_session_create(&session, uuid)) {
 		case STATUS_OK:
 			/* session created, set cookie and redirect */
 			if (mshield_add_session_cookie_to_headers(r, config, r->err_headers_out, &session) != STATUS_OK) {

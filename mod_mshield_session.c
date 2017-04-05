@@ -34,6 +34,14 @@ generate_session_id(request_rec *r) {
 }
 
 /*
+ * Generate a new UUID.
+ */
+char *
+generate_uuid(session_t *session) {
+    return generate_session_id(session->request);
+}
+
+/*
  * Initialize session_t data structure with invalid session.
  */
 void
@@ -97,21 +105,15 @@ mshield_session_open(session_t *session, session_handle_t handle) {
  * session is an initialized session_t.
  */
 apr_status_t
-mshield_session_create(session_t *session) {
+mshield_session_create(session_t *session, const char *uuid) {
 	apr_status_t status;
 	char *sid = NULL;
-    char *uuid = NULL;
 
 	sid = generate_session_id(session->request);
 	if (!sid) {
 		return STATUS_ERROR;
 	}
     ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new SID [%s]", sid);
-    uuid = generate_session_id(session->request);
-    if (!uuid) {
-        return STATUS_ERROR;
-    }
-    ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new UUID [%s]", uuid);
 
 	status = create_new_shm_session(session->request, sid, uuid, &session->handle);
 	if (status != STATUS_OK) {
@@ -194,7 +196,7 @@ mshield_session_set_cookie(session_t *session, const char *key, const char *valu
  * Returns STATUS_ENOEXIST if session does not exist.
  */
 apr_status_t
-mshield_session_renew(session_t *session) {
+mshield_session_renew(session_t *session, const char *uuid) {
 	apr_status_t status;
 	session_data_t *old_data;
 
@@ -204,7 +206,7 @@ mshield_session_renew(session_t *session) {
 
 	old_data = session->data;
 
-	status = mshield_session_create(session);
+	status = mshield_session_create(session, uuid);
 	if (status != STATUS_OK) {
 		return status;
 	}
