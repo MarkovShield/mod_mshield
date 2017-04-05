@@ -378,7 +378,6 @@ mshield_access_checker(request_rec *r)
 	 */
 
 	/* Initialize the session struct. */
-    // ToDo Philip: Add UUID fist time here?
 	mshield_session_init(&session, r, config);
 
 	/* Look up the session. */
