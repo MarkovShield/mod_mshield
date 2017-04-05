@@ -1,403 +1,367 @@
-/* $Id: mod_mshield_config.c 147 2010-05-30 20:28:01Z ibuetler $ */
-
 #include "mod_mshield.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmany-braces-around-scalar-init"
+
 const char *
-mshield_config_enabled(cmd_parms *cmd, void *dummy, int arg)
-{
-	/*
-	 * Here, we defined the configuration defaults if the user does
-	 * not set MOD_MSHIELD_* directives in httpd.conf
-	 * See the mod_mshield.h for the default values
-	 */
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	conf->enabled = arg;
+mshield_config_enabled(cmd_parms *cmd, void *dummy, int arg) {
+    /*
+     * Here, we defined the configuration defaults if the user does
+     * not set MOD_MSHIELD_* directives in httpd.conf
+     * See the mod_mshield.h for the default values
+     */
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    conf->enabled = arg;
     conf->pool = cmd->pool;
-	conf->client_refuses_cookies_url = MOD_MSHIELD_COOKIE_REFUSE_URL;
-	conf->cookie_name = MOD_MSHIELD_COOKIE_NAME;
-	conf->cookie_domain = MOD_MSHIELD_COOKIE_DOMAIN;
-	conf->cookie_path = MOD_MSHIELD_COOKIE_PATH;
-	conf->cookie_expiration = MOD_MSHIELD_COOKIE_EXPIRATION;
-	conf->cookie_secure = MOD_MSHIELD_COOKIE_SECURE;
-	conf->cookie_httponly = MOD_MSHIELD_COOKIE_HTTPONLY;
-	conf->session_free_url = MOD_MSHIELD_SESSION_FREE_URL;
-	conf->session_hard_timeout = MOD_MSHIELD_SESSION_HARD_TIMEOUT;
-	conf->session_inactivity_timeout = MOD_MSHIELD_SESSION_INACTIVITY_TIMEOUT;
-	conf->session_expired_url = MOD_MSHIELD_SESSION_TIMEOUT_URL;
-	conf->session_destroy = MOD_MSHIELD_SESSION_DESTROY;
-	conf->session_destroy_url = MOD_MSHIELD_SESSION_DESTROY_URL;
-	conf->session_renew_url = MOD_MSHIELD_SESSION_RENEW_URL;
-	conf->authorization_enabled = 0;
-	conf->global_logon_server_url = MOD_MSHIELD_LOGON_SERVER_URL;
-	conf->global_logon_server_url_1 = MOD_MSHIELD_LOGON_SERVER_URL_1;
-	conf->global_logon_server_url_2 = MOD_MSHIELD_LOGON_SERVER_URL_2;
-	conf->global_logon_auth_cookie_name = MOD_MSHIELD_LOGON_AUTH_COOKIE_NAME;
-	conf->global_logon_auth_cookie_value = MOD_MSHIELD_LOGON_AUTH_COOKIE_VALUE;
-	conf->all_shm_space_used_url = MOD_MSHIELD_SHM_USED_URL;
-	conf->session_store_free_cookies = MOD_MSHIELD_FREE_COOKIES;
-	conf->service_list_cookie_name = MOD_MSHIELD_SERVICE_LIST_COOKIE_NAME;
-	conf->service_list_cookie_value = MOD_MSHIELD_SERVICE_LIST_COOKIE_VALUE;
-	conf->service_list_error_url = MOD_MSHIELD_SERVICE_LIST_ERROR_URL;
-	conf->authorized_logon_url = MOD_MSHIELD_AUTHORIZED_LOGON_URL;
-	conf->url_after_renew = MOD_MSHIELD_URL_AFTER_RENEW;
-	conf->username = MOD_MSHIELD_USERNAME;
-	conf->fraud_detection_enabled = MOD_MSHIELD_FRAUD_DETECTION_ENABLED;
+    conf->client_refuses_cookies_url = MOD_MSHIELD_COOKIE_REFUSE_URL;
+    conf->cookie_name = MOD_MSHIELD_COOKIE_NAME;
+    conf->cookie_domain = MOD_MSHIELD_COOKIE_DOMAIN;
+    conf->cookie_path = MOD_MSHIELD_COOKIE_PATH;
+    conf->cookie_expiration = MOD_MSHIELD_COOKIE_EXPIRATION;
+    conf->cookie_secure = MOD_MSHIELD_COOKIE_SECURE;
+    conf->cookie_httponly = MOD_MSHIELD_COOKIE_HTTPONLY;
+    conf->session_free_url = MOD_MSHIELD_SESSION_FREE_URL;
+    conf->session_hard_timeout = MOD_MSHIELD_SESSION_HARD_TIMEOUT;
+    conf->session_inactivity_timeout = MOD_MSHIELD_SESSION_INACTIVITY_TIMEOUT;
+    conf->session_expired_url = MOD_MSHIELD_SESSION_TIMEOUT_URL;
+    conf->session_destroy = MOD_MSHIELD_SESSION_DESTROY;
+    conf->session_destroy_url = MOD_MSHIELD_SESSION_DESTROY_URL;
+    conf->session_renew_url = MOD_MSHIELD_SESSION_RENEW_URL;
+    conf->authorization_enabled = 0;
+    conf->global_logon_server_url = MOD_MSHIELD_LOGON_SERVER_URL;
+    conf->global_logon_server_url_1 = MOD_MSHIELD_LOGON_SERVER_URL_1;
+    conf->global_logon_server_url_2 = MOD_MSHIELD_LOGON_SERVER_URL_2;
+    conf->global_logon_auth_cookie_name = MOD_MSHIELD_LOGON_AUTH_COOKIE_NAME;
+    conf->global_logon_auth_cookie_value = MOD_MSHIELD_LOGON_AUTH_COOKIE_VALUE;
+    conf->all_shm_space_used_url = MOD_MSHIELD_SHM_USED_URL;
+    conf->session_store_free_cookies = MOD_MSHIELD_FREE_COOKIES;
+    conf->service_list_cookie_name = MOD_MSHIELD_SERVICE_LIST_COOKIE_NAME;
+    conf->service_list_cookie_value = MOD_MSHIELD_SERVICE_LIST_COOKIE_VALUE;
+    conf->service_list_error_url = MOD_MSHIELD_SERVICE_LIST_ERROR_URL;
+    conf->authorized_logon_url = MOD_MSHIELD_AUTHORIZED_LOGON_URL;
+    conf->url_after_renew = MOD_MSHIELD_URL_AFTER_RENEW;
+    conf->username = MOD_MSHIELD_USERNAME;
+    conf->fraud_detection_enabled = MOD_MSHIELD_FRAUD_DETECTION_ENABLED;
 
-	return OK;
+    return OK;
 }
 
 const char *
-mshield_config_enabled_return_to_orig_url(cmd_parms *cmd, void *dummy, int arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	conf->mshield_config_enabled_return_to_orig_url = arg;
-	return OK;
+mshield_config_enabled_return_to_orig_url(cmd_parms *cmd, void *dummy, int arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    conf->mshield_config_enabled_return_to_orig_url = arg;
+    return OK;
 }
 
 
 const char *
-mshield_config_client_refuses_cookies_url(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->client_refuses_cookies_url = arg;
-	}
-	return OK;
+mshield_config_client_refuses_cookies_url(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->client_refuses_cookies_url = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_cookie_name(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->cookie_name = arg;
-	}
-	return OK;
+mshield_config_cookie_name(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->cookie_name = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_cookie_domain(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->cookie_domain = arg;
-	}
-	return OK;
+mshield_config_cookie_domain(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->cookie_domain = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_cookie_path(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->cookie_path = arg;
-	}
-	return OK;
+mshield_config_cookie_path(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->cookie_path = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_cookie_expiration(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->cookie_expiration = arg;
-	}
-	return OK;
+mshield_config_cookie_expiration(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->cookie_expiration = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_cookie_secure(cmd_parms *cmd, void *dummy, int arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	conf->cookie_secure = arg;
-	return OK;
+mshield_config_cookie_secure(cmd_parms *cmd, void *dummy, int arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    conf->cookie_secure = arg;
+    return OK;
 }
 
 const char *
-mshield_config_cookie_httponly(cmd_parms *cmd, void *dummy, int arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	conf->cookie_httponly = arg;
-	return OK;
+mshield_config_cookie_httponly(cmd_parms *cmd, void *dummy, int arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    conf->cookie_httponly = arg;
+    return OK;
 }
 
 const char *
-mshield_config_session_free_url(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->session_free_url = arg;
-	}
-	return OK;
+mshield_config_session_free_url(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->session_free_url = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_session_hard_timeout(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->session_hard_timeout = apr_atoi64(arg);
-	}
-	return OK;
+mshield_config_session_hard_timeout(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->session_hard_timeout = apr_atoi64(arg);
+    }
+    return OK;
 }
 
 const char *
-mshield_config_session_inactivity_timeout(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->session_inactivity_timeout = apr_atoi64(arg);
-	}
-	return OK;
+mshield_config_session_inactivity_timeout(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->session_inactivity_timeout = apr_atoi64(arg);
+    }
+    return OK;
 }
 
 const char *
-mshield_config_session_expired_url(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->session_expired_url = arg;
-	}
-	return OK;
+mshield_config_session_expired_url(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->session_expired_url = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_session_renew_url(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->session_renew_url = arg;
-	}
-	return OK;
+mshield_config_session_renew_url(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->session_renew_url = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_all_shm_used_url(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->all_shm_space_used_url = arg;
-	}
-	return OK;
+mshield_config_all_shm_used_url(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->all_shm_space_used_url = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_session_destroy(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->session_destroy = arg;
-	}
-	return OK;
+mshield_config_session_destroy(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->session_destroy = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_session_destroy_url(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->session_destroy_url = arg;
-	}
-	return OK;
+mshield_config_session_destroy_url(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->session_destroy_url = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_authorization_enabled_on(cmd_parms *cmd, void *dummy, int arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	conf->authorization_enabled = arg;
-	return OK;
+mshield_config_authorization_enabled_on(cmd_parms *cmd, void *dummy, int arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    conf->authorization_enabled = arg;
+    return OK;
 }
 
 const char *
-mshield_config_global_logon_server_url(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->global_logon_server_url = arg;
-	}
-	return OK;
+mshield_config_global_logon_server_url(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->global_logon_server_url = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_global_logon_server_url_1(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->global_logon_server_url_1 = arg;
-	}
-	return OK;
+mshield_config_global_logon_server_url_1(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->global_logon_server_url_1 = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_global_logon_server_url_2(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->global_logon_server_url_2 = arg;
-	}
-	return OK;
+mshield_config_global_logon_server_url_2(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->global_logon_server_url_2 = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_global_logon_auth_cookie_name(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->global_logon_auth_cookie_name = arg;
-	}
-	return OK;
+mshield_config_global_logon_auth_cookie_name(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->global_logon_auth_cookie_name = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_global_logon_auth_cookie_value(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->global_logon_auth_cookie_value = arg;
-	}
-	return OK;
+mshield_config_global_logon_auth_cookie_value(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->global_logon_auth_cookie_value = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_session_store_free_cookies(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->session_store_free_cookies = arg;
-	}
-	return OK;
+mshield_config_session_store_free_cookies(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->session_store_free_cookies = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_service_list_cookie_name(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->service_list_cookie_name = arg;
-	}
-	return OK;
+mshield_config_service_list_cookie_name(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->service_list_cookie_name = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_service_list_cookie_value(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->service_list_cookie_value = arg;
-	}
-	return OK;
+mshield_config_service_list_cookie_value(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->service_list_cookie_value = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_service_list_error_url(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->service_list_error_url = arg;
-	}
-	return OK;
+mshield_config_service_list_error_url(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->service_list_error_url = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_service_list_enabled(cmd_parms *cmd, void *dummy, int arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->service_list_enabled_on = arg;
-	}
-	return OK;
+mshield_config_service_list_enabled(cmd_parms *cmd, void *dummy, int arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->service_list_enabled_on = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_authorized_logon_url(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->authorized_logon_url = arg;
-	}
-	return OK;
+mshield_config_authorized_logon_url(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->authorized_logon_url = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_url_after_renew(cmd_parms *cmd, void *dummy, const char *arg)
-{
-        mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-        if (arg) {
-                conf->url_after_renew = arg;
-        }
-        return OK;
+mshield_config_url_after_renew(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->url_after_renew = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_username(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->username = arg;
-	}
-	return OK;
+mshield_config_username(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->username = arg;
+    }
+    return OK;
 }
+
 /* Fraud detection starts here */
 const char *
-mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg) {
-		conf->fraud_detection_enabled = arg;
-		conf->url_store = apr_hash_make(cmd->pool);
-		conf->kafka.broker = MOD_MSHIELD_KAFKA_BROKER;
-		conf->kafka.topic_analyse = MOD_MSHIELD_KAFKA_TOPIC_ANALYSE;
-		conf->kafka.topic_analyse_result = MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT;
-		conf->kafka.rk = NULL;
-		conf->kafka.conf.global = apr_hash_make(cmd->pool);
-		conf->kafka.conf.topic = apr_hash_make(cmd->pool);
-	}
-	return OK;
+mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg) {
+        conf->fraud_detection_enabled = arg;
+        conf->url_store = apr_hash_make(cmd->pool);
+        conf->kafka.broker = MOD_MSHIELD_KAFKA_BROKER;
+        conf->kafka.topic_analyse = MOD_MSHIELD_KAFKA_TOPIC_ANALYSE;
+        conf->kafka.topic_analyse_result = MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT;
+        conf->kafka.rk = NULL;
+        conf->kafka.conf.global = apr_hash_make(cmd->pool);
+        conf->kafka.conf.topic = apr_hash_make(cmd->pool);
+    }
+    return OK;
 }
 
 const char *
-mshield_config_kafka_broker(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg && conf->fraud_detection_enabled) {
-		conf->kafka.broker = arg;
-	}
-	return OK;
+mshield_config_kafka_broker(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg && conf->fraud_detection_enabled) {
+        conf->kafka.broker = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_kafka_topic_analyse(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg && conf->fraud_detection_enabled) {
-		conf->kafka.topic_analyse = arg;
-	}
-	return OK;
+mshield_config_kafka_topic_analyse(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg && conf->fraud_detection_enabled) {
+        conf->kafka.topic_analyse = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_kafka_topic_analyse_result(cmd_parms *cmd, void *dummy, const char *arg)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg && conf->fraud_detection_enabled) {
-		conf->kafka.topic_analyse_result = arg;
-	}
-	return OK;
+mshield_config_kafka_topic_analyse_result(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg && conf->fraud_detection_enabled) {
+        conf->kafka.topic_analyse_result = arg;
+    }
+    return OK;
 }
 
 const char *
-mshield_config_urls(cmd_parms *cmd, void *dummy, const char *arg1, const char *arg2)
-{
-	mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
-	if (arg1 && arg2 && conf->fraud_detection_enabled) {
-		if (atoi(arg2) == 0 || atoi(arg2) == 1) {
-			apr_hash_set(conf->url_store, arg1, APR_HASH_KEY_STRING, arg2);
-		}
-	}
-	return OK;
+mshield_config_urls(cmd_parms *cmd, void *dummy, const char *arg1, const char *arg2) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg1 && arg2 && conf->fraud_detection_enabled) {
+        if (atoi(arg2) == 0 || atoi(arg2) == 1) {
+            apr_hash_set(conf->url_store, arg1, APR_HASH_KEY_STRING, arg2);
+        }
+    }
+    return OK;
 }
 
 const command_rec mshield_cmds[] =

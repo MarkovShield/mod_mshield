@@ -1,5 +1,3 @@
-/* $Id: mod_mshield_compat.h 147 2010-05-30 20:28:01Z ibuetler $ */
-
 /*
  * Compatibility hacks.
  *
@@ -11,7 +9,9 @@
 
 /* unix specific stuff */
 #if !defined(OS2) && !defined(WIN32) && !defined(BEOS) && !defined(NETWARE)
+
 #include "unixd.h"
+
 #define MOD_MSHIELD_SET_MUTEX_PERMS
 #endif
 

@@ -697,17 +697,6 @@ static int mshield_post_config(apr_pool_t *pconf, apr_pool_t *plog,
 	}
 #endif /* MOD_MSHIELD_SET_MUTEX_PERMS */
 
-	//ToDo Philip: Add kafka connection setup here (via function call). Really needed? -> Guess there's no setup needed...
-/*    mod_mshield_server_t *conf = ap_get_module_config(s->module_config, &mshield_module);
-    if(conf->fraud_detection_enabled) {
-
-        //status = ;
-        if (status != APR_SUCCESS) {
-            ERRLOG_SRV_CRIT("Failed to setup kafka connection.");
-            return HTTP_INTERNAL_SERVER_ERROR;
-        }
-    }*/
-
 	return OK;
 }
 
@@ -811,11 +800,11 @@ mshield_register_hooks(apr_pool_t *p)
  */
 module AP_MODULE_DECLARE_DATA mshield_module =
 {
-	STANDARD20_MODULE_STUFF,	/* standard Apache 2.0 module stuff              */
+	STANDARD20_MODULE_STUFF,	    /* standard Apache 2.0 module stuff              */
 	mshield_create_dir_conf,		/* create per-directory configuration structures */
-	NULL,				/* merge per-directory                           */
+	NULL,				            /* merge per-directory                           */
 	mshield_create_server_conf,		/* create per-server configuration structures    */
-	NULL,				/* merge per-server                              */
-	mshield_cmds,			/* configuration directive handlers              */
-	mshield_register_hooks,		/* request handlers                              */
+	NULL,				            /* merge per-server                              */
+	mshield_cmds,			        /* configuration directive handlers              */
+	mshield_register_hooks,		    /* request handlers                              */
 };

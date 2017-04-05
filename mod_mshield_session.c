@@ -1,5 +1,3 @@
-/* $Id: mod_mshield_session.c 147 2010-05-30 20:28:01Z ibuetler $ */
-
 #include "mod_mshield.h"
 
 /*
@@ -12,8 +10,7 @@
  * On Linux, APR should be compiled to read from /dev/urandom by default.
  */
 static char *
-generate_session_id(request_rec *r)
-{
+generate_session_id(request_rec *r) {
 	apr_status_t rc;
 	unsigned char rnd[MOD_MSHIELD_SIDBYTES];
 	char *sid = apr_pcalloc(r->pool, apr_base64_encode_len(MOD_MSHIELD_SIDBYTES) + 1);
@@ -41,8 +38,7 @@ generate_session_id(request_rec *r)
  * Initialize session_t data structure with invalid session.
  */
 void
-mshield_session_init(session_t *session, request_rec *r, mod_mshield_server_t *config)
-{
+mshield_session_init(session_t *session, request_rec *r, mod_mshield_server_t *config) {
 	session->handle = INVALID_SESSION_HANDLE;
 	session->data = NULL;
 	session->request = r;
@@ -54,8 +50,7 @@ mshield_session_init(session_t *session, request_rec *r, mod_mshield_server_t *c
  * session slot.
  */
 int
-mshield_session_isnull(session_t *session)
-{
+mshield_session_isnull(session_t *session) {
 	return !session || !session->data || session->handle == INVALID_SESSION_HANDLE;
 }
 
@@ -64,16 +59,15 @@ mshield_session_isnull(session_t *session)
  * session is an initialized session_t.
  */
 apr_status_t
-mshield_session_find(session_t *session, const char *session_name, const char *session_id)
-{
+mshield_session_find(session_t *session, const char *session_name, const char *session_id) {
 	int i;
 
 	/* loop over all sessions */
 	for (i = 0; i < MOD_MSHIELD_SESSION_COUNT; i++) {
 		session_data_t *session_data = get_session_by_index(i); /* XXX iterator in SHM code */
 		if (session_data->slot_used &&
-		    !apr_strnatcmp(session_data->session_id, session_id) &&   /* id is more likely to mismatch */
-		    !apr_strnatcmp(session_data->session_name, session_name)) {
+			!apr_strnatcmp(session_data->session_id, session_id) &&   /* id is more likely to mismatch */
+			!apr_strnatcmp(session_data->session_name, session_name)) {
 			session->handle = i;
 			session->data = session_data;
 			return STATUS_OK;
@@ -87,8 +81,7 @@ mshield_session_find(session_t *session, const char *session_name, const char *s
  * session is an initialized session_t.
  */
 apr_status_t
-mshield_session_open(session_t *session, session_handle_t handle)
-{
+mshield_session_open(session_t *session, session_handle_t handle) {
 	session->data = get_session_by_index(handle);
 	if (!session->data->slot_used) {
 		session->data = NULL;
@@ -105,8 +98,7 @@ mshield_session_open(session_t *session, session_handle_t handle)
  * session is an initialized session_t.
  */
 apr_status_t
-mshield_session_create(session_t *session)
-{
+mshield_session_create(session_t *session) {
 	apr_status_t status;
 	char *sid = NULL;
 
@@ -128,8 +120,7 @@ mshield_session_create(session_t *session)
  * session is a valid session which gets invalidated.
  */
 void
-mshield_session_unlink(session_t *session)
-{
+mshield_session_unlink(session_t *session) {
 	if (mshield_session_isnull(session)) {
 		return;
 	}
@@ -146,17 +137,16 @@ mshield_session_unlink(session_t *session)
  * STATUS_ENOEXIST	session reached a timeout or is invalid
  */
 apr_status_t
-mshield_session_validate(session_t *session, int hard_timeout, int inactivity_timeout)
-{
+mshield_session_validate(session_t *session, int hard_timeout, int inactivity_timeout) {
 	if (mshield_session_isnull(session)) {
 		return STATUS_ENOEXIST;
 	}
-	
-/*GET*/	if (mshield_shm_timeout(session->data, hard_timeout, inactivity_timeout)) {
-/*UNLINK*/	mshield_session_unlink(session);
+
+/*GET*/    if (mshield_shm_timeout(session->data, hard_timeout, inactivity_timeout)) {
+/*UNLINK*/    mshield_session_unlink(session);
 		return STATUS_ENOEXIST;
 	} else {
-/*SET*/		session->data->atime = (int)apr_time_sec(apr_time_now());
+/*SET*/        session->data->atime = (int) apr_time_sec(apr_time_now());
 	}
 
 	return STATUS_OK;
@@ -168,8 +158,7 @@ mshield_session_validate(session_t *session, int hard_timeout, int inactivity_ti
  * Returns NULL if session is not a session.
  */
 const char *
-mshield_session_get_cookies(session_t *session)
-{
+mshield_session_get_cookies(session_t *session) {
 	if (mshield_session_isnull(session)) {
 		return NULL;
 	}
@@ -182,8 +171,7 @@ mshield_session_get_cookies(session_t *session)
  * Returns STATUS_ENOEXIST if session does not exist.
  */
 apr_status_t
-mshield_session_set_cookie(session_t *session, const char *key, const char *value, int locid)
-{
+mshield_session_set_cookie(session_t *session, const char *key, const char *value, int locid) {
 	if (mshield_session_isnull(session)) {
 		return STATUS_ENOEXIST;
 	}
@@ -198,8 +186,7 @@ mshield_session_set_cookie(session_t *session, const char *key, const char *valu
  * Returns STATUS_ENOEXIST if session does not exist.
  */
 apr_status_t
-mshield_session_renew(session_t *session)
-{
+mshield_session_renew(session_t *session) {
 	apr_status_t status;
 	session_data_t *old_data;
 
@@ -214,19 +201,20 @@ mshield_session_renew(session_t *session)
 		return status;
 	}
 
-	session->data->ctime                 = old_data->ctime;
-	session->data->atime                 = old_data->atime;
-	session->data->cookiestore_index     = old_data->cookiestore_index;
-	session->data->logon_state           = old_data->logon_state;
+	session->data->ctime = old_data->ctime;
+	session->data->atime = old_data->atime;
+	session->data->cookiestore_index = old_data->cookiestore_index;
+	session->data->logon_state = old_data->logon_state;
 	session->data->redirect_on_auth_flag = old_data->redirect_on_auth_flag;
-	session->data->auth_strength         = old_data->auth_strength;
+	session->data->auth_strength = old_data->auth_strength;
 	apr_cpystrn(session->data->url, old_data->url, sizeof(session->data->url));
 	apr_cpystrn(session->data->service_list, old_data->service_list, sizeof(session->data->service_list));
-	apr_cpystrn(session->data->redirect_url_after_login, old_data->redirect_url_after_login, sizeof(session->data->redirect_url_after_login));
+	apr_cpystrn(session->data->redirect_url_after_login, old_data->redirect_url_after_login,
+				sizeof(session->data->redirect_url_after_login));
 	apr_cpystrn(session->data->uuid, old_data->uuid, sizeof(old_data->uuid));
 
 	ap_log_error(PC_LOG_CRIT, NULL, "FRAUD === UUID         === [%s]", session->data->uuid);
-	old_data->cookiestore_index          = -1; /* moved to new session ctx */
+	old_data->cookiestore_index = -1; /* moved to new session ctx */
 
 	mshield_shm_free(old_data);
 	return STATUS_OK;
