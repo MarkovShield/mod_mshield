@@ -91,7 +91,6 @@ kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, c
 
     /* Fetch topic handle */
     rd_kafka_topic_t *rkt;
-    // ToDo Philip: Make this function usable to multiple Kafka topic not only kafka->rk_topic_analyse. -> DONE -> Test it!
     rkt = (rd_kafka_topic_t *) *rk_topic;
     if (rkt) {
         ERRLOG_REQ_INFO("Fetching topic handle: Got rkt from *rk_topic");
@@ -134,7 +133,6 @@ kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, c
     topic_conf = NULL;
 
     ERRLOG_REQ_INFO("Created Kafka topic: %s", topic);
-    // ToDo Philip: Make this function usable to multiple Kafka topic not only kafka->rk_topic_analyse. DONE -> Test it!
     *rk_topic = (const void *) rkt;
 
     return rkt;
@@ -156,8 +154,11 @@ void kafka_produce(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
             ERRLOG_REQ_CRIT("Kafka produce failed! Topic: %s", topic);
         }
 
-        /* Poll to handle delivery reports */
-        rd_kafka_poll(kafka->rk, 10);
+        /*
+         * Poll to handle delivery reports. Non-blocking
+         * See https://github.com/edenhill/librdkafka/blob/master/examples/rdkafka_simple_producer.c
+         */
+        rd_kafka_poll(kafka->rk, 0);
     } else {
         ERRLOG_REQ_CRIT("No such kafka topic: %s", topic);
     }
