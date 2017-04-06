@@ -247,15 +247,8 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
     if (!apr_strnatcmp(cookie_name, config->username_value)) {
         apr_cpystrn(cr->session->data->username, cookie_value, sizeof(cr->session->data->username));
         ERRLOG_CRIT("FRAUD-ENGINE: Received USERNAME [%s] for UUID [%s]", cr->session->data->username, cr->session->data->uuid);
-        //ToDo Philip: Publish this information to a Kafka topic.
-
-        json_value * arr = json_array_new(0);
-        json_array_push(arr, json_string_new(cr->session->data->uuid));
-        json_array_push(arr, json_string_new(cr->session->data->username));
-        char * buf = malloc(json_measure(arr));
-        json_serialize(buf, arr);
-
-        kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_usermapping, &config->kafka.rk_topic_usermapping, RD_KAFKA_PARTITION_UA, buf);
+        //ToDo Philip: Publish this information to a Kafka topic. -> DONE -> Test it!
+        kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_usermapping, &config->kafka.rk_topic_usermapping, RD_KAFKA_PARTITION_UA, "USERNAME: hacker, UUID: XYZ");
     }
 
 
