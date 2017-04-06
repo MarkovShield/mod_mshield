@@ -76,6 +76,7 @@
 #define MOD_MSHIELD_KAFKA_BROKER                "127.0.0.1:9092"                            /* set the kafka broker IP and port */
 #define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE         "mshield-analyse"                            /* set Kafka topic on which clicks are sent to the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT  "mshield-analyse-result"                    /* set Kafka topic to receive analysed results from the engine */
+#define MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING     "mshield-user-mapping"                      /* set Kafka topic on which the username <-> UUID mapping is sent to the engine */
 
 /********************************************************************
  * Compile time configuration
@@ -130,6 +131,8 @@ typedef struct {
     const char *rk_topic_analyse;                   /* topic_analyse handle */
     const char *topic_analyse_result;               /* Set the kafka topic on which analysed results from the engine comes back */
     const char *rk_topic_analyse_result;            /* topic_analyse_result handle */
+    const char *topic_usermapping;                  /* Set the kafka topic on which the username <-> UUID mapping is sent */
+    const char *rk_topic_usermapping;               /* topic_analyse_usermapping handle */
     const char *broker;                             /* Set the IP of the Kafka broker */
     rd_kafka_t *rk;                                 /* Kafka handle */
 } mod_mshield_kafka_t;

@@ -248,7 +248,7 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
         apr_cpystrn(cr->session->data->username, cookie_value, sizeof(cr->session->data->username));
         ERRLOG_CRIT("FRAUD-ENGINE: Received USERNAME [%s] for UUID [%s]", cr->session->data->username, cr->session->data->uuid);
         //ToDo Philip: Publish this information to a Kafka topic.
-
+        kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_usermapping, RD_KAFKA_PARTITION_UA, "USERNAME: hacker, UUID: XYZ");
     }
 
 
