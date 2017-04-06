@@ -71,7 +71,7 @@ static apr_status_t kafka_connect(apr_pool_t *p, request_rec *r, mod_mshield_kaf
  * Connect to a speficied Kafka topic and save its handle
  */
 static rd_kafka_topic_t *
-kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, const char *topic) {
+kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic) {
     if (!topic || strlen(topic) == 0) {
         ERRLOG_REQ_CRIT("No such Kafka topic");
         return NULL;
@@ -83,11 +83,18 @@ kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, c
             return NULL;
         }
     }
+
+    if (!rk_topic) {
+        ERRLOG_REQ_CRIT("No Kafka rk_topic provided");
+        return NULL;
+    }
+
     /* Fetch topic handle */
     rd_kafka_topic_t *rkt;
-    rkt = (rd_kafka_topic_t *) kafka->rk_topic_analyse;
+    // ToDo Philip: Make this function usable to multiple Kafka topic not only kafka->rk_topic_analyse. -> DONE -> Test it!
+    rkt = (rd_kafka_topic_t *) *rk_topic;
     if (rkt) {
-        ERRLOG_REQ_INFO("Fetching topic handle: Got rkt from kafka->rk_topic_analyse");
+        ERRLOG_REQ_INFO("Fetching topic handle: Got rkt from *rk_topic");
         return rkt;
     }
     /* Configuration topic */
@@ -127,8 +134,8 @@ kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, c
     topic_conf = NULL;
 
     ERRLOG_REQ_INFO("Created Kafka topic: %s", topic);
-
-    kafka->rk_topic_analyse = (const void *) rkt;
+    // ToDo Philip: Make this function usable to multiple Kafka topic not only kafka->rk_topic_analyse. DONE -> Test it!
+    *rk_topic = (const void *) rkt;
 
     return rkt;
 }
@@ -138,8 +145,8 @@ kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, c
  * Note: Set partition to RD_KAFKA_PARTITION_UA if none is provieded.
  */
 void kafka_produce(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
-                   const char *topic, int32_t partition, char *msg) {
-    rd_kafka_topic_t *rkt = kafka_topic_connect(p, r, kafka, topic);
+                   const char *topic, const char **rk_topic, int32_t partition, char *msg) {
+    rd_kafka_topic_t *rkt = kafka_topic_connect(p, r, kafka, topic, rk_topic);
     if (rkt) {
         ERRLOG_REQ_INFO("produce: (%s:%i) %s", topic, partition, msg);
 
@@ -147,9 +154,6 @@ void kafka_produce(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
         if (rd_kafka_produce(rkt, partition, RD_KAFKA_MSG_F_COPY,
                              msg, strlen(msg), NULL, 0, NULL) == -1) {
             ERRLOG_REQ_CRIT("Kafka produce failed! Topic: %s", topic);
-            /*ERRLOG_GENERAL_ERROR(p, "Failed to produce to topic %s partition %i: %s",
-                  rd_kafka_topic_name(rkt), partition,
-                  rd_kafka_err2str(rd_kafka_errno2err(errno)));*/
         }
 
         /* Poll to handle delivery reports */

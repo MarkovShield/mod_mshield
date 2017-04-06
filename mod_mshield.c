@@ -642,8 +642,8 @@ mshield_access_checker(request_rec *r)
 		}
 	}
 
-    // ToDo Philip: Extract login data from here and send it to Kafka
-    kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_analyse, RD_KAFKA_PARTITION_UA, "Test vom Modul");
+    // ToDo Philip: Extract login data from here and send it to Kafka. DONE -> Test it!
+    kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse, RD_KAFKA_PARTITION_UA, "Test vom Modul");
 
 
 	apr_global_mutex_unlock(mshield_mutex);

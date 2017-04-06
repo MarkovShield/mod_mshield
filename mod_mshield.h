@@ -200,7 +200,8 @@ typedef struct {
     int slot_used;
     char session_name[32];                          /* Name of session cookie */
     char session_id[
-            MOD_MSHIELD_SIDBYTES / 3 * 4 + 1];      /* Value of session cookie, MOD_MSHIELD_SIDBYTES random bytes, Base64 */
+            MOD_MSHIELD_SIDBYTES / 3 * 4 +
+            1];      /* Value of session cookie, MOD_MSHIELD_SIDBYTES random bytes, Base64 */
     char url[255];                                  /* Used to store URLs for client redirection */
     int ctime;
     int atime;
@@ -367,7 +368,7 @@ extern const command_rec mshield_cmds[];
  */
 apr_status_t kafka_cleanup(void *s);
 
-void kafka_produce(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, const char *topic, int32_t partition,
-                   char *msg);
+void kafka_produce(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic,
+                   int32_t partition, char *msg);
 
 #endif /* MOD_MSHIELD_H */
