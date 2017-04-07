@@ -33,7 +33,8 @@ extern "C"
 #define CJSON_VERSION_MINOR 4
 #define CJSON_VERSION_PATCH 5
 
-#include <stddef.h>
+#include "stddef.h"
+#include "math.h"
 
 /* cJSON Types: */
 #define cJSON_Invalid (0)

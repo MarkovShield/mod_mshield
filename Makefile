@@ -15,6 +15,8 @@
 # APXSFLAGS=-c -i -a -Wc,-O2 -Wc,-Wall,-DMOD_MSHIELD_SESSION_COUNT=10 -Wc,-DMOD_MSHIELD_COOKIESTORE_COUNT=30
 APXSFLAGS=-I /opt/applic/pcre-8.39/include -v -c -Wc,-O0 -Wc ,-Wall -Wc, -DMOD_MSHIELD_SESSION_COUNT=10 -Wc, -DMOD_MSHIELD_COOKIESTORE_COUNT=30 -Wc
 
+LIBS =-lrdkafka -lz -lpthread -lrt -lm
+
 SRC= \
 	mod_mshield.c \
 	mod_mshield_regexp.c \
@@ -33,7 +35,7 @@ all: mod_mshield
 
 mod_mshield: $(SRC)
 #	$(APXS) $(APXSFLAGS) $(SRC)
-	apxs $(APXSFLAGS) $(SRC)
+	apxs $(APXSFLAGS) $(SRC) $(LIBS)
 
 clean:
 	rm -rf *.la *.slo *.o *.lo .libs
