@@ -643,11 +643,16 @@ mshield_access_checker(request_rec *r)
 	}
 
     // ToDo Philip: Extract login data from here and send it to Kafka. DONE -> Test it!
+    cJSON *click_json;
+    click_json = cJSON_CreateObject();
+    cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(cr->session->data->uuid));
+    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(cr->r->unparsed_uri));
+    cJSON_AddItemToObject(click_json, "timestamp", cJSON_CreateNumber(cr->r->request_time));
+    cJSON_AddItemToObject(click_json, "uri", cJSON_CreateString(cr->r->uri));
 
+    kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse, RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
 
-
-    kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse, RD_KAFKA_PARTITION_UA, "Test vom Modul");
-
+    cJSON_Delete(click_json);
 
 	apr_global_mutex_unlock(mshield_mutex);
 
