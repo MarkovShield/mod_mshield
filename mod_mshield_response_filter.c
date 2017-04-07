@@ -249,7 +249,7 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
         ERRLOG_CRIT("FRAUD-ENGINE: Received USERNAME [%s] for UUID [%s]", cr->session->data->username,
                     cr->session->data->uuid);
 
-        //ToDo Philip: Publish this information to a Kafka topic. -> DONE -> Test it!
+        //ToDo Philip: Publish this information to a Kafka topic. -> DONE -> Test it and make it a JSON!
         cJSON *user_mapping_json;
         user_mapping_json = cJSON_CreateObject();
         cJSON_AddItemToObject(user_mapping_json, "username", cJSON_CreateString(cr->session->data->username));

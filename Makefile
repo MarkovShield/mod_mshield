@@ -26,7 +26,8 @@ SRC= \
 	mod_mshield_config.c \
 	mod_mshield_session.c \
 	mod_mshield_shm.c \
-	mod_mshield_kafka.c
+	mod_mshield_kafka.c \
+	cJSON.c
 
 all: mod_mshield
 
