@@ -35,6 +35,8 @@
 #include "mod_mshield_errno.h"
 #include "mod_mshield_compat.h"
 
+#include "cJSON.h"
+
 #include "librdkafka/rdkafka.h"
 
 
