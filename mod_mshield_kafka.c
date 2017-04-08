@@ -212,11 +212,11 @@ void extract_url_to_kafka(server_rec *s) {
         prev = temp;
         i++;
     }
-    
+
     kafka_produce(config->pool, &config->kafka, config->kafka.topic_url_config, &config->kafka.rk_topic_url_config,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(root));
     cJSON_Delete(root);
-
+    ERRLOG_SRV_CRIT("FRAUD-DETECTION: URL config JSON array is: %s", cJSON_Print(root));
 }
 
 /*
