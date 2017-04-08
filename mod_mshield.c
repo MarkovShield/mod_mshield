@@ -718,7 +718,6 @@ static int mshield_post_config(apr_pool_t *pconf, apr_pool_t *plog,
 	}
 #endif /* MOD_MSHIELD_SET_MUTEX_PERMS */
 
-	// ToDo Philip: Is that the right place to post url_store to Kafka? -> Check!
 	extract_url_to_kafka(s);
 
 	return OK;
@@ -809,8 +808,6 @@ mshield_register_hooks(apr_pool_t *p)
 	ap_hook_access_checker(mshield_access_checker, NULL, NULL, APR_HOOK_FIRST);
 
     ap_hook_child_init(kafka_child_init, NULL, NULL, APR_HOOK_MIDDLE);
-	// ToDo: Remove?
-	//ap_hook_check_config()
 
 #if 0
 	ap_register_input_filter("MOD_MSHIELD_IN", mod_mshield_input_filter, NULL, AP_FTYPE_CONTENT_SET);

@@ -186,7 +186,6 @@ void extract_url_to_kafka(server_rec *s) {
     mod_mshield_server_t *config;
     config = ap_get_module_config(s->module_config, &mshield_module);
 
-    // ToDo Philip: Iterate over config->url_store:
     cJSON *root = cJSON_CreateObject();
     apr_hash_index_t *hi;
     for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
