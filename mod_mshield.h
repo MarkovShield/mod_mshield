@@ -213,7 +213,7 @@ typedef struct {
     char service_list[100];
     int auth_strength;
     char redirect_url_after_login[255];
-    char *uuid;
+    char uuid[64];
     char username[64];                              /* Username of Backend Web App */
 } session_data_t;
 

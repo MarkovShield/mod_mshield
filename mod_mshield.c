@@ -229,7 +229,7 @@ mshield_access_checker(request_rec *r)
 	 * First of all, set the unknown user a new UUID
 	 */
 	 // ToDo Philip: Fix this condition because a array address will always return true!
-    if (!session.data->uuid) {
+    if (strncmp(session.data->uuid, "", strlen(session.data->uuid))) {
         strncpy(session.data->uuid, generate_uuid(&session), sizeof(session.data->uuid)-1);
         // ToDo Philip: Fix this condition because a array address will always return true!
 /*        if (!session.data->uuid) {
@@ -238,6 +238,16 @@ mshield_access_checker(request_rec *r)
         }*/
         ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new UUID [%s]", session.data->uuid);
     }
+
+    cJSON *click_json;
+    click_json = cJSON_CreateObject();
+    cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(session.data->uuid));
+    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(r->unparsed_uri));
+    cJSON_AddItemToObject(click_json, "timestamp", cJSON_CreateNumber(r->request_time));
+
+    kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse, RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
+
+    cJSON_Delete(click_json);
 
 	/****************************** PART 1 *******************************************************
 	 * Handle special URLs which do not require a session.
@@ -250,6 +260,7 @@ mshield_access_checker(request_rec *r)
 	case STATUS_MATCH:
 		ERRLOG_INFO("Renew URL found [%s]", r->uri);
         /*CREATE*/
+        // ToDo Philip: Can a array be used here? -> Check
 		switch (mshield_session_create(&session, session.data->uuid)) {
 		case STATUS_OK:
 			/* session renewed, set cookie and redirect */
@@ -304,21 +315,6 @@ mshield_access_checker(request_rec *r)
 	}
 
 
-    /****************************** PART X *******************************************************
-     * Send click information to Kafka
-     */
-
-    cJSON *click_json;
-    click_json = cJSON_CreateObject();
-    cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(session.data->uuid));
-    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(r->unparsed_uri));
-    cJSON_AddItemToObject(click_json, "timestamp", cJSON_CreateNumber(r->request_time));
-
-    kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse, RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
-
-    cJSON_Delete(click_json);
-
-
 	/****************************** PART 2 *******************************************************
 	 * Check of the mod_mshield session
 	 *	a) mod_mshield session is not sent by client
@@ -367,6 +363,7 @@ mshield_access_checker(request_rec *r)
 	if (!cr->sessionid) {
 		ERRLOG_INFO("Client did not send mod_mshield session");
         /*CREATE*/
+        // ToDo Philip: Can a array be used here? -> Check
     	switch (mshield_session_create(&session, session.data->uuid)) {
 		case STATUS_OK:
 			/* session created, set cookie and redirect */
