@@ -199,7 +199,6 @@ mshield_access_checker(request_rec *r)
 	session_t session;
 	cookie_res *cr;
 	apr_status_t status;
-    char *uuid;
 
 	config = ap_get_module_config(r->server->module_config, &mshield_module);
 	if (!config) {
@@ -229,12 +228,15 @@ mshield_access_checker(request_rec *r)
     /****************************** PART 0 *******************************************************
 	 * First of all, set the unknown user a new UUID
 	 */
-    if (!uuid) {
-        uuid = generate_uuid(&session);
-        if (!uuid) {
+	 // ToDo Philip: Fix this condition because a array address will always return true!
+    if (!session.data->uuid) {
+        strncpy(session.data->uuid, generate_uuid(&session), sizeof(session.data->uuid)-1);
+        // ToDo Philip: Fix this condition because a array address will always return true!
+/*        if (!session.data->uuid) {
+            ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated UUID [%s] couldn't be saved to session.data", uuid);
             return STATUS_ERROR;
-        }
-        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new UUID [%s]", uuid);
+        }*/
+        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new UUID [%s]", session.data->uuid);
     }
 
 	/****************************** PART 1 *******************************************************
@@ -248,7 +250,8 @@ mshield_access_checker(request_rec *r)
 	case STATUS_MATCH:
 		ERRLOG_INFO("Renew URL found [%s]", r->uri);
         /*CREATE*/
-		switch (mshield_session_create(&session, uuid)) {
+        // ToDo Philip: Can a array be used here? -> Check
+		switch (mshield_session_create(&session, session.data->uuid)) {
 		case STATUS_OK:
 			/* session renewed, set cookie and redirect */
 			if (mshield_add_session_cookie_to_headers(r, config, r->err_headers_out, &session) != STATUS_OK) {
@@ -350,7 +353,8 @@ mshield_access_checker(request_rec *r)
 	if (!cr->sessionid) {
 		ERRLOG_INFO("Client did not send mod_mshield session");
         /*CREATE*/
-    	switch (mshield_session_create(&session, uuid)) {
+        // ToDo Philip: Can a array be used here? -> Check
+    	switch (mshield_session_create(&session, session.data->uuid)) {
 		case STATUS_OK:
 			/* session created, set cookie and redirect */
 			if (mshield_add_session_cookie_to_headers(r, config, r->err_headers_out, &session) != STATUS_OK) {
@@ -645,10 +649,9 @@ mshield_access_checker(request_rec *r)
     // ToDo Philip: Extract login data from here and send it to Kafka. DONE -> Test it!
     cJSON *click_json;
     click_json = cJSON_CreateObject();
-    cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(cr->session->data->uuid));
-    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(cr->r->unparsed_uri));
-    cJSON_AddItemToObject(click_json, "timestamp", cJSON_CreateNumber((double)cr->r->request_time));
-    cJSON_AddItemToObject(click_json, "uri", cJSON_CreateString(cr->r->uri));
+    cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(session.data->uuid));
+    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(r->unparsed_uri));
+    cJSON_AddItemToObject(click_json, "timestamp", cJSON_CreateNumber(r->request_time));
 
     kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse, RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
 
