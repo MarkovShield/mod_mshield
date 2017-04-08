@@ -369,6 +369,15 @@ mshield_config_kafka_topic_usermapping(cmd_parms *cmd, void *dummy, const char *
 }
 
 const char *
+mshield_config_kafka_topic_url_config(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg && conf->fraud_detection_enabled) {
+        conf->kafka.topic_url_config = arg;
+    }
+    return OK;
+}
+
+const char *
 mshield_config_urls(cmd_parms *cmd, void *dummy, const char *arg1, const char *arg2) {
     mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
     if (arg1 && arg2 && conf->fraud_detection_enabled) {
@@ -419,6 +428,7 @@ const command_rec mshield_cmds[] =
 	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_ANALYSE",            mshield_config_kafka_topic_analyse,             NULL, RSRC_CONF, "Set Kafka topic on which clicks are sent to the engine"),
 	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT",     mshield_config_kafka_topic_analyse_result,      NULL, RSRC_CONF, "Set Kafka topic to receive analysed results from the engine"),
     AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING",        mshield_config_kafka_topic_usermapping,         NULL, RSRC_CONF, "Set Kafka topic on which the UUID <-> username mapping is sent"),
+    AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG",         mshield_config_kafka_topic_url_config,          NULL, RSRC_CONF, "Set Kafka topic on which the url <-> risk config is sent"),
     AP_INIT_ITERATE2("MOD_MSHIELD_URL",                         mshield_config_urls,                            NULL, RSRC_CONF, "Web application url with its criticality level"),
 	/* per directory/location configuration */
 	AP_INIT_TAKE1("MOD_MSHIELD_LOGON_SERVER_URL", ap_set_string_slot, (void*)APR_OFFSETOF(mod_mshield_dir_t, logon_server_url),          OR_ALL, "Logon server relative URL for this directory"),
