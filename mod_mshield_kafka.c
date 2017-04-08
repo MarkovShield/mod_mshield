@@ -186,14 +186,36 @@ void extract_url_to_kafka(server_rec *s) {
     mod_mshield_server_t *config;
     config = ap_get_module_config(s->module_config, &mshield_module);
 
-    cJSON *click_json;
-    click_json = cJSON_CreateObject();
     // ToDo Philip: Iterate over config->url_store:
-    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString("/test/url"));
-    cJSON_AddItemToObject(click_json, "risk_level", cJSON_CreateNumber(1));
+    int i = 0;
+    cJSON *prev;
+    cJSON *root = cJSON_CreateArray();
+
+    apr_hash_index_t *hi;
+    for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
+        const char *key;
+        const char *value;
+
+        apr_hash_this(hi, (const void**)&key, NULL, (void**)&value);
+
+        cJSON *temp;
+
+        cJSON_AddItemToObject(temp, "url", cJSON_CreateString(key));
+        cJSON_AddItemToObject(temp, "risk_level", cJSON_CreateNumber(atoi(value)));
+
+        if (!i) {
+            root->child = temp;
+        } else {
+            prev->next = temp;
+            temp->prev = prev;
+        }
+        prev = temp;
+        i++;
+    }
+    
     kafka_produce(config->pool, &config->kafka, config->kafka.topic_url_config, &config->kafka.rk_topic_url_config,
-                  RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
-    cJSON_Delete(click_json);
+                  RD_KAFKA_PARTITION_UA, cJSON_Print(root));
+    cJSON_Delete(root);
 
 }
 
