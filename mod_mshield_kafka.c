@@ -162,7 +162,7 @@ void kafka_produce(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
 }
 
 /*
- * Use this function to extract some request information and send it to kafka topic
+ * Use this function to extract some request information and send it to kafka
  */
 void extract_click_to_kafka(request_rec *r, char *uuid) {
 
@@ -176,6 +176,25 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     cJSON_AddItemToObject(click_json, "timestamp", cJSON_CreateNumber(r->request_time));
     kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
+    cJSON_Delete(click_json);
+}
+
+/*
+ * Use this function to extract the url configurations and send it to kafka
+ */
+void extract_url_to_kafka(server_rec *s, apr_hash_t *urls) {
+
+    mod_mshield_server_t *config;
+    config = ap_get_module_config(s->module_config, &mshield_module);
+
+    cJSON *click_json;
+    click_json = cJSON_CreateObject();
+    // ToDo Philip: Iterate over urls:
+    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString("/test/url"));
+    cJSON_AddItemToObject(click_json, "risk_level", cJSON_CreateNumber(1));
+    // ToDo Philip: Change to server_rec
+    //kafka_produce(config->pool, r, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
+    //              RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
     cJSON_Delete(click_json);
 }
 

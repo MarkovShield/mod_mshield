@@ -63,6 +63,7 @@ MOD_MSHIELD_KAFKA_BROKER                    127.0.0.1:9092
 MOD_MSHIELD_KAFKA_TOPIC_ANALYSE             mshield-analyse
 MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT      mshield-analyse-result
 MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING         mshield-user-mapping
+MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG          mshield-url-config
 
 # Place your URL ratings in the following config file:
 Include conf/extra/mod_mshield_url_rating.conf

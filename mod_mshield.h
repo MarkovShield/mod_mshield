@@ -79,6 +79,7 @@
 #define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE         "mshield-analyse"                            /* set Kafka topic on which clicks are sent to the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT  "mshield-analyse-result"                    /* set Kafka topic to receive analysed results from the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING     "mshield-user-mapping"                      /* set Kafka topic on which the username <-> UUID mapping is sent to the engine */
+#define MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG      "mshield-url-config"                        /* set Kafka topic on which the url <-> risk_level configuration is sent to the engine */
 
 /********************************************************************
  * Compile time configuration
@@ -135,6 +136,8 @@ typedef struct {
     const char *rk_topic_analyse_result;            /* topic_analyse_result handle */
     const char *topic_usermapping;                  /* Set the kafka topic on which the username <-> UUID mapping is sent */
     const char *rk_topic_usermapping;               /* topic_analyse_usermapping handle */
+    const char *topic_url_config;                   /* Set the kafka topic on which the url <-> risk_level configuration is sent */
+    const char *rk_topic_url_config;                /* topic_url_config handle */
     const char *broker;                             /* Set the IP of the Kafka broker */
     rd_kafka_t *rk;                                 /* Kafka handle */
 } mod_mshield_kafka_t;
@@ -370,6 +373,7 @@ extern const command_rec mshield_cmds[];
  */
 apr_status_t kafka_cleanup(void *s);
 void extract_click_to_kafka(request_rec *r, char *uuid);
+void extract_url_to_kafka(server_rec *s, apr_hash_t *urls);
 void kafka_produce(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic,
                    int32_t partition, char *msg);
 

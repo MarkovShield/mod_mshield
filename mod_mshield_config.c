@@ -320,7 +320,12 @@ mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg) {
         conf->kafka.topic_analyse = MOD_MSHIELD_KAFKA_TOPIC_ANALYSE;
         conf->kafka.topic_analyse_result = MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT;
         conf->kafka.topic_usermapping = MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING;
+        conf->kafka.topic_url_config = MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG;
         conf->kafka.rk = NULL;
+        conf->kafka.rk_topic_analyse = NULL;
+        conf->kafka.rk_topic_analyse_result = NULL;
+        conf->kafka.rk_topic_usermapping = NULL;
+        conf->kafka.rk_topic_url_config = NULL;
         conf->kafka.conf.global = apr_hash_make(cmd->pool);
         conf->kafka.conf.topic = apr_hash_make(cmd->pool);
     }

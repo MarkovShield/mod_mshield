@@ -718,6 +718,9 @@ static int mshield_post_config(apr_pool_t *pconf, apr_pool_t *plog,
 	}
 #endif /* MOD_MSHIELD_SET_MUTEX_PERMS */
 
+    // ToDo Philip: Is that the right place to post url_store to Kafka? -> Check!
+    // extract_url_to_kafka(s, s->);
+
 	return OK;
 }
 
