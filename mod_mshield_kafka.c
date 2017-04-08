@@ -91,7 +91,6 @@ kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, c
 
     /* Fetch topic handle */
     rd_kafka_topic_t *rkt;
-    // ToDo Philip: Make this function usable to multiple Kafka topic not only kafka->rk_topic_analyse. -> DONE -> Test it!
     rkt = (rd_kafka_topic_t *) *rk_topic;
     if (rkt) {
         ERRLOG_REQ_INFO("Fetching topic handle: Got rkt from *rk_topic");
@@ -134,7 +133,6 @@ kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, c
     topic_conf = NULL;
 
     ERRLOG_REQ_INFO("Created Kafka topic: %s", topic);
-    // ToDo Philip: Make this function usable to multiple Kafka topic not only kafka->rk_topic_analyse. DONE -> Test it!
     *rk_topic = (const void *) rkt;
 
     return rkt;
@@ -161,6 +159,24 @@ void kafka_produce(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
     } else {
         ERRLOG_REQ_CRIT("No such kafka topic: %s", topic);
     }
+}
+
+/*
+ * Use this function to extract some request information and send it to kafka topic
+ */
+void extract_click_to_kafka(request_rec *r, char *uuid) {
+
+    mod_mshield_server_t *config;
+    config = ap_get_module_config(r->server->module_config, &mshield_module);
+
+    cJSON *click_json;
+    click_json = cJSON_CreateObject();
+    cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(uuid));
+    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(r->unparsed_uri));
+    cJSON_AddItemToObject(click_json, "timestamp", cJSON_CreateNumber(r->request_time));
+    kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
+                  RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
+    cJSON_Delete(click_json);
 }
 
 /*

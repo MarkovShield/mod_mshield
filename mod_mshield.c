@@ -289,6 +289,8 @@ mshield_access_checker(request_rec *r)
 	case STATUS_MATCH:
 		apr_global_mutex_unlock(mshield_mutex);
 		ERRLOG_INFO("Session free URL [%s]", r->uri);
+        /* We also need to extract information about requests on free urls.. */
+        extract_click_to_kafka(r, uuid);
 		return DECLINED;
 
 	case STATUS_NOMATCH:
@@ -302,19 +304,11 @@ mshield_access_checker(request_rec *r)
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 
-    /****************************** PART X *******************************************************
+    /****************************** PART 1.5 *******************************************************
      * Extract click data to kafka
      */
 
-    cJSON *click_json;
-    click_json = cJSON_CreateObject();
-    cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(uuid));
-    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(r->unparsed_uri));
-    cJSON_AddItemToObject(click_json, "timestamp", cJSON_CreateNumber(r->request_time));
-
-    kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse, RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
-
-    cJSON_Delete(click_json);
+    extract_click_to_kafka(r, uuid);
 
     /****************************** PART 2 *******************************************************
      * Check of the mod_mshield session
