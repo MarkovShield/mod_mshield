@@ -248,12 +248,16 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
         apr_cpystrn(cr->session->data->username, cookie_value, sizeof(cr->session->data->username));
         ERRLOG_CRIT("FRAUD-ENGINE: Received USERNAME [%s] for UUID [%s]", cr->session->data->username,
                     cr->session->data->uuid);
+
+        //ToDo Philip: Publish this information to a Kafka topic. -> DONE -> Test it and make it a JSON!
         cJSON *user_mapping_json;
         user_mapping_json = cJSON_CreateObject();
-        cJSON_AddItemToObject(user_mapping_json, "uuid", cJSON_CreateString(cr->session->data->uuid));
         cJSON_AddItemToObject(user_mapping_json, "username", cJSON_CreateString(cr->session->data->username));
+        cJSON_AddItemToObject(user_mapping_json, "uuid", cJSON_CreateString(cr->session->data->uuid));
+        ERRLOG_CRIT("FRAUD-ENGINE: Sent JSON user mapping object is: [%s]", cJSON_Print(user_mapping_json));
         kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_usermapping, &config->kafka.rk_topic_usermapping,
                       RD_KAFKA_PARTITION_UA, cJSON_Print(user_mapping_json));
+
         cJSON_Delete(user_mapping_json);
     }
 

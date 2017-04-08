@@ -226,7 +226,7 @@ mshield_access_checker(request_rec *r)
 	ERRLOG_INFO("Request %s", r->uri);
 
     /****************************** PART 0 *******************************************************
-	 * First of all, set the unknown user a new UUID and send click information to Kafka
+	 * First of all, set the unknown user a new UUID
 	 */
 	 // ToDo Philip: Fix this condition because a array address will always return true!
     if (!session.data->uuid) {
@@ -237,8 +237,6 @@ mshield_access_checker(request_rec *r)
             return STATUS_ERROR;
         }*/
         ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new UUID [%s]", session.data->uuid);
-    } else {
-        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: UUID was [%s]", session.data->uuid);
     }
 
 	/****************************** PART 1 *******************************************************
@@ -660,6 +658,17 @@ mshield_access_checker(request_rec *r)
 			apr_table_set(r->headers_in, "Cookie", cookie);
 		}
 	}
+
+    // ToDo Philip: Extract login data from here and send it to Kafka. DONE -> Test it!
+    cJSON *click_json;
+    click_json = cJSON_CreateObject();
+    cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(session.data->uuid));
+    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(r->unparsed_uri));
+    cJSON_AddItemToObject(click_json, "timestamp", cJSON_CreateNumber(r->request_time));
+
+    kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse, RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
+
+    cJSON_Delete(click_json);
 
 	apr_global_mutex_unlock(mshield_mutex);
 

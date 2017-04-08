@@ -15,7 +15,6 @@ APXS=/opt/applic/httpd/bin/apxs
 # APXSFLAGS=-c -i -a -Wc,-O2 -Wc,-Wall,-DMOD_MSHIELD_SESSION_COUNT=10 -Wc,-DMOD_MSHIELD_COOKIESTORE_COUNT=30
 APXSFLAGS=-I /opt/applic/pcre-8.39/include -v -c -i -a -Wc,-O0 -Wc ,-Wall -Wc, -DMOD_MSHIELD_SESSION_COUNT=10 -Wc, -DMOD_MSHIELD_COOKIESTORE_COUNT=30 -Wc
 
-# Remove -lrt if compiling under macOS
 LIBS =-lrdkafka -lz -lpthread -lrt -lm
 
 SRC= \
