@@ -3,7 +3,7 @@
 /*
  * Connect to Kafka broker
  */
-static apr_status_t kafka_connect(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka) {
+static apr_status_t kafka_connect(apr_pool_t *p, mod_mshield_kafka_t *kafka) {
     const char *brokers = kafka->broker;
 
     if (!brokers || strlen(brokers) == 0) {
@@ -13,7 +13,7 @@ static apr_status_t kafka_connect(apr_pool_t *p, request_rec *r, mod_mshield_kaf
     /* Configuration */
     rd_kafka_conf_t *conf = rd_kafka_conf_new();
     if (!conf) {
-        ERRLOG_REQ_CRIT("Init Kafka conf failed");
+        ap_log_error(PC_LOG_CRIT, NULL, "Init Kafka conf failed");
         return APR_EINIT;
     }
 
@@ -29,11 +29,11 @@ static apr_status_t kafka_connect(apr_pool_t *p, request_rec *r, mod_mshield_kaf
         void *value = NULL;
         apr_hash_this(hash, &property, NULL, &value);
         if (value) {
-            ERRLOG_REQ_INFO("global configration: %s = %s", (char *) property, (char *) value);
+            ap_log_error(PC_LOG_INFO, NULL, "global configration: %s = %s", (char *) property, (char *) value);
 
             if (rd_kafka_conf_set(conf, (char *) property, (char *) value,
                                   tmp, sizeof(tmp)) != RD_KAFKA_CONF_OK) {
-                ERRLOG_REQ_INFO("Kafka config: %s", tmp);
+                ap_log_error(PC_LOG_INFO, NULL, "Kafka config: %s", tmp);
                 rd_kafka_conf_destroy(conf);
                 return APR_EINIT;
             }
@@ -44,25 +44,24 @@ static apr_status_t kafka_connect(apr_pool_t *p, request_rec *r, mod_mshield_kaf
     /* Create producer handle */
     kafka->rk = rd_kafka_new(RD_KAFKA_PRODUCER, conf, NULL, 0);
     if (!kafka->rk) {
-        ERRLOG_REQ_CRIT("Kafka producer init failed");
+        ap_log_error(PC_LOG_CRIT, NULL, "Kafka producer init failed");
         rd_kafka_conf_destroy(conf);
         return APR_EINIT;
     }
-    conf = NULL;
 
-    ERRLOG_REQ_INFO("Created Kafka producer");
+    ap_log_error(PC_LOG_CRIT, NULL, "Created Kafka producer");
 
     rd_kafka_set_log_level(kafka->rk, 0);
 
     /* Add brokers */
     if (rd_kafka_brokers_add(kafka->rk, brokers) == 0) {
-        ERRLOG_REQ_CRIT("Add Kafka brokers: %s", brokers);
+        ap_log_error(PC_LOG_CRIT, NULL, "Add Kafka brokers: %s", brokers);
         rd_kafka_destroy(kafka->rk);
         kafka->rk = NULL;
         return APR_EINIT;
     }
 
-    ERRLOG_REQ_INFO("Add Kafka brokers: %s", brokers);
+    ap_log_error(PC_LOG_INFO, NULL, "Add Kafka brokers: %s", brokers);
 
     return APR_SUCCESS;
 }
@@ -71,21 +70,21 @@ static apr_status_t kafka_connect(apr_pool_t *p, request_rec *r, mod_mshield_kaf
  * Connect to a speficied Kafka topic and save its handle
  */
 static rd_kafka_topic_t *
-kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic) {
+kafka_topic_connect(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic) {
     if (!topic || strlen(topic) == 0) {
-        ERRLOG_REQ_CRIT("No such Kafka topic");
+        ap_log_error(PC_LOG_CRIT, NULL, "No such Kafka topic");
         return NULL;
     }
 
     if (!kafka->rk) {
-        if (kafka_connect(p, r, kafka) != APR_SUCCESS) {
-            ERRLOG_REQ_CRIT("kafka_connect() call was NOT successful.");
+        if (kafka_connect(p, kafka) != APR_SUCCESS) {
+            ap_log_error(PC_LOG_CRIT, NULL, "kafka_connect() call was NOT successful.");
             return NULL;
         }
     }
 
     if (!rk_topic) {
-        ERRLOG_REQ_CRIT("No Kafka rk_topic provided");
+        ap_log_error(PC_LOG_CRIT, NULL, "No Kafka rk_topic provided");
         return NULL;
     }
 
@@ -93,13 +92,13 @@ kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, c
     rd_kafka_topic_t *rkt;
     rkt = (rd_kafka_topic_t *) *rk_topic;
     if (rkt) {
-        ERRLOG_REQ_INFO("Fetching topic handle: Got rkt from *rk_topic");
+        ap_log_error(PC_LOG_CRIT, NULL, "Fetching topic handle: Got rkt from *rk_topic");
         return rkt;
     }
     /* Configuration topic */
     rd_kafka_topic_conf_t *topic_conf = rd_kafka_topic_conf_new();
     if (!topic_conf) {
-        ERRLOG_REQ_CRIT("Init Kafka topic conf failed");
+        ap_log_error(PC_LOG_CRIT, NULL, "Init Kafka topic conf failed");
         return NULL;
     }
 
@@ -111,11 +110,11 @@ kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, c
         apr_hash_this(hash, &property, NULL, &value);
         if (value) {
             char err[512];
-            ERRLOG_REQ_INFO("topic configration: %s = %s", (char *) property, (char *) value);
+            ap_log_error(PC_LOG_INFO, NULL, "topic configration: %s = %s", (char *) property, (char *) value);
 
             if (rd_kafka_topic_conf_set(topic_conf, (char *) property, (char *) value,
                                         err, sizeof(err)) != RD_KAFKA_CONF_OK) {
-                ERRLOG_REQ_CRIT("Kafka topic config: %s", err);
+                ap_log_error(PC_LOG_CRIT, NULL, "Kafka topic config: %s", err);
                 rd_kafka_topic_conf_destroy(topic_conf);
                 return NULL;
             }
@@ -126,13 +125,12 @@ kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, c
     /* Create topic handle */
     rkt = rd_kafka_topic_new(kafka->rk, topic, topic_conf);
     if (!rkt) {
-        ERRLOG_REQ_CRIT("Kafka topic handle creation failed!");
+        ap_log_error(PC_LOG_CRIT, NULL, "Kafka topic handle creation failed!");
         rd_kafka_topic_conf_destroy(topic_conf);
         return NULL;
     }
-    topic_conf = NULL;
 
-    ERRLOG_REQ_INFO("Created Kafka topic: %s", topic);
+    ap_log_error(PC_LOG_INFO, NULL, "Created Kafka topic: %s", topic);
     *rk_topic = (const void *) rkt;
 
     return rkt;
@@ -140,24 +138,24 @@ kafka_topic_connect(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka, c
 
 /*
  * Send something to a specified topic. Partition is supported.
- * Note: Set partition to RD_KAFKA_PARTITION_UA if none is provieded.
+ * Note: Set partition to RD_KAFKA_PARTITION_UA if none is provided.
  */
-void kafka_produce(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
+void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
                    const char *topic, const char **rk_topic, int32_t partition, char *msg) {
-    rd_kafka_topic_t *rkt = kafka_topic_connect(p, r, kafka, topic, rk_topic);
+    rd_kafka_topic_t *rkt = kafka_topic_connect(p, kafka, topic, rk_topic);
     if (rkt) {
-        ERRLOG_REQ_INFO("produce: (%s:%i) %s", topic, partition, msg);
+        ap_log_error(PC_LOG_INFO, NULL, "produce: (%s:%i) %s", topic, partition, msg);
 
         /* Produce send */
         if (rd_kafka_produce(rkt, partition, RD_KAFKA_MSG_F_COPY,
                              msg, strlen(msg), NULL, 0, NULL) == -1) {
-            ERRLOG_REQ_CRIT("Kafka produce failed! Topic: %s", topic);
+            ap_log_error(PC_LOG_CRIT, NULL, "Kafka produce failed! Topic: %s", topic);
         }
 
         /* Poll to handle delivery reports */
         rd_kafka_poll(kafka->rk, 10);
     } else {
-        ERRLOG_REQ_CRIT("No such kafka topic: %s", topic);
+        ap_log_error(PC_LOG_CRIT, NULL, "No such kafka topic: %s", topic);
     }
 }
 
@@ -174,7 +172,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(uuid));
     cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(r->unparsed_uri));
     cJSON_AddItemToObject(click_json, "timestamp", cJSON_CreateNumber(r->request_time));
-    kafka_produce(r->pool, r, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
+    kafka_produce(r->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
     cJSON_Delete(click_json);
 }
@@ -182,19 +180,18 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
 /*
  * Use this function to extract the url configurations and send it to kafka
  */
-void extract_url_to_kafka(server_rec *s, apr_hash_t *urls) {
+void extract_url_to_kafka(server_rec *s) {
 
     mod_mshield_server_t *config;
     config = ap_get_module_config(s->module_config, &mshield_module);
 
     cJSON *click_json;
     click_json = cJSON_CreateObject();
-    // ToDo Philip: Iterate over urls:
+    // ToDo Philip: Iterate over config->url_store:
     cJSON_AddItemToObject(click_json, "url", cJSON_CreateString("/test/url"));
     cJSON_AddItemToObject(click_json, "risk_level", cJSON_CreateNumber(1));
-    // ToDo Philip: Change to server_rec
-    //kafka_produce(config->pool, r, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
-    //              RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
+    kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
+                  RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
     cJSON_Delete(click_json);
 }
 
