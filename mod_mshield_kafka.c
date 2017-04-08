@@ -175,6 +175,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     kafka_produce(r->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
     cJSON_Delete(click_json);
+    
 }
 
 /*
@@ -190,9 +191,10 @@ void extract_url_to_kafka(server_rec *s) {
     // ToDo Philip: Iterate over config->url_store:
     cJSON_AddItemToObject(click_json, "url", cJSON_CreateString("/test/url"));
     cJSON_AddItemToObject(click_json, "risk_level", cJSON_CreateNumber(1));
-    kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
+    kafka_produce(config->pool, &config->kafka, config->kafka.topic_url_config, &config->kafka.rk_topic_url_config,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
     cJSON_Delete(click_json);
+
 }
 
 /*
