@@ -129,8 +129,7 @@ create_new_shm_session(request_rec *r, const char *sid, const char *uuid, int *s
             apr_cpystrn(session_data->session_id, sid, sizeof(session_data->session_id));
             // ToDo Philip: Username nicht von config holen sondern vom loginserver cookie.
             //apr_cpystrn(session_data->username, config->username_value, sizeof(session_data->username));
-            // ToDo Philip: Is this uuid copy useless? -> Check
-            //apr_cpystrn(session_data->uuid, uuid, sizeof(session_data->uuid));
+            apr_cpystrn(session_data->uuid, uuid, sizeof(session_data->uuid));
             /* Store r->unparsed_uri to prevent HTTP Response Splitting attacks;
              * strip __cookie_try in case the user has a bookmark containing
              * a __cookie_try argument - otherwise we get a redirection loop */

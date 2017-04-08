@@ -200,14 +200,16 @@ typedef struct {
 /* session data */
 typedef struct {
     int slot_used;
-    char session_name[32];                                  /* Name of session cookie */
-    char session_id[MOD_MSHIELD_SIDBYTES / 3 * 4 + 1];      /* Value of session cookie, MOD_MSHIELD_SIDBYTES random bytes, Base64 */
-    char url[255];                                          /* Used to store URLs for client redirection */
+    char session_name[32];                          /* Name of session cookie */
+    char session_id[
+            MOD_MSHIELD_SIDBYTES / 3 * 4 +
+            1];      /* Value of session cookie, MOD_MSHIELD_SIDBYTES random bytes, Base64 */
+    char url[255];                                  /* Used to store URLs for client redirection */
     int ctime;
     int atime;
-    int cookiestore_index;                                  /* index of first cookie in cookie store; -1 if none */
-    int logon_state;                                        /* 0 = not logged in, 1 = logged in */
-    int redirect_on_auth_flag;                              /* Redirect client to orig_url on first authenticated request to protected URL */
+    int cookiestore_index;                          /* index of first cookie in cookie store; -1 if none */
+    int logon_state;                                /* 0 = not logged in, 1 = logged in */
+    int redirect_on_auth_flag;                      /* Redirect client to orig_url on first authenticated request to protected URL */
     char service_list[100];
     int auth_strength;
     char redirect_url_after_login[255];
