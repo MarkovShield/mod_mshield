@@ -188,7 +188,7 @@ apr_status_t kafka_cleanup(void *arg) {
     config = ap_get_module_config(s->module_config, &mshield_module);
 
     apr_pool_t *p = config->pool;
-    if (!config) {
+    if (!p) {
         return APR_SUCCESS;
     }
 

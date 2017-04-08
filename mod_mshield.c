@@ -289,8 +289,8 @@ mshield_access_checker(request_rec *r)
 	case STATUS_MATCH:
 		apr_global_mutex_unlock(mshield_mutex);
 		ERRLOG_INFO("Session free URL [%s]", r->uri);
-        /* We also need to extract information about requests on free urls.. */
-        extract_click_to_kafka(r, uuid);
+        /* Uncomment if you want information about requests on free urls.. */
+        //extract_click_to_kafka(r, uuid);
 		return DECLINED;
 
 	case STATUS_NOMATCH:
