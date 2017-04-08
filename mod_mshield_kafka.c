@@ -175,7 +175,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     kafka_produce(r->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
     cJSON_Delete(click_json);
-    
+
 }
 
 /*
@@ -187,36 +187,23 @@ void extract_url_to_kafka(server_rec *s) {
     config = ap_get_module_config(s->module_config, &mshield_module);
 
     // ToDo Philip: Iterate over config->url_store:
-    int i = 0;
-    cJSON *prev;
-    cJSON *root = cJSON_CreateArray();
-
+    cJSON *root = cJSON_CreateObject();
     apr_hash_index_t *hi;
     for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
         const char *key;
         const char *value;
 
         apr_hash_this(hi, (const void**)&key, NULL, (void**)&value);
-
+        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-DETECTION: URL config. KEY: %s VALUE: %s", key, value);
         cJSON *temp;
-
+        cJSON_AddItemToObject(root, "url_entry", temp = cJSON_CreateObject());
         cJSON_AddItemToObject(temp, "url", cJSON_CreateString(key));
         cJSON_AddItemToObject(temp, "risk_level", cJSON_CreateNumber(atoi(value)));
-
-        if (!i) {
-            root->child = temp;
-        } else {
-            prev->next = temp;
-            temp->prev = prev;
-        }
-        prev = temp;
-        i++;
     }
 
     kafka_produce(config->pool, &config->kafka, config->kafka.topic_url_config, &config->kafka.rk_topic_url_config,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(root));
     cJSON_Delete(root);
-    ERRLOG_SRV_CRIT("FRAUD-DETECTION: URL config JSON array is: %s", cJSON_Print(root));
 }
 
 /*
