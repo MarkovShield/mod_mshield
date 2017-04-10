@@ -126,7 +126,7 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 			ERRLOG_INFO("=============================== START RENEW SESSION ====================================");
 			ERRLOG_INFO("Renewing session after login.");
 			//ERRLOG_CRIT("Add session cookie to headers [%s]", session);
-/*RENEW*/		status = mshield_session_renew(&session, session.data->uuid);
+/*RENEW*/		status = mshield_session_renew(&session);
 			if (status != STATUS_OK) {
 				if (status == STATUS_ESHMFULL) {
 					status = mod_mshield_redirect_to_shm_error(r, config);
@@ -199,7 +199,6 @@ mshield_access_checker(request_rec *r)
 	session_t session;
 	cookie_res *cr;
 	apr_status_t status;
-    char *uuid;
 
 	config = ap_get_module_config(r->server->module_config, &mshield_module);
 	if (!config) {
@@ -229,14 +228,13 @@ mshield_access_checker(request_rec *r)
     /****************************** PART 0 *******************************************************
 	 * First of all, set the unknown user a new UUID
 	 */
-	 // ToDo Philip: Fix this!
-    if (!uuid) {
+    /*if (!uuid) {
         uuid = generate_uuid(&session);
         if (!uuid) {
             return STATUS_ERROR;
         }
         ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new UUID [%s]", uuid);
-    }
+    }*/
 
 	/****************************** PART 1 *******************************************************
 	 * Handle special URLs which do not require a session.
@@ -249,7 +247,7 @@ mshield_access_checker(request_rec *r)
 	case STATUS_MATCH:
 		ERRLOG_INFO("Renew URL found [%s]", r->uri);
         /*CREATE*/
-		switch (mshield_session_create(&session, uuid)) {
+		switch (mshield_session_create(&session, true)) {
 		case STATUS_OK:
 			/* session renewed, set cookie and redirect */
 			if (mshield_add_session_cookie_to_headers(r, config, r->err_headers_out, &session) != STATUS_OK) {
@@ -284,13 +282,13 @@ mshield_access_checker(request_rec *r)
 
 	/*
 	 * Session free URL?
+	 * Note: The requests on free urls exit mod_mshield in the following switch case! After here the requests on free urls
+	 * are no longer available.
 	 */
 	switch (mod_mshield_regexp_match(r, config->session_free_url, r->uri)) {
 	case STATUS_MATCH:
 		apr_global_mutex_unlock(mshield_mutex);
 		ERRLOG_INFO("Session free URL [%s]", r->uri);
-        /* Uncomment if you want information about requests on free urls.. */
-        //extract_click_to_kafka(r, uuid);
 		return DECLINED;
 
 	case STATUS_NOMATCH:
@@ -303,12 +301,6 @@ mshield_access_checker(request_rec *r)
 		ERRLOG_CRIT("Error while matching MOD_MSHIELD_SESSION_FREE_URL");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
-
-    /****************************** PART 1.5 *******************************************************
-     * Extract click data to kafka
-     */
-
-    extract_click_to_kafka(r, uuid);
 
     /****************************** PART 2 *******************************************************
      * Check of the mod_mshield session
@@ -358,7 +350,7 @@ mshield_access_checker(request_rec *r)
 	if (!cr->sessionid) {
 		ERRLOG_INFO("Client did not send mod_mshield session");
         /*CREATE*/
-    	switch (mshield_session_create(&session, uuid)) {
+    	switch (mshield_session_create(&session, true)) {
 		case STATUS_OK:
 			/* session created, set cookie and redirect */
 			if (mshield_add_session_cookie_to_headers(r, config, r->err_headers_out, &session) != STATUS_OK) {
@@ -386,10 +378,12 @@ mshield_access_checker(request_rec *r)
 	 */
 
 	/* Initialize the session struct. */
+    // ToDo Philip: Check: Why is this function called twice inside this function?
 	mshield_session_init(&session, r, config);
 
-	/* Look up the session. */
+	/* Look up the session and save it to session, if it's found. */
     /*FIND*/
+    // ToDo Philip: Note: Here the old UUID gets writen to the new initialized session back again!
     switch (mshield_session_find(&session, config->cookie_name, cr->sessionid)) {
 	case STATUS_OK:
 		break;
@@ -415,6 +409,7 @@ mshield_access_checker(request_rec *r)
 
 	/* Validate the session, time it out if necessary, updating atime. */
     /*UNLINK,SET*/
+
     switch (mshield_session_validate(&session,
 			config->session_hard_timeout,
 			config->session_inactivity_timeout)) {
@@ -444,6 +439,11 @@ mshield_access_checker(request_rec *r)
 	 * If we are here, the client has sent a valid mod_mshield session
 	 */
 	ERRLOG_INFO("Client has sent a valid mod_mshield session");
+
+    /*
+     * Extract click data to kafka.
+     */
+    extract_click_to_kafka(r, session.data->uuid);
 
 	/*
 	 * We will first check, if the requesting URI asks for the session destroy function

@@ -30,6 +30,7 @@
 #include "apr_base64.h"
 #include "apr_anylock.h"
 #include "ap_mpm.h"
+#include "stdbool.h"
 
 #include "mod_mshield_debug.h"
 #include "mod_mshield_errno.h"
@@ -216,7 +217,8 @@ typedef struct {
     char service_list[100];
     int auth_strength;
     char redirect_url_after_login[255];
-    char uuid[64];
+    char uuid[MOD_MSHIELD_SIDBYTES / 3 * 4 +
+              1];
     char username[64];                              /* Username of Backend Web App */
 } session_data_t;
 
@@ -322,7 +324,7 @@ apr_status_t mshield_session_find(session_t *session, const char *session_name, 
 
 apr_status_t mshield_session_open(session_t *session, session_handle_t handle);
 
-apr_status_t mshield_session_create(session_t *session, const char *uuid);
+apr_status_t mshield_session_create(session_t *session, bool is_new_session);
 
 char *generate_uuid(session_t *session);
 
@@ -330,7 +332,7 @@ void mshield_session_unlink(session_t *session);
 
 apr_status_t mshield_session_validate(session_t *session, int hard_timeout, int inactivity_timeout);
 
-apr_status_t mshield_session_renew(session_t *session, const char *uuid);
+apr_status_t mshield_session_renew(session_t *session);
 
 const char *mshield_session_get_cookies(session_t *session);
 

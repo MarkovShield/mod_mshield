@@ -105,7 +105,7 @@ mshield_session_open(session_t *session, session_handle_t handle) {
  * session is an initialized session_t.
  */
 apr_status_t
-mshield_session_create(session_t *session, const char *uuid) {
+mshield_session_create(session_t *session, bool is_new_session) {
 	apr_status_t status;
 	char *sid = NULL;
 
@@ -115,7 +115,15 @@ mshield_session_create(session_t *session, const char *uuid) {
 	}
     ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new SID [%s]", sid);
 
-	status = create_new_shm_session(session->request, sid, uuid, &session->handle);
+    // ToDo Philip: Do the UUID generation stuff inside this function! Done -> Check!
+    if (is_new_session) {
+        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: is_new_session = [%i]", is_new_session);
+        strncpy(session->data->uuid, generate_uuid(session), sizeof(session->data->uuid));
+        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: UUID generated: [%s]", session->data->uuid);
+    }
+    ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: NO UUID generated. UUID is: [%s]", session->data->uuid);
+
+	status = create_new_shm_session(session->request, sid, session->data->uuid, &session->handle);
 	if (status != STATUS_OK) {
 		return status;
 	}
@@ -194,9 +202,10 @@ mshield_session_set_cookie(session_t *session, const char *key, const char *valu
  * No cookies are created or updated.
  * session is a valid session.
  * Returns STATUS_ENOEXIST if session does not exist.
+ * ToDo Philip: Copy UUID too!
  */
 apr_status_t
-mshield_session_renew(session_t *session, const char *uuid) {
+mshield_session_renew(session_t *session) {
 	apr_status_t status;
 	session_data_t *old_data;
 
@@ -206,7 +215,7 @@ mshield_session_renew(session_t *session, const char *uuid) {
 
 	old_data = session->data;
 
-	status = mshield_session_create(session, uuid);
+	status = mshield_session_create(session, false);
 	if (status != STATUS_OK) {
 		return status;
 	}
