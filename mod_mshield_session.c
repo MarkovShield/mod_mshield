@@ -46,8 +46,9 @@ generate_uuid(session_t *session) {
  */
 void
 mshield_session_init(session_t *session, request_rec *r, mod_mshield_server_t *config) {
+	session_data_t *data;
 	session->handle = INVALID_SESSION_HANDLE;
-	session->data = NULL;
+	session->data = data;
 	session->request = r;
 	session->config = config;
 }
@@ -91,7 +92,8 @@ apr_status_t
 mshield_session_open(session_t *session, session_handle_t handle) {
 	session->data = get_session_by_index(handle);
 	if (!session->data->slot_used) {
-		session->data = NULL;
+		session_data_t *data;
+		session->data = data;
 		session->handle = INVALID_SESSION_HANDLE;
 		return STATUS_ERROR;
 	}
@@ -116,12 +118,13 @@ mshield_session_create(session_t *session, bool is_new_session) {
     ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new SID [%s]", sid);
 
     // ToDo Philip: Do the UUID generation stuff inside this function! Done -> Check!
+		ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: is_new_session = [%i]", is_new_session);
     if (is_new_session) {
-        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: is_new_session = [%i]", is_new_session);
-        strncpy(session->data->uuid, generate_uuid(session), sizeof(session->data->uuid));
-        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: UUID generated: [%s]", session->data->uuid);
-    }
-    ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: NO UUID generated. UUID is: [%s]", session->data->uuid);
+        apr_cpystrn(session->data->uuid, generate_uuid(session), sizeof(session->data->uuid));
+				ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: UUID generated: [%s]", session->data->uuid);
+    } else {
+				ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: NO UUID generated. UUID is: [%s]", session->data->uuid);
+		}
 
 	status = create_new_shm_session(session->request, sid, session->data->uuid, &session->handle);
 	if (status != STATUS_OK) {
@@ -247,4 +250,3 @@ mshield_session_renew(session_t *session) {
 
 	return STATUS_OK;
 }
-

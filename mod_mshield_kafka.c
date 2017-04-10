@@ -92,7 +92,6 @@ kafka_topic_connect(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic
     rd_kafka_topic_t *rkt;
     rkt = (rd_kafka_topic_t *) *rk_topic;
     if (rkt) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Fetching topic handle: Got rkt from *rk_topic");
         return rkt;
     }
     /* Configuration topic */
