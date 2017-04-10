@@ -169,10 +169,20 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     cJSON *click_json;
     click_json = cJSON_CreateObject();
     cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(uuid));
-    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(r->unparsed_uri));
     cJSON_AddItemToObject(click_json, "timestamp", cJSON_CreateNumber(r->request_time));
+    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(r->unparsed_uri));
+    int risk_level = atoi(apr_hash_get(config->url_store, r->unparsed_uri, APR_HASH_KEY_STRING));
+    if (risk_level) {
+        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] found in url_store", r->unparsed_uri);
+        cJSON_AddItemToObject(click_json, "url_risk_level", cJSON_CreateNumber(risk_level));
+    } else {
+        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] NOT found in url_store", r->unparsed_uri);
+        cJSON_AddItemToObject(click_json, "url_risk_level", cJSON_CreateNumber(-1));
+    }
+    
     kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
+
     cJSON_Delete(click_json);
 
 }
