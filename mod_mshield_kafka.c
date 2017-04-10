@@ -171,7 +171,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(uuid));
     cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(r->unparsed_uri));
     cJSON_AddItemToObject(click_json, "timestamp", cJSON_CreateNumber(r->request_time));
-    kafka_produce(r->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
+    kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
     cJSON_Delete(click_json);
 
@@ -202,6 +202,7 @@ void extract_url_to_kafka(server_rec *s) {
     kafka_produce(config->pool, &config->kafka, config->kafka.topic_url_config, &config->kafka.rk_topic_url_config,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(root));
     cJSON_Delete(root);
+    kafka_cleanup(s);
 }
 
 /*
