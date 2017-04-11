@@ -181,11 +181,11 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     risk_level = (char *) apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING);
     if (risk_level) {
         ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] found in url_store", url);
-        cJSON_AddItemToObject(click_json, "url_risk_level", cJSON_CreateNumber(atoi(risk_level)));
+        cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(atoi(risk_level)));
     } else {
         /* Default value for unknown urls is 0. This means they are not rated in the engine. */
         ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] NOT found in url_store", url);
-        cJSON_AddItemToObject(click_json, "url_risk_level", cJSON_CreateNumber(0));
+        cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(0));
     }
 
     kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
