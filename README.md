@@ -92,9 +92,10 @@ For the URL criticality level definitions, create another file `conf/extra/mod_m
 #################################################################################
 
 MOD_MSHIELD_URL /public 0
+MOD_MSHIELD_URL /login/login.php 1
 MOD_MSHIELD_URL /private 1
-MOD_MSHIELD_URL /private/chat 1
-MOD_MSHIELD_URL /private/request-header 1
+MOD_MSHIELD_URL /private/1 1
+MOD_MSHIELD_URL /private/1/printheader.php 1
 ```
 
 Finally restart apache httpd in order to apply the new module and its configuration:

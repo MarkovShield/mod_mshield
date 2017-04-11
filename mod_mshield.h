@@ -382,6 +382,6 @@ void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic,
 /********************************************************************
  * mod_mshield_helpers.c
  */
-const char * mshield_remove_trailing_slash(const char *arg1);
+const char *mshield_remove_trailing_slash(const char *arg1);
 
 #endif /* MOD_MSHIELD_H */

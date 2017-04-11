@@ -167,9 +167,8 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     mod_mshield_server_t *config;
     config = ap_get_module_config(r->server->module_config, &mshield_module);
 
-    // ToDo Philip: Remove trailing "/" on the URLs.
-    const char* url;
-    url = mshield_remove_trailing_slash(r->uri);
+    char *url = NULL;
+    apr_cpystrn(url, mshield_remove_trailing_slash(r->uri), sizeof(url));
 
     cJSON *click_json;
     click_json = cJSON_CreateObject();
