@@ -140,14 +140,14 @@ kafka_topic_connect(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic
  * Note: Set partition to RD_KAFKA_PARTITION_UA if none is provided.
  */
 void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
-                   const char *topic, const char **rk_topic, int32_t partition, char *msg) {
+                   const char *topic, const char **rk_topic, int32_t partition, char *msg, char *key) {
     rd_kafka_topic_t *rkt = kafka_topic_connect(p, kafka, topic, rk_topic);
     if (rkt) {
         ap_log_error(PC_LOG_INFO, NULL, "produce: (%s:%i) %s", topic, partition, msg);
 
         /* Produce send */
         if (rd_kafka_produce(rkt, partition, RD_KAFKA_MSG_F_COPY,
-                             msg, strlen(msg), NULL, 0, NULL) == -1) {
+                             msg, strlen(msg), key, strlen(key), NULL) == -1) {
             ap_log_error(PC_LOG_CRIT, NULL, "Kafka produce failed! Topic: %s", topic);
         }
 
@@ -160,6 +160,7 @@ void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
 
 /*
  * Use this function to extract some request information and send it to kafka
+ * Note: We want milliseconds and not microseconds -> divide request_time by 1000.
  */
 void extract_click_to_kafka(request_rec *r, char *uuid) {
 
@@ -169,7 +170,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     cJSON *click_json;
     click_json = cJSON_CreateObject();
     cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(uuid));
-    cJSON_AddItemToObject(click_json, "timestamp", cJSON_CreateNumber(r->request_time));
+    cJSON_AddItemToObject(click_json, "timeStamp", cJSON_CreateNumber(r->request_time/1000));
     cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(r->unparsed_uri));
     /*
      * The following code is currently not needed.
@@ -186,7 +187,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     }*/
 
     kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
-                  RD_KAFKA_PARTITION_UA, cJSON_Print(click_json));
+                  RD_KAFKA_PARTITION_UA, cJSON_Print(click_json), uuid);
 
     cJSON_Delete(click_json);
 
@@ -202,10 +203,9 @@ void extract_url_to_kafka(server_rec *s) {
 
     cJSON *root = cJSON_CreateObject();
     apr_hash_index_t *hi;
+    const char *key;
+    const char *value;
     for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
-        const char *key;
-        const char *value;
-
         apr_hash_this(hi, (const void**)&key, NULL, (void**)&value);
         ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-DETECTION: URL config. KEY: %s VALUE: %s", key, value);
         cJSON *temp;
@@ -215,7 +215,7 @@ void extract_url_to_kafka(server_rec *s) {
     }
 
     kafka_produce(config->pool, &config->kafka, config->kafka.topic_url_config, &config->kafka.rk_topic_url_config,
-                  RD_KAFKA_PARTITION_UA, cJSON_Print(root));
+                  RD_KAFKA_PARTITION_UA, cJSON_Print(root), key);
     cJSON_Delete(root);
     kafka_cleanup(s);
 }
