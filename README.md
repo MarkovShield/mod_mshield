@@ -85,7 +85,7 @@ Include conf/extra/mod_mshield_url_rating.conf
     ProxyPass   http://localhost:8888/
 </Location>
 ```
-For the URL criticality level definitions, create another file `conf/extra/mod_mshield_url_rating.conf`. Use the following format (`0` = non-critical, `1` = critical):
+For the URL criticality level definitions, create another file `conf/extra/mod_mshield_url_rating.conf`. Use the following format (`0` = non-critical, `1` = critical) and make sure to define the URLs **without** trailing slash::
 ```bash
 #################################################################################
 #   MOD_MSHIELD url ratings

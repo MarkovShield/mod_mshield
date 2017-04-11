@@ -167,25 +167,26 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     mod_mshield_server_t *config;
     config = ap_get_module_config(r->server->module_config, &mshield_module);
 
+    // ToDo Philip: Remove trailing "/" on the URLs.
+    const char* url;
+    url = mshield_remove_trailing_slash(r->uri);
+
     cJSON *click_json;
     click_json = cJSON_CreateObject();
     cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(uuid));
     cJSON_AddItemToObject(click_json, "timeStamp", cJSON_CreateNumber(r->request_time/1000));
-    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(r->unparsed_uri));
+    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(url));
 
     const char *risk_level;
-    risk_level = (char *) apr_hash_get(config->url_store, r->unparsed_uri, APR_HASH_KEY_STRING);
+    risk_level = (char *) apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING);
     if (risk_level) {
-        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] found in url_store", r->unparsed_uri);
+        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] found in url_store", url);
         cJSON_AddItemToObject(click_json, "url_risk_level", cJSON_CreateNumber(atoi(risk_level)));
     } else {
-        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] NOT found in url_store", r->unparsed_uri);
-        cJSON_AddItemToObject(click_json, "url_risk_level", cJSON_CreateNumber(-1));
+        /* Default value for unknown urls is 0. This means they are not rated in the engine. */
+        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] NOT found in url_store", url);
+        cJSON_AddItemToObject(click_json, "url_risk_level", cJSON_CreateNumber(0));
     }
-
-    ap_log_error(PC_LOG_CRIT, NULL, "Parsed URL: [%s]", r->parsed_uri.path);
-    ap_log_error(PC_LOG_CRIT, NULL, "Unparsed URL: [%s]", r->unparsed_uri);
-    ap_log_error(PC_LOG_CRIT, NULL, "uri URL: [%s]", r->uri);
 
     kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(click_json), uuid);

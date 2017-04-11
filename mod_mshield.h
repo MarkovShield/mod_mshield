@@ -379,4 +379,9 @@ void extract_url_to_kafka(server_rec *s);
 void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic,
                    int32_t partition, char *msg, const char *key);
 
+/********************************************************************
+ * mod_mshield_helpers.c
+ */
+const char * mshield_remove_trailing_slash(const char *arg1);
+
 #endif /* MOD_MSHIELD_H */

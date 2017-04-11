@@ -1,0 +1,15 @@
+#include "mod_mshield.h"
+
+/*
+ * Remove trailing slash from arg1
+ */
+const char *
+mshield_remove_trailing_slash(const char *arg1) {
+    char *temp;
+    temp = (char *) arg1;
+    size_t len = strlen(temp);
+    if((len > 0) && (temp[len-1] == '/')) {
+        temp[len - 1] = '\0';
+    }
+    return temp;
+}
