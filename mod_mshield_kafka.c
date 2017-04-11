@@ -140,7 +140,7 @@ kafka_topic_connect(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic
  * Note: Set partition to RD_KAFKA_PARTITION_UA if none is provided.
  */
 void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
-                   const char *topic, const char **rk_topic, int32_t partition, char *msg, char *key) {
+                   const char *topic, const char **rk_topic, int32_t partition, char *msg, const char *key) {
     rd_kafka_topic_t *rkt = kafka_topic_connect(p, kafka, topic, rk_topic);
     if (rkt) {
         ap_log_error(PC_LOG_INFO, NULL, "produce: (%s:%i) %s", topic, partition, msg);
