@@ -718,7 +718,8 @@ static int mshield_post_config(apr_pool_t *pconf, apr_pool_t *plog,
 	}
 #endif /* MOD_MSHIELD_SET_MUTEX_PERMS */
 
-	extract_url_to_kafka(s);
+    // Currently not needed anymore..
+	//extract_url_to_kafka(s);
 
 	return OK;
 }
