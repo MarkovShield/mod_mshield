@@ -264,7 +264,7 @@ kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
     }
 
     /* Start consuming on the topic */
-    rd_kafka_consume_start(rkt, partition, RD_KAFKA_OFFSET_BEGINNING);
+    rd_kafka_consume_start(rkt, partition, RD_KAFKA_OFFSET_END);
 
     *rk_topic = (const void *) rkt;
 
@@ -307,9 +307,9 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
     if (rkt) {
         ap_log_error(PC_LOG_CRIT, NULL, "Starting consuming messages from %s", topic);
         rd_kafka_message_t *rk_message;
-        rk_message = rd_kafka_consume((rd_kafka_topic_t *)rk_topic, partition, 10000);
+        rk_message = rd_kafka_consume_batch((rd_kafka_topic_t *)rk_topic, partition, 1000);
         // ToDo Philip: Do the application logic here. The waiting and so on.
-        if (rk_message == NULL) {
+        if (rk_message == NULL && rk_message->err) {
             ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE an error occurred!");
             if (rk_message->err == ETIMEDOUT) {
                 ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE timeout reached!");
@@ -320,6 +320,8 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
         } else {
             ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rk_message->payload ,rk_message->key);
         }
+        rd_kafka_poll(kafka->rk_consumer, 0);
+        /* After usage, the message needs to be destroyed. */
         rd_kafka_message_destroy(rk_message);
     } else {
         ap_log_error(PC_LOG_CRIT, NULL, "No such kafka topic: %s", topic);
@@ -362,7 +364,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
 
     cJSON_Delete(click_json);
 
-    // ToDo Philip: If URL was critical, call function there to wait for response
+    /* If URL was critical, wait for a response message from the engine and parse it. */
     if (risk_level && atoi(risk_level) == 1) {
         kafka_consume(config->pool, &config->kafka, config->kafka.topic_analyse_result, &config->kafka.rk_topic_analyse_result,
                       RD_KAFKA_PARTITION_UA, "test_key");
@@ -428,23 +430,37 @@ apr_status_t kafka_cleanup(void *arg) {
         }
 
         ERRLOG_SRV_INFO("Destroy topic");
-        apr_hash_index_t *hash = apr_hash_first(config->pool, config->kafka.conf_producer.topic);
-        while (hash) {
-            const void *topic = NULL;
-            void *rkt = NULL;
-            apr_hash_this(hash, &topic, NULL, &rkt);
-            if (rkt) {
-                ERRLOG_SRV_INFO("kafka topic = %s", (char *) topic);
-                rd_kafka_topic_destroy((rd_kafka_topic_t *) rkt);
-            }
-            hash = apr_hash_next(hash);
+        if (config->kafka.rk_topic_analyse) {
+            rd_kafka_topic_destroy((rd_kafka_topic_t *) config->kafka.rk_topic_analyse);
+        }
+        if (config->kafka.rk_topic_usermapping) {
+            rd_kafka_topic_destroy((rd_kafka_topic_t *) config->kafka.rk_topic_usermapping);
         }
 
         ERRLOG_SRV_INFO("Destroy producer handle");
         rd_kafka_destroy(config->kafka.rk_producer);
         config->kafka.rk_producer = NULL;
 
-        ERRLOG_SRV_INFO("Let backgournd threds clean up");
+        ERRLOG_SRV_INFO("Let background threads clean up");
+        int32_t i = 5;
+        while (i-- > 0 && rd_kafka_wait_destroyed(500) == -1) { ;
+        }
+    }
+
+    if(config->kafka.rk_consumer) {
+
+        rd_kafka_consume_stop((rd_kafka_topic_t *) config->kafka.rk_topic_analyse_result, RD_KAFKA_PARTITION_UA);
+
+        ERRLOG_SRV_INFO("Destroy topic");
+        if (config->kafka.rk_topic_analyse_result) {
+            rd_kafka_topic_destroy((rd_kafka_topic_t *) config->kafka.rk_topic_analyse_result);
+        }
+
+        ERRLOG_SRV_INFO("Destroy producer handle");
+        rd_kafka_destroy(config->kafka.rk_consumer);
+        config->kafka.rk_consumer = NULL;
+
+        ERRLOG_SRV_INFO("Let background threads clean up");
         int32_t i = 5;
         while (i-- > 0 && rd_kafka_wait_destroyed(500) == -1) { ;
         }
