@@ -392,7 +392,7 @@ mshield_config_urls(cmd_parms *cmd, void *dummy, const char *arg1, const char *a
     mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
     if (arg1 && arg2 && conf->fraud_detection_enabled) {
         if (atoi(arg2) == 0 || atoi(arg2) == 1) {
-            apr_hash_set(conf->url_store, mshield_remove_trailing_slash(arg1), APR_HASH_KEY_STRING, arg2);
+            apr_hash_set(conf->url_store, arg1, APR_HASH_KEY_STRING, arg2);
         }
     }
     return OK;

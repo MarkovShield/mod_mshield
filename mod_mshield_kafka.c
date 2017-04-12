@@ -306,6 +306,7 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
 
     if (rkt) {
         ap_log_error(PC_LOG_CRIT, NULL, "Starting consuming messages from %s", topic);
+        // ToDo Philip: Switch to High-level balanced Consumer. See https://github.com/edenhill/librdkafka/blob/master/examples/rdkafka_performance.c line 1478+
         rd_kafka_message_t *rk_message;
         rk_message = rd_kafka_consume((rd_kafka_topic_t *)rk_topic, partition, 1000);
         // ToDo Philip: Do the application logic here. The waiting and so on.
@@ -338,7 +339,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     mod_mshield_server_t *config;
     config = ap_get_module_config(r->server->module_config, &mshield_module);
 
-    char *url = (char *) mshield_remove_trailing_slash(r->unparsed_uri);
+    char *url = r->unparsed_uri;
     //ap_log_error(PC_LOG_CRIT, NULL, "URL befor trailing / removal: [%s]", r->parsed_uri.path);
     //ap_log_error(PC_LOG_CRIT, NULL, "URL after trailing / removal: [%s]", url);
 
@@ -366,6 +367,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
 
     /* If URL was critical, wait for a response message from the engine and parse it. */
     if (risk_level && atoi(risk_level) == 1) {
+        // ToDo Philip: Partition ändern, Hier kann kein Default Value genommen werden!
         kafka_consume(config->pool, &config->kafka, config->kafka.topic_analyse_result, &config->kafka.rk_topic_analyse_result,
                       RD_KAFKA_PARTITION_UA, "test_key");
         ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] risk level was [%i]", url, atoi(apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING)));
