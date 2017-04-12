@@ -225,16 +225,6 @@ mshield_access_checker(request_rec *r)
 
 	ERRLOG_INFO("Request %s", r->uri);
 
-    /****************************** PART 0 *******************************************************
-	 * First of all, set the unknown user a new UUID
-	 */
-    /*if (!uuid) {
-        uuid = generate_uuid(&session);
-        if (!uuid) {
-            return STATUS_ERROR;
-        }
-        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new UUID [%s]", uuid);
-    }*/
 
 	/****************************** PART 1 *******************************************************
 	 * Handle special URLs which do not require a session.

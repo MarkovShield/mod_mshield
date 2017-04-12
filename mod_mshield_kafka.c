@@ -302,9 +302,97 @@ void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
  */
 void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
                    const char *topic, const char **rk_topic, int32_t partition, const char *key) {
-    rd_kafka_topic_t *rkt = kafka_topic_connect_consumer(p, kafka, topic, rk_topic, partition);
+    //rd_kafka_topic_t *rkt = kafka_topic_connect_consumer(p, kafka, topic, rk_topic, partition);
 
-    if (rkt) {
+    char errstr[512];
+    static int run = 1;
+    int64_t seek_offset = 0;
+    int64_t start_offset = 0;
+    rd_kafka_topic_conf_t *topic_conf;
+    topic_conf = rd_kafka_topic_conf_new();
+    rd_kafka_conf_t *conf;
+    conf = rd_kafka_conf_new();
+    rd_kafka_topic_t *rkt;
+
+
+    /* Create Kafka handle */
+    if (!(kafka->rk_consumer = rd_kafka_new(RD_KAFKA_CONSUMER, conf,
+                            errstr, sizeof(errstr)))) {
+        fprintf(stderr,
+                "%% Failed to create new consumer: %s\n",
+                errstr);
+        exit(1);
+    }
+
+    /* Add brokers */
+    if (rd_kafka_brokers_add(kafka->rk_consumer, kafka->broker) == 0) {
+        fprintf(stderr, "%% No valid brokers specified\n");
+        exit(1);
+    }
+
+    /* Create topic */
+    rkt = rd_kafka_topic_new(kafka->rk_consumer, topic, topic_conf);
+    topic_conf = NULL; /* Now owned by topic */
+
+    /* Start consuming */
+    if (rd_kafka_consume_start(rkt, partition, start_offset) == -1){
+        rd_kafka_resp_err_t err = rd_kafka_last_error();
+        fprintf(stderr, "%% Failed to start consuming: %s\n",
+                rd_kafka_err2str(err));
+        if (err == RD_KAFKA_RESP_ERR__INVALID_ARG)
+            fprintf(stderr,
+                    "%% Broker based offset storage "
+                            "requires a group.id, "
+                            "add: -X group.id=yourGroup\n");
+        exit(1);
+    }
+
+    while (run) {
+        rd_kafka_message_t *rkmessage;
+        rd_kafka_resp_err_t err;
+
+        /* Poll for errors, etc. */
+        rd_kafka_poll(kafka->rk_consumer, 0);
+
+        /* Consume single message.
+         * See rdkafka_performance.c for high speed
+         * consuming of messages. */
+        rkmessage = rd_kafka_consume(rkt, partition, 1000);
+        if (!rkmessage) /* timeout */
+            continue;
+
+        ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rkmessage->payload ,rkmessage->key);
+
+        /* Return message to rdkafka */
+        rd_kafka_message_destroy(rkmessage);
+
+        if (seek_offset) {
+            err = rd_kafka_seek(rkt, partition, seek_offset,
+                                2000);
+            if (err)
+                printf("Seek failed: %s\n",
+                       rd_kafka_err2str(err));
+            else
+                printf("Seeked to %"PRId64"\n",
+                       seek_offset);
+            seek_offset = 0;
+        }
+    }
+
+    /* Stop consuming */
+    rd_kafka_consume_stop(rkt, partition);
+
+    while (rd_kafka_outq_len(kafka->rk_consumer) > 0)
+        rd_kafka_poll(kafka->rk_consumer, 10);
+
+    /* Destroy topic */
+    rd_kafka_topic_destroy(rkt);
+
+    /* Destroy handle */
+    rd_kafka_destroy(kafka->rk_consumer);
+
+    //if (rkt) {
+    /*if (true) {
         ap_log_error(PC_LOG_CRIT, NULL, "Starting consuming messages from %s", topic);
         // ToDo Philip: Switch to High-level balanced Consumer. See https://github.com/edenhill/librdkafka/blob/master/examples/rdkafka_performance.c line 1478+
         rd_kafka_message_t *rk_message;
@@ -320,13 +408,12 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
             }
         } else {
             ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rk_message->payload ,rk_message->key);
-        }
-        rd_kafka_poll(kafka->rk_consumer, 0);
+        }*/
         /* After usage, the message needs to be destroyed. */
-        rd_kafka_message_destroy(rk_message);
+        /*rd_kafka_message_destroy(rk_message);
     } else {
         ap_log_error(PC_LOG_CRIT, NULL, "No such kafka topic: %s", topic);
-    }
+    }*/
     
 }
 
@@ -340,8 +427,8 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     config = ap_get_module_config(r->server->module_config, &mshield_module);
 
     char *url = r->parsed_uri.path;
-    //ap_log_error(PC_LOG_CRIT, NULL, "URL befor trailing / removal: [%s]", r->parsed_uri.path);
-    //ap_log_error(PC_LOG_CRIT, NULL, "URL after trailing / removal: [%s]", url);
+    //ap_log_error(PC_LOG_CRIT, NULL, "Parsed URI: [%s]", r->parsed_uri.path);
+    //ap_log_error(PC_LOG_CRIT, NULL, "Unparsed URI: [%s]", r->unparsed_uri);
 
     cJSON *click_json;
     click_json = cJSON_CreateObject();
@@ -367,7 +454,6 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
 
     /* If URL was critical, wait for a response message from the engine and parse it. */
     if (risk_level && atoi(risk_level) == 1) {
-        // ToDo Philip: Partition ändern, Hier kann kein Default Value genommen werden!
         kafka_consume(config->pool, &config->kafka, config->kafka.topic_analyse_result, &config->kafka.rk_topic_analyse_result,
                       RD_KAFKA_PARTITION_UA, "test_key");
         ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] risk level was [%i]", url, atoi(apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING)));
