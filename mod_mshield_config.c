@@ -329,7 +329,11 @@ mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg) {
         conf->kafka.rk_topic_url_config = NULL;
         conf->kafka.conf_producer.global = apr_hash_make(cmd->pool);
         /* Add some default settings for Kafka producer */
-        apr_hash_set(conf->kafka.conf_producer.global, "queue.buffering.max.ms", APR_HASH_KEY_STRING, (const void *)1);
+        const char *property;
+        property = "queue.buffering.max.ms";
+        const char *value;
+        value = "1";
+        apr_hash_set(conf->kafka.conf_producer.global, property, APR_HASH_KEY_STRING, (const void *)value);
         conf->kafka.conf_producer.topic = apr_hash_make(cmd->pool);
         conf->kafka.conf_consumer.global = apr_hash_make(cmd->pool);
         /* Add some default settings for Kafka producer */
