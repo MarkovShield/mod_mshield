@@ -307,7 +307,7 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
     if (rkt) {
         ap_log_error(PC_LOG_CRIT, NULL, "Starting consuming messages from %s", topic);
         rd_kafka_message_t *rk_message;
-        rk_message = rd_kafka_consume_batch((rd_kafka_topic_t *)rk_topic, partition, 1000);
+        rk_message = rd_kafka_consume((rd_kafka_topic_t *)rk_topic, partition, 1000);
         // ToDo Philip: Do the application logic here. The waiting and so on.
         if (rk_message == NULL && rk_message->err) {
             ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE an error occurred!");
