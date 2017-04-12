@@ -339,7 +339,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     mod_mshield_server_t *config;
     config = ap_get_module_config(r->server->module_config, &mshield_module);
 
-    char *url = r->unparsed_uri;
+    char *url = r->parsed_uri.path;
     //ap_log_error(PC_LOG_CRIT, NULL, "URL befor trailing / removal: [%s]", r->parsed_uri.path);
     //ap_log_error(PC_LOG_CRIT, NULL, "URL after trailing / removal: [%s]", url);
 
