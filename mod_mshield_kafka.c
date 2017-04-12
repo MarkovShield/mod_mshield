@@ -167,8 +167,9 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     mod_mshield_server_t *config;
     config = ap_get_module_config(r->server->module_config, &mshield_module);
 
-    char *url = NULL;
-    apr_cpystrn(url, mshield_remove_trailing_slash(r->uri), sizeof(url));
+    char *url = (char *) mshield_remove_trailing_slash(r->unparsed_uri);
+    ap_log_error(PC_LOG_CRIT, NULL, "URL befor trailing / removal: [%s]", r->parsed_uri.path);
+    ap_log_error(PC_LOG_CRIT, NULL, "URL after trailing / removal: [%s]", url);
 
     cJSON *click_json;
     click_json = cJSON_CreateObject();
