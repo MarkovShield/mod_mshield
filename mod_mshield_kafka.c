@@ -278,7 +278,9 @@ static apr_status_t kafka_connect_consumer(mod_mshield_kafka_t *kafka) {
         hash = apr_hash_next(hash);
     }*/
 
-    rd_kafka_conf_set(conf, "group.id", "mshield", tmp, sizeof(tmp));
+    if (rd_kafka_conf_set(conf, "group.id", "mshield", tmp, sizeof(tmp)) != RD_KAFKA_CONF_OK) {
+        ap_log_error(PC_LOG_CRIT, NULL, "Configuration of group.id failed!");
+    }
 
     /* Create consumer handle */
     kafka->rk_consumer = rd_kafka_new(RD_KAFKA_CONSUMER, conf, NULL, 0);
