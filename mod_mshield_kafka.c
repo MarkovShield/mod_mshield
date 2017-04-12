@@ -234,7 +234,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
 /*
  * Connect to Kafka broker
  */
-static apr_status_t kafka_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka) {
+static apr_status_t kafka_connect_consumer(mod_mshield_kafka_t *kafka) {
 
     /* If the consumer handle already exists, we skip the rest because we already have done it. */
     if (kafka->rk_consumer) {
@@ -260,7 +260,7 @@ static apr_status_t kafka_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *k
     rd_kafka_conf_set(conf, "internal.termination.signal", tmp, NULL, 0);
 
     /* Set configuration */
-    apr_hash_index_t *hash = apr_hash_first(p, kafka->conf_consumer.global);
+    /* apr_hash_index_t *hash = apr_hash_first(p, kafka->conf_consumer.global);
     while (hash) {
         const void *property = NULL;
         void *value = NULL;
@@ -276,7 +276,9 @@ static apr_status_t kafka_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *k
             }
         }
         hash = apr_hash_next(hash);
-    }
+    }*/
+
+    rd_kafka_conf_set(conf, "group.id", "mshield", tmp, sizeof(tmp));
 
     /* Create consumer handle */
     kafka->rk_consumer = rd_kafka_new(RD_KAFKA_CONSUMER, conf, NULL, 0);
@@ -377,7 +379,7 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
         ap_log_error(PC_LOG_CRIT, NULL, "Created topic for message consumer.");
     }
 
-    if(kafka_connect_consumer(p, kafka) != APR_SUCCESS) {
+    if (kafka_connect_consumer(kafka) != APR_SUCCESS) {
         ap_log_error(PC_LOG_CRIT, NULL, "Kafka consumer initialisation call was NOT successful.");
         return;
     }
