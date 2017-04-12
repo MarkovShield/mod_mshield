@@ -1,8 +1,8 @@
 #include "mod_mshield.h"
 
-/****************************
- * Producer functions
- */
+/****************************************************************************************************************
+ * Producer part
+ *****************************************************************************************************************/
 
 /*
  * Connect to Kafka broker
@@ -134,14 +134,113 @@ kafka_topic_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
     return rkt;
 }
 
-/****************************
- * Consumer functions
+/*
+ * Send something to a specified topic. Partition is supported.
+ * Note: Set partition to RD_KAFKA_PARTITION_UA if none is provided.
  */
+void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
+                   const char *topic, const char **rk_topic, int32_t partition, char *msg, const char *key) {
+    rd_kafka_topic_t *rkt = kafka_topic_connect_producer(p, kafka, topic, rk_topic);
+    if (rkt) {
+        ap_log_error(PC_LOG_INFO, NULL, "produce: (%s:%i) %s", topic, partition, msg);
+
+        /* Produce send */
+        if (rd_kafka_produce(rkt, partition, RD_KAFKA_MSG_F_COPY,
+                             msg, strlen(msg), key, strlen(key), NULL) == -1) {
+            ap_log_error(PC_LOG_CRIT, NULL, "Kafka produce failed! Topic: %s", topic);
+        }
+
+        /* Poll to handle delivery reports */
+        rd_kafka_poll(kafka->rk_producer, 10);
+    } else {
+        ap_log_error(PC_LOG_CRIT, NULL, "No such kafka topic: %s", topic);
+    }
+}
+
+/*
+ * Use this function to extract some request information and send it to kafka
+ * Note: We want milliseconds and not microseconds -> divide request_time by 1000.
+ */
+void extract_click_to_kafka(request_rec *r, char *uuid) {
+
+    mod_mshield_server_t *config;
+    config = ap_get_module_config(r->server->module_config, &mshield_module);
+
+    char *url = r->parsed_uri.path;
+    //ap_log_error(PC_LOG_CRIT, NULL, "Parsed URI: [%s]", r->parsed_uri.path);
+    //ap_log_error(PC_LOG_CRIT, NULL, "Unparsed URI: [%s]", r->unparsed_uri);
+
+    cJSON *click_json;
+    click_json = cJSON_CreateObject();
+    cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(uuid));
+    cJSON_AddItemToObject(click_json, "timeStamp", cJSON_CreateNumber(r->request_time/1000));
+    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(url));
+
+    char *risk_level = NULL;
+    risk_level = (char *) apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING);
+    if (risk_level) {
+        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] found in url_store", url);
+        cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(atoi(risk_level)));
+    } else {
+        /* Default value for unknown urls is 0. This means they are not rated in the engine. */
+        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] NOT found in url_store", url);
+        cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(0));
+    }
+
+    kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
+                  RD_KAFKA_PARTITION_UA, cJSON_Print(click_json), uuid);
+
+    cJSON_Delete(click_json);
+
+    /* If URL was critical, wait for a response message from the engine and parse it. */
+    if (risk_level && atoi(risk_level) == 1) {
+        kafka_consume(config->pool, &config->kafka, config->kafka.topic_analyse_result, &config->kafka.rk_topic_analyse_result, "test_key");
+        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] risk level was [%i]", url, atoi(apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING)));
+    }
+
+}
+
+/*
+ * Use this function to extract the url configurations and send it to kafka
+ */
+/*void extract_url_to_kafka(server_rec *s) {
+
+    mod_mshield_server_t *config;
+    config = ap_get_module_config(s->module_config, &mshield_module);
+
+    cJSON *root = cJSON_CreateObject();
+    apr_hash_index_t *hi;
+    const char *key;
+    const char *value;
+    for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
+        apr_hash_this(hi, (const void**)&key, NULL, (void**)&value);
+        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-DETECTION: URL config. KEY: %s VALUE: %s", key, value);
+        cJSON *temp;
+        cJSON_AddItemToObject(root, "url_entry", temp = cJSON_CreateObject());
+        cJSON_AddItemToObject(temp, "url", cJSON_CreateString(key));
+        cJSON_AddItemToObject(temp, "risk_level", cJSON_CreateNumber(atoi(value)));
+    }
+
+    kafka_produce(config->pool, &config->kafka, config->kafka.topic_url_config, &config->kafka.rk_topic_url_config,
+                  RD_KAFKA_PARTITION_UA, cJSON_Print(root), key);
+    cJSON_Delete(root);
+    kafka_cleanup(s);
+}*/
+
+/****************************************************************************************************************
+ * Consumer part
+ *****************************************************************************************************************/
 
 /*
  * Connect to Kafka broker
  */
 static apr_status_t kafka_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka) {
+
+    /* If the consumer handle already exists, we skip the rest because we already have done it. */
+    if (kafka->rk_consumer) {
+        return APR_SUCCESS;
+    }
+
     const char *brokers = kafka->broker;
 
     if (!brokers || strlen(brokers) == 0) {
@@ -203,36 +302,32 @@ static apr_status_t kafka_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *k
 /*
  * Connect to a specific Kafka topic and save its handle
  */
-static rd_kafka_topic_t *
-kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic, int32_t partition) {
+static apr_status_t
+kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic) {
+
     if (!topic || strlen(topic) == 0) {
         ap_log_error(PC_LOG_CRIT, NULL, "No such Kafka topic");
-        return NULL;
-    }
-
-    if (!kafka->rk_consumer) {
-        if (kafka_connect_consumer(p, kafka) != APR_SUCCESS) {
-            ap_log_error(PC_LOG_CRIT, NULL, "kafka_connect_consumer() call was NOT successful.");
-            return NULL;
-        }
+        return APR_EINIT;
     }
 
     if (!rk_topic) {
         ap_log_error(PC_LOG_CRIT, NULL, "No Kafka rk_topic provided");
-        return NULL;
+        return APR_EINIT;
     }
+
+    /* Initialize the topic if it's not existing. */
 
     /* Fetch topic handle */
     rd_kafka_topic_t *rkt;
     rkt = (rd_kafka_topic_t *) *rk_topic;
     if (rkt) {
-        return rkt;
+        return APR_SUCCESS;
     }
     /* Configuration topic */
     rd_kafka_topic_conf_t *topic_conf = rd_kafka_topic_conf_new();
     if (!topic_conf) {
         ap_log_error(PC_LOG_CRIT, NULL, "Init Kafka topic conf failed");
-        return NULL;
+        return APR_EINIT;
     }
 
     /* Set configuration topic */
@@ -249,7 +344,7 @@ kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
                                         err, sizeof(err)) != RD_KAFKA_CONF_OK) {
                 ap_log_error(PC_LOG_CRIT, NULL, "Kafka topic config: %s", err);
                 rd_kafka_topic_conf_destroy(topic_conf);
-                return NULL;
+                return APR_EINIT;
             }
         }
         hash = apr_hash_next(hash);
@@ -260,40 +355,12 @@ kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
     if (!rkt) {
         ap_log_error(PC_LOG_CRIT, NULL, "Kafka topic handle creation failed!");
         rd_kafka_topic_conf_destroy(topic_conf);
-        return NULL;
+        return APR_EINIT;
     }
-
-    /* Forward all events to consumer queue */
-    rd_kafka_poll_set_consumer(kafka->rk_consumer);
 
     *rk_topic = (const void *) rkt;
 
-    return rkt;
-}
-
-
-
-/*
- * Send something to a specified topic. Partition is supported.
- * Note: Set partition to RD_KAFKA_PARTITION_UA if none is provided.
- */
-void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
-                   const char *topic, const char **rk_topic, int32_t partition, char *msg, const char *key) {
-    rd_kafka_topic_t *rkt = kafka_topic_connect_producer(p, kafka, topic, rk_topic);
-    if (rkt) {
-        ap_log_error(PC_LOG_INFO, NULL, "produce: (%s:%i) %s", topic, partition, msg);
-
-        /* Produce send */
-        if (rd_kafka_produce(rkt, partition, RD_KAFKA_MSG_F_COPY,
-                             msg, strlen(msg), key, strlen(key), NULL) == -1) {
-            ap_log_error(PC_LOG_CRIT, NULL, "Kafka produce failed! Topic: %s", topic);
-        }
-
-        /* Poll to handle delivery reports */
-        rd_kafka_poll(kafka->rk_producer, 10);
-    } else {
-        ap_log_error(PC_LOG_CRIT, NULL, "No such kafka topic: %s", topic);
-    }
+    return APR_SUCCESS;
 }
 
 /*
@@ -301,11 +368,21 @@ void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
  * Note: Set partition to RD_KAFKA_PARTITION_UA if none is provided.
  */
 void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
-                   const char *topic, const char **rk_topic, int32_t partition, const char *key) {
-    //rd_kafka_topic_t *rkt = kafka_topic_connect_consumer(p, kafka, topic, rk_topic, partition);
+                   const char *topic, const char **rk_topic, const char *key) {
 
-    // Even needed?
-    // rd_kafka_conf_set_default_topic_conf(conf, topic_conf);
+    if (!rk_topic) {
+        if (kafka_topic_connect_consumer(p, kafka, topic, rk_topic) != APR_SUCCESS) {
+            ap_log_error(PC_LOG_CRIT, NULL, "Could not create topic for message consumer.");
+        }
+        ap_log_error(PC_LOG_CRIT, NULL, "Created topic for message consumer.");
+    }
+
+    if(kafka_connect_consumer(p, kafka) != APR_SUCCESS) {
+        ap_log_error(PC_LOG_CRIT, NULL, "Kafka consumer initialisation call was NOT successful.");
+        return;
+    }
+
+    // Needed? -> rd_kafka_conf_set_default_topic_conf(conf, topic_conf);
 
     rd_kafka_resp_err_t err;
 
@@ -316,108 +393,22 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
         exit(1);
     }
 
-    //if (rkt) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Starting consuming messages from %s", topic);
-        // ToDo Philip: Switch to High-level balanced Consumer. See https://github.com/edenhill/librdkafka/blob/master/examples/rdkafka_performance.c line 1478+
+    ap_log_error(PC_LOG_CRIT, NULL, "Starting consuming messages from %s", topic);
 
-        rd_kafka_message_t *rkmessage;
+    rd_kafka_message_t *rkmessage;
 
-        rkmessage = rd_kafka_consumer_poll(kafka->rk_consumer, 1000);
-        if (rkmessage) {
-            ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rkmessage->payload ,rkmessage->key);
-            rd_kafka_message_destroy(rkmessage);
-        }
-
+    rkmessage = rd_kafka_consumer_poll(kafka->rk_consumer, 1000);
+    if (rkmessage) {
         // ToDo Philip: Do the application logic here. The waiting and so on.
-        /*if (rkmessage == NULL && rkmessage->err) {
-            ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE an error occurred!");
-            if (rkmessage->err == ETIMEDOUT) {
-                ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE timeout reached!");
-            }
-            if (rkmessage->err == ENOENT) {
-                ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE partition is unknown!");
-            }
-        } else {
-            ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rk_message->payload ,rk_message->key);
-        }*/
-        /* After usage, the message needs to be destroyed. */
-        /*rd_kafka_message_destroy(rkmessage);
-    } else {
-        ap_log_error(PC_LOG_CRIT, NULL, "No such kafka topic: %s", topic);
-    }*/
-    
-}
-
-/*
- * Use this function to extract some request information and send it to kafka
- * Note: We want milliseconds and not microseconds -> divide request_time by 1000.
- */
-void extract_click_to_kafka(request_rec *r, char *uuid) {
-
-    mod_mshield_server_t *config;
-    config = ap_get_module_config(r->server->module_config, &mshield_module);
-
-    char *url = r->parsed_uri.path;
-    //ap_log_error(PC_LOG_CRIT, NULL, "Parsed URI: [%s]", r->parsed_uri.path);
-    //ap_log_error(PC_LOG_CRIT, NULL, "Unparsed URI: [%s]", r->unparsed_uri);
-
-    cJSON *click_json;
-    click_json = cJSON_CreateObject();
-    cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(uuid));
-    cJSON_AddItemToObject(click_json, "timeStamp", cJSON_CreateNumber(r->request_time/1000));
-    cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(url));
-
-    char *risk_level = NULL;
-    risk_level = (char *) apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING);
-    if (risk_level) {
-        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] found in url_store", url);
-        cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(atoi(risk_level)));
-    } else {
-        /* Default value for unknown urls is 0. This means they are not rated in the engine. */
-        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] NOT found in url_store", url);
-        cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(0));
-    }
-
-    kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
-                  RD_KAFKA_PARTITION_UA, cJSON_Print(click_json), uuid);
-
-    cJSON_Delete(click_json);
-
-    /* If URL was critical, wait for a response message from the engine and parse it. */
-    if (risk_level && atoi(risk_level) == 1) {
-        kafka_consume(config->pool, &config->kafka, config->kafka.topic_analyse_result, &config->kafka.rk_topic_analyse_result,
-                      RD_KAFKA_PARTITION_UA, "test_key");
-        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] risk level was [%i]", url, atoi(apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING)));
+        ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rkmessage->payload ,rkmessage->key);
+        rd_kafka_message_destroy(rkmessage);
     }
 
 }
 
-/*
- * Use this function to extract the url configurations and send it to kafka
- */
-void extract_url_to_kafka(server_rec *s) {
-
-    mod_mshield_server_t *config;
-    config = ap_get_module_config(s->module_config, &mshield_module);
-
-    cJSON *root = cJSON_CreateObject();
-    apr_hash_index_t *hi;
-    const char *key;
-    const char *value;
-    for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
-        apr_hash_this(hi, (const void**)&key, NULL, (void**)&value);
-        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-DETECTION: URL config. KEY: %s VALUE: %s", key, value);
-        cJSON *temp;
-        cJSON_AddItemToObject(root, "url_entry", temp = cJSON_CreateObject());
-        cJSON_AddItemToObject(temp, "url", cJSON_CreateString(key));
-        cJSON_AddItemToObject(temp, "risk_level", cJSON_CreateNumber(atoi(value)));
-    }
-
-    kafka_produce(config->pool, &config->kafka, config->kafka.topic_url_config, &config->kafka.rk_topic_url_config,
-                  RD_KAFKA_PARTITION_UA, cJSON_Print(root), key);
-    cJSON_Delete(root);
-    kafka_cleanup(s);
-}
+/****************************************************************************************************************
+ * Cleanup
+ *****************************************************************************************************************/
 
 /*
  * Cleans up kafka stuff when apache is shutting down
