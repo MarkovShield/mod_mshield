@@ -77,6 +77,7 @@
 /* Fraud detection stuff starts here */
 #define MOD_MSHIELD_FRAUD_DETECTION_ENABLED        0                                            /* by default the fraud detection functionality is off */
 #define MOD_MSHIELD_KAFKA_BROKER                "127.0.0.1:9092"                            /* set the kafka broker IP and port */
+#define MOD_MSHIELD_KAFKA_GROUP_ID              "mshield"                                   /* set the Kafka client group id */
 #define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE         "mshield-analyse"                            /* set Kafka topic on which clicks are sent to the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT  "mshield-analyse-result"                    /* set Kafka topic to receive analysed results from the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING     "mshield-user-mapping"                      /* set Kafka topic on which the username <-> UUID mapping is sent to the engine */
@@ -144,6 +145,7 @@ typedef struct {
     const char *topic_url_config;                   /* Set the kafka topic on which the url <-> risk_level configuration is sent */
     const char *rk_topic_url_config;                /* topic_url_config handle */
     const char *broker;                             /* Set the IP of the Kafka broker */
+    const char *group_id;                           /* Kafka client group id string. */
     rd_kafka_t *rk_producer;                        /* Kafka producer handle */
     rd_kafka_t *rk_consumer;                        /* Kafka consumer handle */
     rd_kafka_topic_partition_list_t *topics;        /* Kafka topics for high-level consumer */
