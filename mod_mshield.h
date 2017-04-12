@@ -130,7 +130,11 @@ typedef struct {
     struct {
         apr_hash_t *global;
         apr_hash_t *topic;
-    } conf;
+    } conf_producer;
+    struct {
+        apr_hash_t *global;
+        apr_hash_t *topic;
+    } conf_consumer;
     const char *topic_analyse;                      /* Set the kafka topic on which clicks are sent to the engine */
     const char *rk_topic_analyse;                   /* topic_analyse handle */
     const char *topic_analyse_result;               /* Set the kafka topic on which analysed results from the engine comes back */
@@ -140,7 +144,8 @@ typedef struct {
     const char *topic_url_config;                   /* Set the kafka topic on which the url <-> risk_level configuration is sent */
     const char *rk_topic_url_config;                /* topic_url_config handle */
     const char *broker;                             /* Set the IP of the Kafka broker */
-    rd_kafka_t *rk;                                 /* Kafka handle */
+    rd_kafka_t *rk_producer;                        /* Kafka producer handle */
+    rd_kafka_t *rk_consumer;                        /* Kafka consumer handle */
 } mod_mshield_kafka_t;
 
 typedef struct {

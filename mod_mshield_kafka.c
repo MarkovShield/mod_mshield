@@ -1,9 +1,13 @@
 #include "mod_mshield.h"
 
+/****************************
+ * Producer functions
+ */
+
 /*
  * Connect to Kafka broker
  */
-static apr_status_t kafka_connect(apr_pool_t *p, mod_mshield_kafka_t *kafka) {
+static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *kafka) {
     const char *brokers = kafka->broker;
 
     if (!brokers || strlen(brokers) == 0) {
@@ -23,7 +27,7 @@ static apr_status_t kafka_connect(apr_pool_t *p, mod_mshield_kafka_t *kafka) {
     rd_kafka_conf_set(conf, "internal.termination.signal", tmp, NULL, 0);
 
     /* Set configuration */
-    apr_hash_index_t *hash = apr_hash_first(p, kafka->conf.global);
+    apr_hash_index_t *hash = apr_hash_first(p, kafka->conf_producer.global);
     while (hash) {
         const void *property = NULL;
         void *value = NULL;
@@ -42,43 +46,39 @@ static apr_status_t kafka_connect(apr_pool_t *p, mod_mshield_kafka_t *kafka) {
     }
 
     /* Create producer handle */
-    kafka->rk = rd_kafka_new(RD_KAFKA_PRODUCER, conf, NULL, 0);
-    if (!kafka->rk) {
+    kafka->rk_producer = rd_kafka_new(RD_KAFKA_PRODUCER, conf, NULL, 0);
+    if (!kafka->rk_producer) {
         ap_log_error(PC_LOG_CRIT, NULL, "Kafka producer init failed");
         rd_kafka_conf_destroy(conf);
         return APR_EINIT;
     }
 
-    ap_log_error(PC_LOG_CRIT, NULL, "Created Kafka producer");
-
-    rd_kafka_set_log_level(kafka->rk, 0);
+    rd_kafka_set_log_level(kafka->rk_producer, 0);
 
     /* Add brokers */
-    if (rd_kafka_brokers_add(kafka->rk, brokers) == 0) {
+    if (rd_kafka_brokers_add(kafka->rk_producer, brokers) == 0) {
         ap_log_error(PC_LOG_CRIT, NULL, "Add Kafka brokers: %s", brokers);
-        rd_kafka_destroy(kafka->rk);
-        kafka->rk = NULL;
+        rd_kafka_destroy(kafka->rk_producer);
+        kafka->rk_producer = NULL;
         return APR_EINIT;
     }
-
-    ap_log_error(PC_LOG_INFO, NULL, "Add Kafka brokers: %s", brokers);
 
     return APR_SUCCESS;
 }
 
 /*
- * Connect to a speficied Kafka topic and save its handle
+ * Connect to a specific Kafka topic and save its handle
  */
 static rd_kafka_topic_t *
-kafka_topic_connect(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic) {
+kafka_topic_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic) {
     if (!topic || strlen(topic) == 0) {
         ap_log_error(PC_LOG_CRIT, NULL, "No such Kafka topic");
         return NULL;
     }
 
-    if (!kafka->rk) {
-        if (kafka_connect(p, kafka) != APR_SUCCESS) {
-            ap_log_error(PC_LOG_CRIT, NULL, "kafka_connect() call was NOT successful.");
+    if (!kafka->rk_producer) {
+        if (kafka_connect_producer(p, kafka) != APR_SUCCESS) {
+            ap_log_error(PC_LOG_CRIT, NULL, "kafka_connect_producer() call was NOT successful.");
             return NULL;
         }
     }
@@ -102,7 +102,7 @@ kafka_topic_connect(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic
     }
 
     /* Set configuration topic */
-    apr_hash_index_t *hash = apr_hash_first(p, kafka->conf.topic);
+    apr_hash_index_t *hash = apr_hash_first(p, kafka->conf_producer.topic);
     while (hash) {
         const void *property = NULL;
         void *value = NULL;
@@ -122,18 +122,156 @@ kafka_topic_connect(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic
     }
 
     /* Create topic handle */
-    rkt = rd_kafka_topic_new(kafka->rk, topic, topic_conf);
+    rkt = rd_kafka_topic_new(kafka->rk_producer, topic, topic_conf);
     if (!rkt) {
         ap_log_error(PC_LOG_CRIT, NULL, "Kafka topic handle creation failed!");
         rd_kafka_topic_conf_destroy(topic_conf);
         return NULL;
     }
 
-    ap_log_error(PC_LOG_INFO, NULL, "Created Kafka topic: %s", topic);
     *rk_topic = (const void *) rkt;
 
     return rkt;
 }
+
+/****************************
+ * Consumer functions
+ */
+
+/*
+ * Connect to Kafka broker
+ */
+static apr_status_t kafka_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka) {
+    const char *brokers = kafka->broker;
+
+    if (!brokers || strlen(brokers) == 0) {
+        brokers = MOD_MSHIELD_KAFKA_BROKER;
+    }
+
+    /* Configuration */
+    rd_kafka_conf_t *conf = rd_kafka_conf_new();
+    if (!conf) {
+        ap_log_error(PC_LOG_CRIT, NULL, "Init Kafka conf failed");
+        return APR_EINIT;
+    }
+
+    /* Quick termination */
+    char tmp[512];
+    snprintf(tmp, sizeof(tmp), "%i", SIGIO);
+    rd_kafka_conf_set(conf, "internal.termination.signal", tmp, NULL, 0);
+
+    /* Set configuration */
+    apr_hash_index_t *hash = apr_hash_first(p, kafka->conf_consumer.global);
+    while (hash) {
+        const void *property = NULL;
+        void *value = NULL;
+        apr_hash_this(hash, &property, NULL, &value);
+        if (value) {
+            ap_log_error(PC_LOG_INFO, NULL, "global configration: %s = %s", (char *) property, (char *) value);
+
+            if (rd_kafka_conf_set(conf, (char *) property, (char *) value,
+                                  tmp, sizeof(tmp)) != RD_KAFKA_CONF_OK) {
+                ap_log_error(PC_LOG_INFO, NULL, "Kafka config: %s", tmp);
+                rd_kafka_conf_destroy(conf);
+                return APR_EINIT;
+            }
+        }
+        hash = apr_hash_next(hash);
+    }
+
+    /* Create consumer handle */
+    kafka->rk_consumer = rd_kafka_new(RD_KAFKA_CONSUMER, conf, NULL, 0);
+    if (!kafka->rk_consumer) {
+        ap_log_error(PC_LOG_CRIT, NULL, "Kafka consumer init failed");
+        rd_kafka_conf_destroy(conf);
+        return APR_EINIT;
+    }
+
+    rd_kafka_set_log_level(kafka->rk_consumer, 0);
+
+    /* Add brokers */
+    if (rd_kafka_brokers_add(kafka->rk_consumer, brokers) == 0) {
+        ap_log_error(PC_LOG_CRIT, NULL, "Add Kafka brokers: %s", brokers);
+        rd_kafka_destroy(kafka->rk_consumer);
+        kafka->rk_consumer = NULL;
+        return APR_EINIT;
+    }
+
+    return APR_SUCCESS;
+}
+
+/*
+ * Connect to a specific Kafka topic and save its handle
+ */
+static rd_kafka_topic_t *
+kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic, int32_t partition) {
+    if (!topic || strlen(topic) == 0) {
+        ap_log_error(PC_LOG_CRIT, NULL, "No such Kafka topic");
+        return NULL;
+    }
+
+    if (!kafka->rk_consumer) {
+        if (kafka_connect_consumer(p, kafka) != APR_SUCCESS) {
+            ap_log_error(PC_LOG_CRIT, NULL, "kafka_connect_consumer() call was NOT successful.");
+            return NULL;
+        }
+    }
+
+    if (!rk_topic) {
+        ap_log_error(PC_LOG_CRIT, NULL, "No Kafka rk_topic provided");
+        return NULL;
+    }
+
+    /* Fetch topic handle */
+    rd_kafka_topic_t *rkt;
+    rkt = (rd_kafka_topic_t *) *rk_topic;
+    if (rkt) {
+        return rkt;
+    }
+    /* Configuration topic */
+    rd_kafka_topic_conf_t *topic_conf = rd_kafka_topic_conf_new();
+    if (!topic_conf) {
+        ap_log_error(PC_LOG_CRIT, NULL, "Init Kafka topic conf failed");
+        return NULL;
+    }
+
+    /* Set configuration topic */
+    apr_hash_index_t *hash = apr_hash_first(p, kafka->conf_consumer.topic);
+    while (hash) {
+        const void *property = NULL;
+        void *value = NULL;
+        apr_hash_this(hash, &property, NULL, &value);
+        if (value) {
+            char err[512];
+            ap_log_error(PC_LOG_INFO, NULL, "topic configration: %s = %s", (char *) property, (char *) value);
+
+            if (rd_kafka_topic_conf_set(topic_conf, (char *) property, (char *) value,
+                                        err, sizeof(err)) != RD_KAFKA_CONF_OK) {
+                ap_log_error(PC_LOG_CRIT, NULL, "Kafka topic config: %s", err);
+                rd_kafka_topic_conf_destroy(topic_conf);
+                return NULL;
+            }
+        }
+        hash = apr_hash_next(hash);
+    }
+
+    /* Create topic handle */
+    rkt = rd_kafka_topic_new(kafka->rk_consumer, topic, topic_conf);
+    if (!rkt) {
+        ap_log_error(PC_LOG_CRIT, NULL, "Kafka topic handle creation failed!");
+        rd_kafka_topic_conf_destroy(topic_conf);
+        return NULL;
+    }
+
+    /* Start consuming on the topic */
+    rd_kafka_consume_start(rkt, partition, RD_KAFKA_OFFSET_END);
+
+    *rk_topic = (const void *) rkt;
+
+    return rkt;
+}
+
+
 
 /*
  * Send something to a specified topic. Partition is supported.
@@ -141,7 +279,7 @@ kafka_topic_connect(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic
  */
 void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
                    const char *topic, const char **rk_topic, int32_t partition, char *msg, const char *key) {
-    rd_kafka_topic_t *rkt = kafka_topic_connect(p, kafka, topic, rk_topic);
+    rd_kafka_topic_t *rkt = kafka_topic_connect_producer(p, kafka, topic, rk_topic);
     if (rkt) {
         ap_log_error(PC_LOG_INFO, NULL, "produce: (%s:%i) %s", topic, partition, msg);
 
@@ -152,7 +290,28 @@ void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
         }
 
         /* Poll to handle delivery reports */
-        rd_kafka_poll(kafka->rk, 10);
+        rd_kafka_poll(kafka->rk_producer, 10);
+    } else {
+        ap_log_error(PC_LOG_CRIT, NULL, "No such kafka topic: %s", topic);
+    }
+}
+
+/*
+ * Receive something to a specified topic. Partition is supported.
+ * Note: Set partition to RD_KAFKA_PARTITION_UA if none is provided.
+ */
+void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
+                   const char *topic, const char **rk_topic, int32_t partition, const char *key) {
+    rd_kafka_topic_t *rkt = kafka_topic_connect_consumer(p, kafka, topic, rk_topic, partition);
+
+    if (rkt) {
+        rd_kafka_message_t *rk_message;
+        rk_message = rd_kafka_consume((rd_kafka_topic_t *)rk_topic, partition, 100000);
+        // ToDo Philip: Do the application logic here. The waiting and so on.
+
+        ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rk_message->payload ,rk_message->key);
+
+        rd_kafka_message_destroy(rk_message);
     } else {
         ap_log_error(PC_LOG_CRIT, NULL, "No such kafka topic: %s", topic);
     }
@@ -192,6 +351,12 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
                   RD_KAFKA_PARTITION_UA, cJSON_Print(click_json), uuid);
 
     cJSON_Delete(click_json);
+
+    // ToDo Philip: If URL was critical, call function there to wait for response
+    if (atoi(risk_level) == 1) {
+        kafka_consume(config->pool, &config->kafka, config->kafka.topic_analyse_result, &config->kafka.rk_topic_analyse_result,
+                      RD_KAFKA_PARTITION_UA, "test_key");
+    }
 
 }
 
@@ -242,17 +407,17 @@ apr_status_t kafka_cleanup(void *arg) {
         return rv;
     }
 
-    if (config->kafka.rk) {
+    if (config->kafka.rk_producer) {
         ERRLOG_SRV_INFO("Poll to handle delivery reports");
-        rd_kafka_poll(config->kafka.rk, 0);
+        rd_kafka_poll(config->kafka.rk_producer, 0);
 
         ERRLOG_SRV_INFO("Wait for messages to be delivered");
-        while (rd_kafka_outq_len(config->kafka.rk) > 0) {
-            rd_kafka_poll(config->kafka.rk, 10);
+        while (rd_kafka_outq_len(config->kafka.rk_producer) > 0) {
+            rd_kafka_poll(config->kafka.rk_producer, 10);
         }
 
         ERRLOG_SRV_INFO("Destroy topic");
-        apr_hash_index_t *hash = apr_hash_first(config->pool, config->kafka.conf.topic);
+        apr_hash_index_t *hash = apr_hash_first(config->pool, config->kafka.conf_producer.topic);
         while (hash) {
             const void *topic = NULL;
             void *rkt = NULL;
@@ -265,8 +430,8 @@ apr_status_t kafka_cleanup(void *arg) {
         }
 
         ERRLOG_SRV_INFO("Destroy producer handle");
-        rd_kafka_destroy(config->kafka.rk);
-        config->kafka.rk = NULL;
+        rd_kafka_destroy(config->kafka.rk_producer);
+        config->kafka.rk_producer = NULL;
 
         ERRLOG_SRV_INFO("Let backgournd threds clean up");
         int32_t i = 5;
