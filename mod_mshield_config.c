@@ -322,12 +322,15 @@ mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg) {
         conf->kafka.topic_usermapping = MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING;
         conf->kafka.topic_url_config = MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG;
         conf->kafka.rk_producer = NULL;
+        conf->kafka.rk_consumer = NULL;
         conf->kafka.rk_topic_analyse = NULL;
         conf->kafka.rk_topic_analyse_result = NULL;
         conf->kafka.rk_topic_usermapping = NULL;
         conf->kafka.rk_topic_url_config = NULL;
         conf->kafka.conf_producer.global = apr_hash_make(cmd->pool);
         conf->kafka.conf_producer.topic = apr_hash_make(cmd->pool);
+        conf->kafka.conf_consumer.global = apr_hash_make(cmd->pool);
+        conf->kafka.conf_consumer.topic = apr_hash_make(cmd->pool);
     }
     return OK;
 }

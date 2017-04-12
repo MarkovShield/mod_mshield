@@ -264,7 +264,7 @@ kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
     }
 
     /* Start consuming on the topic */
-    rd_kafka_consume_start(rkt, partition, RD_KAFKA_OFFSET_END);
+    rd_kafka_consume_start(rkt, partition, RD_KAFKA_OFFSET_BEGINNING);
 
     *rk_topic = (const void *) rkt;
 
@@ -305,16 +305,26 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
     rd_kafka_topic_t *rkt = kafka_topic_connect_consumer(p, kafka, topic, rk_topic, partition);
 
     if (rkt) {
+        ap_log_error(PC_LOG_CRIT, NULL, "Starting consuming messages from %s", topic);
         rd_kafka_message_t *rk_message;
-        rk_message = rd_kafka_consume((rd_kafka_topic_t *)rk_topic, partition, 100000);
+        rk_message = rd_kafka_consume((rd_kafka_topic_t *)rk_topic, partition, 10000);
         // ToDo Philip: Do the application logic here. The waiting and so on.
-
-        ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rk_message->payload ,rk_message->key);
-
+        if (rk_message == NULL) {
+            ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE an error occurred!");
+            if (rk_message->err == ETIMEDOUT) {
+                ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE timeout reached!");
+            }
+            if (rk_message->err == ENOENT) {
+                ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE partition is unknown!");
+            }
+        } else {
+            ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rk_message->payload ,rk_message->key);
+        }
         rd_kafka_message_destroy(rk_message);
     } else {
         ap_log_error(PC_LOG_CRIT, NULL, "No such kafka topic: %s", topic);
     }
+    
 }
 
 /*
@@ -327,8 +337,8 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     config = ap_get_module_config(r->server->module_config, &mshield_module);
 
     char *url = (char *) mshield_remove_trailing_slash(r->unparsed_uri);
-    ap_log_error(PC_LOG_CRIT, NULL, "URL befor trailing / removal: [%s]", r->parsed_uri.path);
-    ap_log_error(PC_LOG_CRIT, NULL, "URL after trailing / removal: [%s]", url);
+    //ap_log_error(PC_LOG_CRIT, NULL, "URL befor trailing / removal: [%s]", r->parsed_uri.path);
+    //ap_log_error(PC_LOG_CRIT, NULL, "URL after trailing / removal: [%s]", url);
 
     cJSON *click_json;
     click_json = cJSON_CreateObject();
@@ -336,7 +346,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     cJSON_AddItemToObject(click_json, "timeStamp", cJSON_CreateNumber(r->request_time/1000));
     cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(url));
 
-    const char *risk_level;
+    char *risk_level = NULL;
     risk_level = (char *) apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING);
     if (risk_level) {
         ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] found in url_store", url);
@@ -353,9 +363,10 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     cJSON_Delete(click_json);
 
     // ToDo Philip: If URL was critical, call function there to wait for response
-    if (atoi(risk_level) == 1) {
+    if (risk_level && atoi(risk_level) == 1) {
         kafka_consume(config->pool, &config->kafka, config->kafka.topic_analyse_result, &config->kafka.rk_topic_analyse_result,
                       RD_KAFKA_PARTITION_UA, "test_key");
+        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] risk level was [%i]", url, atoi(apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING)));
     }
 
 }
