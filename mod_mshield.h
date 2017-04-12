@@ -146,6 +146,7 @@ typedef struct {
     const char *broker;                             /* Set the IP of the Kafka broker */
     rd_kafka_t *rk_producer;                        /* Kafka producer handle */
     rd_kafka_t *rk_consumer;                        /* Kafka consumer handle */
+    rd_kafka_topic_partition_list_t *topics;        /* Kafka topics for high-level consumer */
 } mod_mshield_kafka_t;
 
 typedef struct {

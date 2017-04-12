@@ -263,8 +263,8 @@ kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
         return NULL;
     }
 
-    /* Start consuming on the topic */
-    rd_kafka_consume_start(rkt, partition, RD_KAFKA_OFFSET_END);
+    /* Forward all events to consumer queue */
+    rd_kafka_poll_set_consumer(kafka->rk_consumer);
 
     *rk_topic = (const void *) rkt;
 
@@ -304,113 +304,44 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
                    const char *topic, const char **rk_topic, int32_t partition, const char *key) {
     //rd_kafka_topic_t *rkt = kafka_topic_connect_consumer(p, kafka, topic, rk_topic, partition);
 
-    char errstr[512];
-    static int run = 1;
-    int64_t seek_offset = 0;
-    int64_t start_offset = 0;
-    rd_kafka_topic_conf_t *topic_conf;
-    topic_conf = rd_kafka_topic_conf_new();
-    rd_kafka_conf_t *conf;
-    conf = rd_kafka_conf_new();
-    rd_kafka_topic_t *rkt;
+    // Even needed?
+    // rd_kafka_conf_set_default_topic_conf(conf, topic_conf);
 
+    rd_kafka_resp_err_t err;
 
-    /* Create Kafka handle */
-    if (!(kafka->rk_consumer = rd_kafka_new(RD_KAFKA_CONSUMER, conf,
-                            errstr, sizeof(errstr)))) {
-        fprintf(stderr,
-                "%% Failed to create new consumer: %s\n",
-                errstr);
-        exit(1);
-    }
-
-    /* Add brokers */
-    if (rd_kafka_brokers_add(kafka->rk_consumer, kafka->broker) == 0) {
-        fprintf(stderr, "%% No valid brokers specified\n");
-        exit(1);
-    }
-
-    /* Create topic */
-    rkt = rd_kafka_topic_new(kafka->rk_consumer, topic, topic_conf);
-    topic_conf = NULL; /* Now owned by topic */
-
-    /* Start consuming */
-    if (rd_kafka_consume_start(rkt, partition, start_offset) == -1){
-        rd_kafka_resp_err_t err = rd_kafka_last_error();
-        fprintf(stderr, "%% Failed to start consuming: %s\n",
+    err = rd_kafka_subscribe(kafka->rk_consumer, kafka->topics);
+    if (err) {
+        fprintf(stderr, "%% Subscribe failed: %s\n",
                 rd_kafka_err2str(err));
-        if (err == RD_KAFKA_RESP_ERR__INVALID_ARG)
-            fprintf(stderr,
-                    "%% Broker based offset storage "
-                            "requires a group.id, "
-                            "add: -X group.id=yourGroup\n");
         exit(1);
     }
-
-    while (run) {
-        rd_kafka_message_t *rkmessage;
-        rd_kafka_resp_err_t err;
-
-        /* Poll for errors, etc. */
-        rd_kafka_poll(kafka->rk_consumer, 0);
-
-        /* Consume single message.
-         * See rdkafka_performance.c for high speed
-         * consuming of messages. */
-        rkmessage = rd_kafka_consume(rkt, partition, 1000);
-        if (!rkmessage) /* timeout */
-            continue;
-
-        ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rkmessage->payload ,rkmessage->key);
-
-        /* Return message to rdkafka */
-        rd_kafka_message_destroy(rkmessage);
-
-        if (seek_offset) {
-            err = rd_kafka_seek(rkt, partition, seek_offset,
-                                2000);
-            if (err)
-                printf("Seek failed: %s\n",
-                       rd_kafka_err2str(err));
-            else
-                printf("Seeked to %"PRId64"\n",
-                       seek_offset);
-            seek_offset = 0;
-        }
-    }
-
-    /* Stop consuming */
-    rd_kafka_consume_stop(rkt, partition);
-
-    while (rd_kafka_outq_len(kafka->rk_consumer) > 0)
-        rd_kafka_poll(kafka->rk_consumer, 10);
-
-    /* Destroy topic */
-    rd_kafka_topic_destroy(rkt);
-
-    /* Destroy handle */
-    rd_kafka_destroy(kafka->rk_consumer);
 
     //if (rkt) {
-    /*if (true) {
         ap_log_error(PC_LOG_CRIT, NULL, "Starting consuming messages from %s", topic);
         // ToDo Philip: Switch to High-level balanced Consumer. See https://github.com/edenhill/librdkafka/blob/master/examples/rdkafka_performance.c line 1478+
-        rd_kafka_message_t *rk_message;
-        rk_message = rd_kafka_consume((rd_kafka_topic_t *)rk_topic, partition, 1000);
+
+        rd_kafka_message_t *rkmessage;
+
+        rkmessage = rd_kafka_consumer_poll(kafka->rk_consumer, 1000);
+        if (rkmessage) {
+            ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rkmessage->payload ,rkmessage->key);
+            rd_kafka_message_destroy(rkmessage);
+        }
+
         // ToDo Philip: Do the application logic here. The waiting and so on.
-        if (rk_message == NULL && rk_message->err) {
+        /*if (rkmessage == NULL && rkmessage->err) {
             ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE an error occurred!");
-            if (rk_message->err == ETIMEDOUT) {
+            if (rkmessage->err == ETIMEDOUT) {
                 ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE timeout reached!");
             }
-            if (rk_message->err == ENOENT) {
+            if (rkmessage->err == ENOENT) {
                 ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE partition is unknown!");
             }
         } else {
             ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rk_message->payload ,rk_message->key);
         }*/
         /* After usage, the message needs to be destroyed. */
-        /*rd_kafka_message_destroy(rk_message);
+        /*rd_kafka_message_destroy(rkmessage);
     } else {
         ap_log_error(PC_LOG_CRIT, NULL, "No such kafka topic: %s", topic);
     }*/
@@ -537,7 +468,21 @@ apr_status_t kafka_cleanup(void *arg) {
 
     if(config->kafka.rk_consumer) {
 
-        rd_kafka_consume_stop((rd_kafka_topic_t *) config->kafka.rk_topic_analyse_result, RD_KAFKA_PARTITION_UA);
+        rd_kafka_resp_err_t err;
+
+        err = rd_kafka_consumer_close(config->kafka.rk_consumer);
+        if (err)
+            fprintf(stderr, "%% Failed to close consumer: %s\n",
+                    rd_kafka_err2str(err));
+
+        rd_kafka_destroy(config->kafka.rk_consumer);
+
+        rd_kafka_topic_partition_list_destroy(config->kafka.topics);
+
+        /* Let background threads clean up and terminate cleanly. */
+        rd_kafka_wait_destroyed(2000);
+
+/*        rd_kafka_consume_stop((rd_kafka_topic_t *) config->kafka.rk_topic_analyse_result, RD_KAFKA_PARTITION_UA);
 
         ERRLOG_SRV_INFO("Destroy topic");
         if (config->kafka.rk_topic_analyse_result) {
@@ -551,7 +496,7 @@ apr_status_t kafka_cleanup(void *arg) {
         ERRLOG_SRV_INFO("Let background threads clean up");
         int32_t i = 5;
         while (i-- > 0 && rd_kafka_wait_destroyed(500) == -1) { ;
-        }
+        }*/
     }
 
     apr_global_mutex_unlock(mshield_mutex);
