@@ -33,7 +33,7 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
         void *value = NULL;
         apr_hash_this(hash, &property, NULL, &value);
         if (value) {
-            ap_log_error(PC_LOG_INFO, NULL, "global configration: %s = %s", (char *) property, (char *) value);
+            ap_log_error(PC_LOG_INFO, NULL, "global producer configration: %s = %s", (char *) property, (char *) value);
 
             if (rd_kafka_conf_set(conf, (char *) property, (char *) value,
                                   errstr, sizeof(errstr)) != RD_KAFKA_CONF_OK) {
@@ -109,7 +109,7 @@ kafka_topic_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
         apr_hash_this(hash, &property, NULL, &value);
         if (value) {
             char err[512];
-            ap_log_error(PC_LOG_INFO, NULL, "topic configration: %s = %s", (char *) property, (char *) value);
+            ap_log_error(PC_LOG_INFO, NULL, "topic producer configration: %s = %s", (char *) property, (char *) value);
 
             if (rd_kafka_topic_conf_set(topic_conf, (char *) property, (char *) value,
                                         err, sizeof(err)) != RD_KAFKA_CONF_OK) {
@@ -268,11 +268,11 @@ static apr_status_t kafka_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *k
         void *value = NULL;
         apr_hash_this(hash, &property, NULL, &value);
         if (value) {
-            ap_log_error(PC_LOG_INFO, NULL, "global configuration: %s = %s", (char *) property, (char *) value);
+            ap_log_error(PC_LOG_INFO, NULL, "global consumer configuration: %s = %s", (char *) property, (char *) value);
 
             if (rd_kafka_conf_set(*conf, (char *) property, (char *) value,
                                   errstr, sizeof(errstr)) != RD_KAFKA_CONF_OK) {
-                ap_log_error(PC_LOG_INFO, NULL, "Kafka config: %s", errstr);
+                ap_log_error(PC_LOG_INFO, NULL, "ERROR setting property: %s", errstr);
                 rd_kafka_conf_destroy(*conf);
                 return APR_EINIT;
             }
@@ -280,7 +280,7 @@ static apr_status_t kafka_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *k
         hash = apr_hash_next(hash);
     }
 
-    /*if (rd_kafka_conf_set(conf, "group.id", "mshield", errstr, sizeof(errstr)) != RD_KAFKA_CONF_OK) {
+    /*if (rd_kafka_conf_set(*conf, "group.id", "mshield", errstr, sizeof(errstr)) != RD_KAFKA_CONF_OK) {
         ap_log_error(PC_LOG_CRIT, NULL, "Configuration of group.id failed!");
     }*/
 
@@ -345,7 +345,7 @@ kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
         apr_hash_this(hash, &property, NULL, &value);
         if (value) {
             char err[512];
-            ap_log_error(PC_LOG_INFO, NULL, "topic configuration: %s = %s", (char *) property, (char *) value);
+            ap_log_error(PC_LOG_INFO, NULL, "topic consumer configuration: %s = %s", (char *) property, (char *) value);
 
             if (rd_kafka_topic_conf_set(*topic_conf, (char *) property, (char *) value,
                                         err, sizeof(err)) != RD_KAFKA_CONF_OK) {

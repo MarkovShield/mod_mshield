@@ -331,11 +331,7 @@ mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg) {
         conf->kafka.conf_producer.global = apr_hash_make(cmd->pool);
         conf->kafka.topics = rd_kafka_topic_partition_list_new(1);
         /* Add some default settings for Kafka producer */
-        const char *property;
-        property = "queue.buffering.max.ms";
-        const char *value;
-        value = "1";
-        apr_hash_set(conf->kafka.conf_producer.global, property, APR_HASH_KEY_STRING, (const void *)value);
+        apr_hash_set(conf->kafka.conf_producer.global, "queue.buffering.max.ms", APR_HASH_KEY_STRING, (const void *)"1");
         conf->kafka.conf_producer.topic = apr_hash_make(cmd->pool);
         conf->kafka.conf_consumer.global = apr_hash_make(cmd->pool);
         /* Add some default settings for Kafka producer */
@@ -358,7 +354,7 @@ mshield_config_kafka_group_id(cmd_parms *cmd, void *dummy, const char *arg) {
     mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
     if (arg && conf->fraud_detection_enabled) {
         conf->kafka.group_id = arg;
-        apr_hash_set(conf->kafka.conf_producer.global, "group.id", APR_HASH_KEY_STRING, (const void *)arg);
+        apr_hash_set(conf->kafka.conf_consumer.global, "group.id", APR_HASH_KEY_STRING, (const void *)arg);
     }
     return OK;
 }
