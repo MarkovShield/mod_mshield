@@ -173,7 +173,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     cJSON *click_json;
     click_json = cJSON_CreateObject();
     cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(uuid));
-    cJSON_AddItemToObject(click_json, "timeStamp", cJSON_CreateNumber(r->request_time/1000));
+    cJSON_AddItemToObject(click_json, "timeStamp", cJSON_CreateNumber(r->request_time / 1000));
     cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(url));
 
     char *risk_level = NULL;
@@ -194,8 +194,10 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
 
     /* If URL was critical, wait for a response message from the engine and parse it. */
     if (risk_level && atoi(risk_level) == 1) {
-        kafka_consume(config->pool, &config->kafka, config->kafka.topic_analyse_result, &config->kafka.rk_topic_analyse_result, "test_key");
-        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] risk level was [%i]", url, atoi(apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING)));
+        kafka_consume(config->pool, &config->kafka, config->kafka.topic_analyse_result,
+                      &config->kafka.rk_topic_analyse_result, "test_key");
+        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] risk level was [%i]", url,
+                     atoi(apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING)));
     }
 
 }
@@ -307,7 +309,8 @@ static apr_status_t kafka_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *k
  * Connect to a specific Kafka topic and save its handle
  */
 static apr_status_t
-kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic, rd_kafka_topic_conf_t **topic_conf) {
+kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic,
+                             rd_kafka_topic_conf_t **topic_conf) {
 
     if (!topic || strlen(topic) == 0) {
         ap_log_error(PC_LOG_CRIT, NULL, "No such Kafka topic");
@@ -368,6 +371,32 @@ kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
 }
 
 /*
+ * Rebalance callback for partition assignment changes
+ */
+static void
+kafka_consumer_rebalance(rd_kafka_t *rk, rd_kafka_resp_err_t err, rd_kafka_topic_partition_list_t *partitions, void *opaque) {
+
+    ap_log_error(PC_LOG_INFO, NULL, "Consumer group rebalanced.");
+
+    switch (err) {
+        case RD_KAFKA_RESP_ERR__ASSIGN_PARTITIONS:
+            ap_log_error(PC_LOG_CRIT, NULL, "Partition assigned");
+            rd_kafka_assign(rk, partitions);
+            break;
+
+        case RD_KAFKA_RESP_ERR__REVOKE_PARTITIONS:
+            ap_log_error(PC_LOG_CRIT, NULL, "Partition revoked");
+            rd_kafka_assign(rk, NULL);
+            break;
+
+        default:
+            ap_log_error(PC_LOG_CRIT, NULL, "Partition rebalance failed: %s", rd_kafka_err2str(err));
+            rd_kafka_assign(rk, NULL);
+            break;
+    }
+}
+
+/*
  * Receive something to a specified topic. Partition is supported.
  * Note: Set partition to RD_KAFKA_PARTITION_UA if none is provided.
  */
@@ -398,6 +427,11 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
         rd_kafka_conf_set_default_topic_conf(conf, topic_conf);
     }
 
+    /* Callback called on partition assignment changes */
+    if (conf != NULL) {
+        rd_kafka_conf_set_rebalance_cb(conf, kafka_consumer_rebalance);
+    }
+
     err = rd_kafka_subscribe(kafka->rk_consumer, kafka->topics);
     if (err) {
         fprintf(stderr, "%% Subscribe failed: %s\n",
@@ -412,7 +446,7 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
     rkmessage = rd_kafka_consumer_poll(kafka->rk_consumer, 1000);
     if (rkmessage) {
         // ToDo Philip: Do the application logic here. The waiting and so on.
-        ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rkmessage->payload ,rkmessage->key);
+        ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rkmessage->payload, rkmessage->key);
         rd_kafka_message_destroy(rkmessage);
     }
 
@@ -469,7 +503,7 @@ apr_status_t kafka_cleanup(void *arg) {
         }
     }
 
-    if(config->kafka.rk_consumer) {
+    if (config->kafka.rk_consumer) {
 
         rd_kafka_resp_err_t err;
 
