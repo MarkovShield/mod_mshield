@@ -368,12 +368,10 @@ mshield_access_checker(request_rec *r)
 	 */
 
 	/* Initialize the session struct. */
-    // ToDo Philip: Check: Why is this function called twice inside this function?
 	mshield_session_init(&session, r, config);
 
 	/* Look up the session and save it to session, if it's found. */
     /*FIND*/
-    // ToDo Philip: Note: Here the old UUID gets writen to the new initialized session back again!
     switch (mshield_session_find(&session, config->cookie_name, cr->sessionid)) {
 	case STATUS_OK:
 		break;

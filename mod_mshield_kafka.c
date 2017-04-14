@@ -24,7 +24,6 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
     /* Quick termination */
     char errstr[512];
     snprintf(errstr, sizeof(errstr), "%i", SIGIO);
-    rd_kafka_conf_set(conf, "internal.termination.signal", errstr, NULL, 0);
 
     /* Set configuration */
     apr_hash_index_t *hash = apr_hash_first(p, kafka->conf_producer.global);
@@ -37,7 +36,7 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
 
             if (rd_kafka_conf_set(conf, (char *) property, (char *) value,
                                   errstr, sizeof(errstr)) != RD_KAFKA_CONF_OK) {
-                ap_log_error(PC_LOG_INFO, NULL, "Kafka config: %s", errstr);
+                ap_log_error(PC_LOG_CRIT, NULL, "Kafka config: %s", errstr);
                 rd_kafka_conf_destroy(conf);
                 return APR_EINIT;
             }
@@ -167,8 +166,6 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     config = ap_get_module_config(r->server->module_config, &mshield_module);
 
     char *url = r->parsed_uri.path;
-    //ap_log_error(PC_LOG_CRIT, NULL, "Parsed URI: [%s]", r->parsed_uri.path);
-    //ap_log_error(PC_LOG_CRIT, NULL, "Unparsed URI: [%s]", r->unparsed_uri);
 
     cJSON *click_json;
     click_json = cJSON_CreateObject();
@@ -179,11 +176,11 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     char *risk_level = NULL;
     risk_level = (char *) apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING);
     if (risk_level) {
-        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] found in url_store", url);
+        ap_log_error(PC_LOG_INFO, NULL, "URL [%s] found in url_store", url);
         cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(atoi(risk_level)));
     } else {
         /* Default value for unknown urls is 0. This means they are not rated in the engine. */
-        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] NOT found in url_store", url);
+        ap_log_error(PC_LOG_INFO, NULL, "URL [%s] NOT found in url_store", url);
         cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(0));
     }
 
@@ -196,7 +193,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     if (risk_level && atoi(risk_level) == 1) {
         kafka_consume(config->pool, &config->kafka, config->kafka.topic_analyse_result,
                       &config->kafka.rk_topic_analyse_result, "test_key");
-        ap_log_error(PC_LOG_CRIT, NULL, "URL [%s] risk level was [%i]", url,
+        ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url,
                      atoi(apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING)));
     }
 
@@ -259,7 +256,6 @@ static apr_status_t kafka_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *k
     /* Quick termination */
     char errstr[512];
     snprintf(errstr, sizeof(errstr), "%i", SIGIO);
-    rd_kafka_conf_set(*conf, "internal.termination.signal", errstr, NULL, 0);
 
     /* Set configuration */
     apr_hash_index_t *hash = apr_hash_first(p, kafka->conf_consumer.global);
@@ -272,17 +268,13 @@ static apr_status_t kafka_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *k
 
             if (rd_kafka_conf_set(*conf, (char *) property, (char *) value,
                                   errstr, sizeof(errstr)) != RD_KAFKA_CONF_OK) {
-                ap_log_error(PC_LOG_INFO, NULL, "ERROR setting property: %s", errstr);
+                ap_log_error(PC_LOG_CRIT, NULL, "ERROR setting property: %s", errstr);
                 rd_kafka_conf_destroy(*conf);
                 return APR_EINIT;
             }
         }
         hash = apr_hash_next(hash);
     }
-
-    /*if (rd_kafka_conf_set(*conf, "group.id", "mshield", errstr, sizeof(errstr)) != RD_KAFKA_CONF_OK) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Configuration of group.id failed!");
-    }*/
 
     /* Create consumer handle */
     kafka->rk_consumer = rd_kafka_new(RD_KAFKA_CONSUMER, *conf, errstr, sizeof(errstr));
@@ -406,20 +398,21 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
     rd_kafka_conf_t *conf = NULL;
     rd_kafka_topic_conf_t *topic_conf = NULL;
     rd_kafka_resp_err_t err;
+    rd_kafka_message_t *rkmessage;
 
     /* Create topic handle to consume from if it not exists */
     if (!rk_topic) {
         if (kafka_topic_connect_consumer(p, kafka, topic, rk_topic, &topic_conf) != APR_SUCCESS) {
             ap_log_error(PC_LOG_CRIT, NULL, "Could not create topic for message consumer.");
-            return;
+            exit(1);
         }
-        ap_log_error(PC_LOG_CRIT, NULL, "Created topic for message consumer.");
+        ap_log_error(PC_LOG_INFO, NULL, "Created topic for message consumer.");
     }
 
     /* Create kafka RD_KAFKA_CONSUMER handle if it not exists */
     if (kafka_connect_consumer(p, kafka, &conf) != APR_SUCCESS) {
         ap_log_error(PC_LOG_CRIT, NULL, "Kafka consumer initialisation call was NOT successful.");
-        return;
+        exit(1);
     }
 
     /* Set default topic config for pattern-matched topics. */
@@ -432,22 +425,24 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
         rd_kafka_conf_set_rebalance_cb(conf, kafka_consumer_rebalance);
     }
 
+    /* Add our topic to the topics list */
+    rd_kafka_topic_partition_list_add(kafka->topics, topic, RD_KAFKA_PARTITION_UA);
+
     err = rd_kafka_subscribe(kafka->rk_consumer, kafka->topics);
     if (err) {
-        fprintf(stderr, "%% Subscribe failed: %s\n",
-                rd_kafka_err2str(err));
+        ap_log_error(PC_LOG_CRIT, NULL, "Subscribe failed: [%s]", rd_kafka_err2str(err));
         exit(1);
     }
 
-    ap_log_error(PC_LOG_CRIT, NULL, "Starting consuming messages from %s", topic);
-
-    rd_kafka_message_t *rkmessage;
+    ap_log_error(PC_LOG_INFO, NULL, "===== Starting consuming messages from %s =====", topic);
 
     rkmessage = rd_kafka_consumer_poll(kafka->rk_consumer, 1000);
     if (rkmessage) {
         // ToDo Philip: Do the application logic here. The waiting and so on.
-        ap_log_error(PC_LOG_CRIT, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rkmessage->payload, rkmessage->key);
+        ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rkmessage->payload, rkmessage->key);
         rd_kafka_message_destroy(rkmessage);
+    } else {
+        ap_log_error(PC_LOG_CRIT, NULL, "Response message not received.");
     }
 
 }
@@ -508,9 +503,14 @@ apr_status_t kafka_cleanup(void *arg) {
         rd_kafka_resp_err_t err;
 
         err = rd_kafka_consumer_close(config->kafka.rk_consumer);
-        if (err)
-            fprintf(stderr, "%% Failed to close consumer: %s\n",
-                    rd_kafka_err2str(err));
+
+        if (err) {
+            ERRLOG_SRV_CRIT("Failed to close consumer: [%s]", rd_kafka_err2str(err));
+        }
+
+        if (config->kafka.rk_topic_analyse_result) {
+            rd_kafka_topic_destroy((rd_kafka_topic_t *) config->kafka.rk_topic_analyse_result);
+        }
 
         rd_kafka_destroy(config->kafka.rk_consumer);
 
@@ -519,21 +519,6 @@ apr_status_t kafka_cleanup(void *arg) {
         /* Let background threads clean up and terminate cleanly. */
         rd_kafka_wait_destroyed(2000);
 
-/*        rd_kafka_consume_stop((rd_kafka_topic_t *) config->kafka.rk_topic_analyse_result, RD_KAFKA_PARTITION_UA);
-
-        ERRLOG_SRV_INFO("Destroy topic");
-        if (config->kafka.rk_topic_analyse_result) {
-            rd_kafka_topic_destroy((rd_kafka_topic_t *) config->kafka.rk_topic_analyse_result);
-        }
-
-        ERRLOG_SRV_INFO("Destroy producer handle");
-        rd_kafka_destroy(config->kafka.rk_consumer);
-        config->kafka.rk_consumer = NULL;
-
-        ERRLOG_SRV_INFO("Let background threads clean up");
-        int32_t i = 5;
-        while (i-- > 0 && rd_kafka_wait_destroyed(500) == -1) { ;
-        }*/
     }
 
     apr_global_mutex_unlock(mshield_mutex);

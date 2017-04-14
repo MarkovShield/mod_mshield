@@ -328,14 +328,18 @@ mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg) {
         conf->kafka.rk_topic_analyse_result = NULL;
         conf->kafka.rk_topic_usermapping = NULL;
         conf->kafka.rk_topic_url_config = NULL;
-        conf->kafka.conf_producer.global = apr_hash_make(cmd->pool);
         conf->kafka.topics = rd_kafka_topic_partition_list_new(1);
-        /* Add some default settings for Kafka producer */
-        apr_hash_set(conf->kafka.conf_producer.global, "queue.buffering.max.ms", APR_HASH_KEY_STRING, (const void *)"1");
+        conf->kafka.conf_producer.global = apr_hash_make(cmd->pool);
         conf->kafka.conf_producer.topic = apr_hash_make(cmd->pool);
         conf->kafka.conf_consumer.global = apr_hash_make(cmd->pool);
-        /* Add some default settings for Kafka producer */
         conf->kafka.conf_consumer.topic = apr_hash_make(cmd->pool);
+
+        /* Add some default settings for Kafka consumer */
+        apr_hash_set(conf->kafka.conf_consumer.global, "queue.buffering.max.ms", APR_HASH_KEY_STRING, (const void *)"0");
+
+        /* Add some default settings for Kafka producer */
+        apr_hash_set(conf->kafka.conf_producer.global, "queue.buffering.max.ms", APR_HASH_KEY_STRING, (const void *)"1");
+        apr_hash_set(conf->kafka.conf_producer.global, "internal.termination.signal", APR_HASH_KEY_STRING, (const void *)"0");
     }
     return OK;
 }

@@ -115,15 +115,14 @@ mshield_session_create(session_t *session, bool is_new_session) {
     if (!sid) {
         return STATUS_ERROR;
     }
-    ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new SID [%s]", sid);
+    ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: Generated new SID [%s]", sid);
 
-    // ToDo Philip: Do the UUID generation stuff inside this function! Done -> Check!
-    ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: is_new_session = [%i]", is_new_session);
+    ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: is_new_session = [%i]", is_new_session);
     if (is_new_session) {
         apr_cpystrn(session->data->uuid, generate_uuid(session), sizeof(session->data->uuid));
-        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: UUID generated: [%s]", session->data->uuid);
+        ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: UUID generated: [%s]", session->data->uuid);
     } else {
-        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: NO UUID generated. UUID is: [%s]", session->data->uuid);
+        ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: NO UUID generated. UUID is: [%s]", session->data->uuid);
     }
 
     status = create_new_shm_session(session->request, sid, session->data->uuid, &session->handle);
@@ -205,7 +204,6 @@ mshield_session_set_cookie(session_t *session, const char *key, const char *valu
  * No cookies are created or updated.
  * session is a valid session.
  * Returns STATUS_ENOEXIST if session does not exist.
- * ToDo Philip: Copy UUID too!
  */
 apr_status_t
 mshield_session_renew(session_t *session) {
@@ -223,7 +221,7 @@ mshield_session_renew(session_t *session) {
         return status;
     }
 
-    ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: ==== Session renewal started ====");
+    ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: ==== Session renewal started ====");
 
     session->data->ctime = old_data->ctime;
     session->data->atime = old_data->atime;
@@ -237,16 +235,16 @@ mshield_session_renew(session_t *session) {
                 sizeof(session->data->redirect_url_after_login));
     apr_cpystrn(session->data->uuid, old_data->uuid, sizeof(old_data->uuid));
 
-    ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Old UUID: [%s]", old_data->uuid);
-    ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Old SID: [%s]", old_data->session_id);
-    ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: New SID: [%s]", session->data->session_id);
-    ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: New UUID: [%s]", session->data->uuid);
+    ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: Old UUID: [%s]", old_data->uuid);
+    ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: Old SID: [%s]", old_data->session_id);
+    ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: New SID: [%s]", session->data->session_id);
+    ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: New UUID: [%s]", session->data->uuid);
 
     old_data->cookiestore_index = -1; /* moved to new session ctx */
 
     mshield_shm_free(old_data);
 
-    ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: ==== Session renewal ended ====");
+    ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: ==== Session renewal ended ====");
 
     return STATUS_OK;
 }
