@@ -442,7 +442,7 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
         ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rkmessage->payload, rkmessage->key);
         rd_kafka_message_destroy(rkmessage);
     } else {
-        ap_log_error(PC_LOG_CRIT, NULL, "Response message not received.");
+        ap_log_error(PC_LOG_CRIT, NULL, "Response message not received. Error: %s", rd_kafka_err2str(rkmessage->err));
     }
 
 }
