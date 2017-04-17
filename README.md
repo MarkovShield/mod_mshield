@@ -198,6 +198,12 @@ cd /opt/applic/httpd/bin
 sudo ./httpd -f /opt/applic/httpd/conf/httpd.conf -e debug -DFOREGROUND
 ```
 
+### Kafka
+#### Show consumer groups
+```bash
+kafka-consumer-groups.sh --list --bootstrap-server localhost:9092
+```
+
 ### Cleanup compilation stuff
 ```bash
 make clean
