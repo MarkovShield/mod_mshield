@@ -399,6 +399,12 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
     rd_kafka_topic_conf_t *topic_conf = NULL;
     rd_kafka_resp_err_t err;
 
+    /* Create kafka RD_KAFKA_CONSUMER handle if it not exists */
+    if (kafka_connect_consumer(p, kafka, &conf) != APR_SUCCESS) {
+        ap_log_error(PC_LOG_CRIT, NULL, "Kafka consumer initialisation call was NOT successful.");
+        exit(1);
+    }
+
     /* Create topic handle to consume from if it not exists */
     if (!rk_topic) {
         if (kafka_topic_connect_consumer(p, kafka, topic, rk_topic, &topic_conf) != APR_SUCCESS) {
@@ -406,12 +412,6 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
             exit(1);
         }
         ap_log_error(PC_LOG_INFO, NULL, "Created topic for message consumer.");
-    }
-
-    /* Create kafka RD_KAFKA_CONSUMER handle if it not exists */
-    if (kafka_connect_consumer(p, kafka, &conf) != APR_SUCCESS) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Kafka consumer initialisation call was NOT successful.");
-        exit(1);
     }
 
     /* Set default topic config for pattern-matched topics. */
@@ -447,7 +447,7 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
         //ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rkmessage->payload, rkmessage->key);
     } else {
       if (rkmessage->err) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Response message not received. Error: %s", rkmessage->err);
+        ap_log_error(PC_LOG_CRIT, NULL, "Response message not received. Error: %i", rkmessage->err);
       } else {
         ap_log_error(PC_LOG_CRIT, NULL, "Response message not received. No error log provided.");
       }
