@@ -284,7 +284,7 @@ static apr_status_t kafka_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *k
         return APR_EINIT;
     }
 
-    rd_kafka_set_log_level(kafka->rk_consumer, 0);
+    rd_kafka_set_log_level(kafka->rk_consumer, LOG_DEBUG);
 
     /* Add brokers */
     if (rd_kafka_brokers_add(kafka->rk_consumer, brokers) == 0) {
@@ -489,11 +489,12 @@ apr_status_t kafka_cleanup(void *arg) {
             rd_kafka_poll(config->kafka.rk_producer, 10);
         }
 
-        ERRLOG_SRV_INFO("Destroy topic");
         if (config->kafka.rk_topic_analyse) {
+            ERRLOG_SRV_INFO("Destroy topic [%s]", config->kafka.rk_topic_analyse);
             rd_kafka_topic_destroy((rd_kafka_topic_t *) config->kafka.rk_topic_analyse);
         }
         if (config->kafka.rk_topic_usermapping) {
+            ERRLOG_SRV_INFO("Destroy topic [%s]", config->kafka.rk_topic_usermapping);
             rd_kafka_topic_destroy((rd_kafka_topic_t *) config->kafka.rk_topic_usermapping);
         }
 
@@ -511,6 +512,7 @@ apr_status_t kafka_cleanup(void *arg) {
 
         rd_kafka_resp_err_t err;
 
+        ERRLOG_SRV_INFO("Close kafka consumer handle");
         err = rd_kafka_consumer_close(config->kafka.rk_consumer);
 
         if (err) {
@@ -518,15 +520,26 @@ apr_status_t kafka_cleanup(void *arg) {
         }
 
         if (config->kafka.rk_topic_analyse_result) {
+            ERRLOG_SRV_INFO("Destroy topic [%s]", config->kafka.rk_topic_analyse_result);
             rd_kafka_topic_destroy((rd_kafka_topic_t *) config->kafka.rk_topic_analyse_result);
         }
 
-        rd_kafka_destroy(config->kafka.rk_consumer);
-
+        ERRLOG_SRV_INFO("Destroy topics partiton list");
         rd_kafka_topic_partition_list_destroy(config->kafka.topics);
 
-        /* Let background threads clean up and terminate cleanly. */
-        rd_kafka_wait_destroyed(2000);
+        ERRLOG_SRV_INFO("Destroy consumer handle");
+        rd_kafka_destroy(config->kafka.rk_consumer);
+
+        ERRLOG_SRV_INFO("Let background threads clean up");
+        int run = 5;
+        while (run-- > 0 && rd_kafka_wait_destroyed(1000) == -1) {
+            ERRLOG_SRV_INFO("Waiting for librdkafka to decommission.");
+        }
+
+        if (run <= 0) {
+            ERRLOG_SRV_INFO("decommission completed.");
+            rd_kafka_dump(stdout, config->kafka.rk_consumer);
+        }
 
     }
 
