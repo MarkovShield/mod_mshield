@@ -177,8 +177,8 @@ void extract_click_to_kafka(request_rec *r, char *uuid, session_t *session) {
     }
 
     click_json = cJSON_CreateObject();
-    cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(uuid));
-    cJSON_AddItemToObject(click_json, "clickId", cJSON_CreateString(clickId));
+    cJSON_AddItemToObject(click_json, "sessionUUID", cJSON_CreateString(uuid));
+    cJSON_AddItemToObject(click_json, "clickUUID", cJSON_CreateString(clickId));
     cJSON_AddItemToObject(click_json, "timeStamp", cJSON_CreateNumber(r->request_time / 1000));
     cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(url));
 
