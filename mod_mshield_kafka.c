@@ -20,31 +20,28 @@ static int get_url_risk_level(request_rec *r, const char *url) {
     mod_mshield_server_t *config;
     config = ap_get_module_config(r->server->module_config, &mshield_module);
 
-    ap_log_error(PC_LOG_CRIT, NULL, "========= Comparing RegEx started =========");
-
     apr_hash_index_t *hi;
     const char *key;
     const char *value;
 
     for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
         apr_hash_this(hi, (const void**)&key, NULL, (void**)&value);
-        ap_log_error(PC_LOG_CRIT, NULL, "REGEX: Current Entry. KEY: %s VALUE: %s", key, value);
+        ap_log_error(PC_LOG_INFO, NULL, "REGEX: Current Entry. KEY: %s VALUE: %s", key, value);
 
         switch (mod_mshield_regexp_match(r, key, url)) {
             case STATUS_MATCH:
-                ap_log_error(PC_LOG_CRIT, NULL, "REGEX: Matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value, url);
+                ap_log_error(PC_LOG_INFO, NULL, "REGEX: Matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value, url);
                 return atoi(value);
                 break;
             case STATUS_NOMATCH:
-                ap_log_error(PC_LOG_CRIT, NULL, "REGEX: NOT matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value, url);
+                ap_log_error(PC_LOG_INFO, NULL, "REGEX: NOT matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value, url);
             case STATUS_ERROR:
             default:
-                ap_log_error(PC_LOG_CRIT, NULL, "REGEX: NOT matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value, url);
+                ap_log_error(PC_LOG_CRIT, NULL, "REGEX: Error happened during RegEx comparison RegEx: [%s] URL: [%s]", key, url);
         }
 
     }
-    ap_log_error(PC_LOG_CRIT, NULL, "REGEX: Getting risk level was not successful for URL: [%s]", url);
-    ap_log_error(PC_LOG_CRIT, NULL, "========= Comparing RegEx ended =========");
+    ap_log_error(PC_LOG_INFO, NULL, "REGEX: Getting risk level was not successful for URL: [%s]", url);
     return 0;
 
 }
@@ -236,7 +233,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid, session_t *session) {
     cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(url));
 
     // ToDo Philip: Refactor in order to use URL RegEx to match the URL
-    int risk_level = NULL;
+    int risk_level;
     //risk_level = (char *) apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING);
     risk_level = get_url_risk_level(r, url);
     if (risk_level) {
@@ -254,11 +251,10 @@ void extract_click_to_kafka(request_rec *r, char *uuid, session_t *session) {
     cJSON_Delete(click_json);
 
     /* If URL was critical, wait for a response message from the engine and parse it. */
-    if (risk_level && risk_level >= 0) {
+    if (risk_level && risk_level > 0) {
         kafka_consume(config->pool, &config->kafka, config->kafka.topic_analyse_result,
                       &config->kafka.rk_topic_analyse_result, "test_key");
-        ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url,
-                     atoi(apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING)));
+        ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url, risk_level);
     }
 
 }
