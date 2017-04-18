@@ -264,7 +264,8 @@ static apr_status_t kafka_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *k
         void *value = NULL;
         apr_hash_this(hash, &property, NULL, &value);
         if (value) {
-            ap_log_error(PC_LOG_INFO, NULL, "global consumer configuration: %s = %s", (char *) property, (char *) value);
+            ap_log_error(PC_LOG_INFO, NULL, "global consumer configuration: %s = %s", (char *) property,
+                         (char *) value);
 
             if (rd_kafka_conf_set(*conf, (char *) property, (char *) value,
                                   errstr, sizeof(errstr)) != RD_KAFKA_CONF_OK) {
@@ -366,7 +367,8 @@ kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
  * Rebalance callback for partition assignment changes
  */
 static void
-kafka_consumer_rebalance(rd_kafka_t *rk, rd_kafka_resp_err_t err, rd_kafka_topic_partition_list_t *partitions, void *opaque) {
+kafka_consumer_rebalance(rd_kafka_t *rk, rd_kafka_resp_err_t err, rd_kafka_topic_partition_list_t *partitions,
+                         void *opaque) {
 
     ap_log_error(PC_LOG_INFO, NULL, "Consumer group rebalanced.");
 
@@ -398,6 +400,7 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
     rd_kafka_conf_t *conf = NULL;
     rd_kafka_topic_conf_t *topic_conf = NULL;
     rd_kafka_resp_err_t err;
+    int msgcount = 0;
 
     /* Create kafka RD_KAFKA_CONSUMER handle if it not exists */
     if (kafka_connect_consumer(p, kafka, &conf) != APR_SUCCESS) {
@@ -433,26 +436,32 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
         exit(1);
     }
 
+    // ToDo Philip: Do the application logic here. The waiting and so on.
     ap_log_error(PC_LOG_INFO, NULL, "===== Starting consuming messages from %s =====", topic);
+    while (msgcount == -1) {
+        rd_kafka_message_t *rkmessage;
+        rkmessage = rd_kafka_consumer_poll(kafka->rk_consumer, 10000);
+        if (rkmessage) {
+            if (rkmessage->payload) {
+                if (rkmessage->key) {
+                    ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rkmessage->payload, rkmessage->key);
+                } else {
+                    ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE [%s]", rkmessage->payload);
+                }
+                msgcount = -1;
+            } else {
+                ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE is empty");
+            }
 
-    rd_kafka_message_t *rkmessage;
-    rkmessage = rd_kafka_consumer_poll(kafka->rk_consumer, 10000);
-    if (rkmessage) {
-        // ToDo Philip: Do the application logic here. The waiting and so on.
-        if (rkmessage->payload) {
-          ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE [%s]", rkmessage->payload);
         } else {
-          ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE is empty");
+            if (rkmessage->err) {
+                ap_log_error(PC_LOG_CRIT, NULL, "Response message not received. Error: %i", rkmessage->err);
+            } else {
+                ap_log_error(PC_LOG_CRIT, NULL, "Response message not received. No error log provided.");
+            }
         }
-        //ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rkmessage->payload, rkmessage->key);
-    } else {
-      if (rkmessage->err) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Response message not received. Error: %i", rkmessage->err);
-      } else {
-        ap_log_error(PC_LOG_CRIT, NULL, "Response message not received. No error log provided.");
-      }
+        rd_kafka_message_destroy(rkmessage);
     }
-    rd_kafka_message_destroy(rkmessage);
     ap_log_error(PC_LOG_INFO, NULL, "===== Stopping consuming messages from %s =====", topic);
 }
 
