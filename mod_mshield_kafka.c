@@ -363,31 +363,10 @@ kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
     return APR_SUCCESS;
 }
 
-/*
- * Rebalance callback for partition assignment changes
- */
-static void
-kafka_consumer_rebalance(rd_kafka_t *rk, rd_kafka_resp_err_t err, rd_kafka_topic_partition_list_t *partitions,
-                         void *opaque) {
-
-    ap_log_error(PC_LOG_INFO, NULL, "Consumer group rebalanced.");
-
-    switch (err) {
-        case RD_KAFKA_RESP_ERR__ASSIGN_PARTITIONS:
-            ap_log_error(PC_LOG_CRIT, NULL, "Partition assigned");
-            rd_kafka_assign(rk, partitions);
-            break;
-
-        case RD_KAFKA_RESP_ERR__REVOKE_PARTITIONS:
-            ap_log_error(PC_LOG_CRIT, NULL, "Partition revoked");
-            rd_kafka_assign(rk, NULL);
-            break;
-
-        default:
-            ap_log_error(PC_LOG_CRIT, NULL, "Partition rebalance failed: %s", rd_kafka_err2str(err));
-            rd_kafka_assign(rk, NULL);
-            break;
-    }
+int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p)
+{
+  return ((timeA_p->tv_sec * 1000000000) + timeA_p->tv_nsec) -
+           ((timeB_p->tv_sec * 1000000000) + timeB_p->tv_nsec);
 }
 
 /*
@@ -401,6 +380,8 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
     rd_kafka_topic_conf_t *topic_conf = NULL;
     rd_kafka_resp_err_t err;
     int msgcount = 0;
+    struct timespec start, end;
+    uint64_t timeElapsed;
 
     /* Create kafka RD_KAFKA_CONSUMER handle if it not exists */
     if (kafka_connect_consumer(p, kafka, &conf) != APR_SUCCESS) {
@@ -422,11 +403,6 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
         rd_kafka_conf_set_default_topic_conf(conf, topic_conf);
     }
 
-    /* Callback called on partition assignment changes */
-    /*if (conf != NULL) {
-        rd_kafka_conf_set_rebalance_cb(conf, kafka_consumer_rebalance);
-    }*/
-
     /* Add our topic to the topics list */
     rd_kafka_topic_partition_list_add(kafka->topics, topic, 0);
 
@@ -438,28 +414,30 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
 
     // ToDo Philip: Do the application logic here. The waiting and so on.
     ap_log_error(PC_LOG_INFO, NULL, "===== Starting consuming messages from %s =====", topic);
-    clock_t start = clock(), diff = 0;
-    while ((msgcount != -1) && (diff < kafka->response_timeout)) {
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    while ((timeElapsed / CLOCKS_PER_SEC) < kafka->response_timeout && msgcount !=1) {
         rd_kafka_message_t *rkmessage;
         rkmessage = rd_kafka_consumer_poll(kafka->rk_consumer, kafka->response_query_interval);
         if (rkmessage) {
             if (rkmessage->err) {
                 /* We have reached the topic/partition end. Continue to wait for the response.. */
                 if (rkmessage->err == RD_KAFKA_RESP_ERR__PARTITION_EOF) {
+                    ap_log_error(PC_LOG_INFO, NULL, "Message from Broker: Reached end of topic. Continue looping...");
                     rd_kafka_message_destroy(rkmessage);
-                    struct timespec ts;
-                    /* Convert milliseconds to nanoseconds: */
-                    ts.tv_nsec = kafka->response_query_interval * 1000000;
-                    nanosleep(&ts, NULL);
-                    diff = clock() - start;
+                    clock_gettime(CLOCK_MONOTONIC, &end);
+                    timeElapsed = timespecDiff(&end, &start);
                     continue;
                 }
             }
-            diff = clock() - start;
-            ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE [%s] with key [%s] within [%lu] milliseconds", rkmessage->payload, rkmessage->key, diff);
-            msgcount = -1;
+            ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE [%s] with key [%s] within [%lu] milliseconds", rkmessage->payload, rkmessage->key, timeElapsed/CLOCKS_PER_SEC);
+            msgcount = 1;
             rd_kafka_message_destroy(rkmessage);
         }
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        timeElapsed = timespecDiff(&end, &start);
+    }
+    if (msgcount != 1) {
+      ap_log_error(PC_LOG_INFO, NULL, "Received no message from broker. Timeout [%lu ms] is expired!", timeElapsed/CLOCKS_PER_SEC);
     }
     ap_log_error(PC_LOG_INFO, NULL, "===== Stopping consuming messages from %s =====", topic);
 }

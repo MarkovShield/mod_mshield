@@ -82,7 +82,7 @@
 #define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT  "mshield-analyse-result"                    /* set Kafka topic to receive analysed results from the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING     "mshield-user-mapping"                      /* set Kafka topic on which the username <-> UUID mapping is sent to the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG      "mshield-url-config"                        /* set Kafka topic on which the url <-> risk_level configuration is sent to the engine */
-#define MOD_MSHIELD_KAFKA_RESULT_QUERY_INTERVAL    10                                      /* set the interval in ms to query the request result */
+#define MOD_MSHIELD_KAFKA_RESULT_QUERY_INTERVAL    25                                      /* set the interval in ms to query the request result */
 #define MOD_MSHIELD_KAFKA_RESULT_TIMEOUT    3000                                            /* set how long to wait (in ms) for request analyse result */
 
 /********************************************************************
