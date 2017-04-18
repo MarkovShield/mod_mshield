@@ -438,9 +438,9 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
 
     // ToDo Philip: Do the application logic here. The waiting and so on.
     ap_log_error(PC_LOG_INFO, NULL, "===== Starting consuming messages from %s =====", topic);
-    while (msgcount == -1) {
+    while (msgcount != -1) {
         rd_kafka_message_t *rkmessage;
-        rkmessage = rd_kafka_consumer_poll(kafka->rk_consumer, 10000);
+        rkmessage = rd_kafka_consumer_poll(kafka->rk_consumer, 1000);
         if (rkmessage) {
             if (rkmessage->payload) {
                 if (rkmessage->key) {
@@ -452,7 +452,6 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
             } else {
                 ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE is empty");
             }
-
         } else {
             if (rkmessage->err) {
                 ap_log_error(PC_LOG_CRIT, NULL, "Response message not received. Error: %i", rkmessage->err);
@@ -462,6 +461,7 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
         }
         rd_kafka_message_destroy(rkmessage);
     }
+
     ap_log_error(PC_LOG_INFO, NULL, "===== Stopping consuming messages from %s =====", topic);
 }
 
