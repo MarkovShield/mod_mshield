@@ -42,6 +42,14 @@ generate_uuid(session_t *session) {
 }
 
 /*
+ * Generate a new UUID.
+ */
+char *
+generate_click_id(session_t *session) {
+    return generate_session_id(session->request);
+}
+
+/*
  * Initialize session_t data structure with invalid session.
  */
 void

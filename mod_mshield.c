@@ -431,7 +431,7 @@ mshield_access_checker(request_rec *r)
     /*
      * Extract click data to kafka.
      */
-    extract_click_to_kafka(r, session.data->uuid);
+    extract_click_to_kafka(r, session.data->uuid, &session);
 
 	/*
 	 * We will first check, if the requesting URI asks for the session destroy function

@@ -160,7 +160,7 @@ void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
  * Use this function to extract some request information and send it to kafka
  * Note: We want milliseconds and not microseconds -> divide request_time by 1000.
  */
-void extract_click_to_kafka(request_rec *r, char *uuid) {
+void extract_click_to_kafka(request_rec *r, char *uuid, session_t *session) {
 
     mod_mshield_server_t *config;
     config = ap_get_module_config(r->server->module_config, &mshield_module);
@@ -170,6 +170,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid) {
     cJSON *click_json;
     click_json = cJSON_CreateObject();
     cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(uuid));
+    cJSON_AddItemToObject(click_json, "clickId", cJSON_CreateString(generate_click_id(session)));
     cJSON_AddItemToObject(click_json, "timeStamp", cJSON_CreateNumber(r->request_time / 1000));
     cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(url));
 
@@ -363,9 +364,11 @@ kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
     return APR_SUCCESS;
 }
 
-int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p)
-{
-  return ((timeA_p->tv_sec * 1000000000) + timeA_p->tv_nsec) -
+/*
+ * Helper function which calculates the time diff between two timespec structs in nanoseconds.
+ */
+int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p) {
+    return ((timeA_p->tv_sec * 1000000000) + timeA_p->tv_nsec) -
            ((timeB_p->tv_sec * 1000000000) + timeB_p->tv_nsec);
 }
 
@@ -381,7 +384,7 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
     rd_kafka_resp_err_t err;
     int msgcount = 0;
     struct timespec start, end;
-    uint64_t timeElapsed;
+    int64_t timeElapsed = 0;
 
     /* Create kafka RD_KAFKA_CONSUMER handle if it not exists */
     if (kafka_connect_consumer(p, kafka, &conf) != APR_SUCCESS) {
@@ -415,7 +418,7 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
     // ToDo Philip: Do the application logic here. The waiting and so on.
     ap_log_error(PC_LOG_INFO, NULL, "===== Starting consuming messages from %s =====", topic);
     clock_gettime(CLOCK_MONOTONIC, &start);
-    while ((timeElapsed / CLOCKS_PER_SEC) < kafka->response_timeout && msgcount !=1) {
+    while ((timeElapsed / CLOCKS_PER_SEC) < kafka->response_timeout && msgcount != 1) {
         rd_kafka_message_t *rkmessage;
         rkmessage = rd_kafka_consumer_poll(kafka->rk_consumer, kafka->response_query_interval);
         if (rkmessage) {
@@ -429,7 +432,8 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
                     continue;
                 }
             }
-            ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE [%s] with key [%s] within [%lu] milliseconds", rkmessage->payload, rkmessage->key, timeElapsed/CLOCKS_PER_SEC);
+            ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE [%s] with key [%s] within [%lld] milliseconds",
+                         rkmessage->payload, rkmessage->key, timeElapsed / CLOCKS_PER_SEC);
             msgcount = 1;
             rd_kafka_message_destroy(rkmessage);
         }
@@ -437,7 +441,9 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
         timeElapsed = timespecDiff(&end, &start);
     }
     if (msgcount != 1) {
-      ap_log_error(PC_LOG_INFO, NULL, "Received no message from broker. Timeout [%lu ms] is expired!", timeElapsed/CLOCKS_PER_SEC);
+        // ToDo Philip: Redirect user to info page which shows him something like HTTP 500.
+        ap_log_error(PC_LOG_INFO, NULL, "Received no message from broker. Timeout [%lld ms] is expired!",
+                     timeElapsed / CLOCKS_PER_SEC);
     }
     ap_log_error(PC_LOG_INFO, NULL, "===== Stopping consuming messages from %s =====", topic);
 }

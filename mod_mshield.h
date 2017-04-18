@@ -340,6 +340,8 @@ apr_status_t mshield_session_create(session_t *session, bool is_new_session);
 
 char *generate_uuid(session_t *session);
 
+char *generate_click_id(session_t *session);
+
 void mshield_session_unlink(session_t *session);
 
 apr_status_t mshield_session_validate(session_t *session, int hard_timeout, int inactivity_timeout);
@@ -386,7 +388,7 @@ extern const command_rec mshield_cmds[];
  * mod_mshield_kafka.c
  */
 apr_status_t kafka_cleanup(void *s);
-void extract_click_to_kafka(request_rec *r, char *uuid);
+void extract_click_to_kafka(request_rec *r, char *uuid, session_t *session);
 //void extract_url_to_kafka(server_rec *s);
 void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic,
                    int32_t partition, char *msg, const char *key);
