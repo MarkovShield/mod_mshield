@@ -82,6 +82,8 @@
 #define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT  "mshield-analyse-result"                    /* set Kafka topic to receive analysed results from the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING     "mshield-user-mapping"                      /* set Kafka topic on which the username <-> UUID mapping is sent to the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG      "mshield-url-config"                        /* set Kafka topic on which the url <-> risk_level configuration is sent to the engine */
+#define MOD_MSHIELD_KAFKA_RESULT_QUERY_INTERVAL    10                                      /* set the interval in ms to query the request result */
+#define MOD_MSHIELD_KAFKA_RESULT_TIMEOUT    3000                                            /* set how long to wait (in ms) for request analyse result */
 
 /********************************************************************
  * Compile time configuration
@@ -146,6 +148,8 @@ typedef struct {
     const char *rk_topic_url_config;                /* topic_url_config handle */
     const char *broker;                             /* Set the IP of the Kafka broker */
     const char *group_id;                           /* Kafka client group id string. */
+    int response_query_interval;                    /* The interval in ms to query request result */
+    int response_timeout;                           /* How long to wait at most for request analyse result (in ms) */
     rd_kafka_t *rk_producer;                        /* Kafka producer handle */
     rd_kafka_t *rk_consumer;                        /* Kafka consumer handle */
     rd_kafka_topic_partition_list_t *topics;        /* Kafka topics for high-level consumer */
