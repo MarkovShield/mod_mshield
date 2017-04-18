@@ -1,6 +1,55 @@
 #include "mod_mshield.h"
 
 /****************************************************************************************************************
+ * Some kafka helper functions
+ *****************************************************************************************************************/
+
+/*
+ * Helper function which calculates the time diff between two timespec structs in nanoseconds.
+ */
+int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p) {
+    return ((timeA_p->tv_sec * 1000000000) + timeA_p->tv_nsec) -
+           ((timeB_p->tv_sec * 1000000000) + timeB_p->tv_nsec);
+}
+
+/*
+ * Get the risk level of a URL
+ */
+static int get_url_risk_level(request_rec *r, const char *url) {
+
+    mod_mshield_server_t *config;
+    config = ap_get_module_config(r->server->module_config, &mshield_module);
+
+    ap_log_error(PC_LOG_CRIT, NULL, "========= Comparing RegEx started =========");
+
+    apr_hash_index_t *hi;
+    const char *key;
+    const char *value;
+
+    for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
+        apr_hash_this(hi, (const void**)&key, NULL, (void**)&value);
+        ap_log_error(PC_LOG_CRIT, NULL, "REGEX: Current Entry. KEY: %s VALUE: %s", key, value);
+
+        switch (mod_mshield_regexp_match(r, key, url)) {
+            case STATUS_MATCH:
+                ap_log_error(PC_LOG_CRIT, NULL, "REGEX: Matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value, url);
+                return atoi(value);
+                break;
+            case STATUS_NOMATCH:
+                ap_log_error(PC_LOG_CRIT, NULL, "REGEX: NOT matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value, url);
+            case STATUS_ERROR:
+            default:
+                ap_log_error(PC_LOG_CRIT, NULL, "REGEX: NOT matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value, url);
+        }
+
+    }
+    ap_log_error(PC_LOG_CRIT, NULL, "REGEX: Getting risk level was not successful for URL: [%s]", url);
+    ap_log_error(PC_LOG_CRIT, NULL, "========= Comparing RegEx ended =========");
+    return 0;
+
+}
+
+/****************************************************************************************************************
  * Producer part
  *****************************************************************************************************************/
 
@@ -186,11 +235,13 @@ void extract_click_to_kafka(request_rec *r, char *uuid, session_t *session) {
     cJSON_AddItemToObject(click_json, "timeStamp", cJSON_CreateNumber(r->request_time / 1000));
     cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(url));
 
-    char *risk_level = NULL;
-    risk_level = (char *) apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING);
+    // ToDo Philip: Refactor in order to use URL RegEx to match the URL
+    int risk_level = NULL;
+    //risk_level = (char *) apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING);
+    risk_level = get_url_risk_level(r, url);
     if (risk_level) {
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] found in url_store", url);
-        cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(atoi(risk_level)));
+        cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(risk_level));
     } else {
         /* Default value for unknown urls is 0. This means they are not rated in the engine. */
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] NOT found in url_store", url);
@@ -203,7 +254,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid, session_t *session) {
     cJSON_Delete(click_json);
 
     /* If URL was critical, wait for a response message from the engine and parse it. */
-    if (risk_level && atoi(risk_level) == 1) {
+    if (risk_level && risk_level >= 0) {
         kafka_consume(config->pool, &config->kafka, config->kafka.topic_analyse_result,
                       &config->kafka.rk_topic_analyse_result, "test_key");
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url,
@@ -374,14 +425,6 @@ kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
     *rk_topic = (const void *) rkt;
 
     return APR_SUCCESS;
-}
-
-/*
- * Helper function which calculates the time diff between two timespec structs in nanoseconds.
- */
-int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p) {
-    return ((timeA_p->tv_sec * 1000000000) + timeA_p->tv_nsec) -
-           ((timeB_p->tv_sec * 1000000000) + timeB_p->tv_nsec);
 }
 
 /*
