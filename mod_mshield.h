@@ -77,10 +77,13 @@
 /* Fraud detection stuff starts here */
 #define MOD_MSHIELD_FRAUD_DETECTION_ENABLED        0                                            /* by default the fraud detection functionality is off */
 #define MOD_MSHIELD_KAFKA_BROKER                "127.0.0.1:9092"                            /* set the kafka broker IP and port */
+#define MOD_MSHIELD_KAFKA_GROUP_ID              "mshield"                                   /* set the Kafka client group id */
 #define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE         "mshield-analyse"                            /* set Kafka topic on which clicks are sent to the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT  "mshield-analyse-result"                    /* set Kafka topic to receive analysed results from the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING     "mshield-user-mapping"                      /* set Kafka topic on which the username <-> UUID mapping is sent to the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG      "mshield-url-config"                        /* set Kafka topic on which the url <-> risk_level configuration is sent to the engine */
+#define MOD_MSHIELD_KAFKA_RESULT_QUERY_INTERVAL    25                                      /* set the interval in ms to query the request result */
+#define MOD_MSHIELD_KAFKA_RESULT_TIMEOUT    3000                                            /* set how long to wait (in ms) for request analyse result */
 
 /********************************************************************
  * Compile time configuration
@@ -130,7 +133,11 @@ typedef struct {
     struct {
         apr_hash_t *global;
         apr_hash_t *topic;
-    } conf;
+    } conf_producer;
+    struct {
+        apr_hash_t *global;
+        apr_hash_t *topic;
+    } conf_consumer;
     const char *topic_analyse;                      /* Set the kafka topic on which clicks are sent to the engine */
     const char *rk_topic_analyse;                   /* topic_analyse handle */
     const char *topic_analyse_result;               /* Set the kafka topic on which analysed results from the engine comes back */
@@ -140,7 +147,12 @@ typedef struct {
     const char *topic_url_config;                   /* Set the kafka topic on which the url <-> risk_level configuration is sent */
     const char *rk_topic_url_config;                /* topic_url_config handle */
     const char *broker;                             /* Set the IP of the Kafka broker */
-    rd_kafka_t *rk;                                 /* Kafka handle */
+    const char *group_id;                           /* Kafka client group id string. */
+    int response_query_interval;                    /* The interval in ms to query request result */
+    int response_timeout;                           /* How long to wait at most for request analyse result (in ms) */
+    rd_kafka_t *rk_producer;                        /* Kafka producer handle */
+    rd_kafka_t *rk_consumer;                        /* Kafka consumer handle */
+    rd_kafka_topic_partition_list_t *topics;        /* Kafka topics for high-level consumer */
 } mod_mshield_kafka_t;
 
 typedef struct {
@@ -328,6 +340,8 @@ apr_status_t mshield_session_create(session_t *session, bool is_new_session);
 
 char *generate_uuid(session_t *session);
 
+char *generate_click_id(session_t *session);
+
 void mshield_session_unlink(session_t *session);
 
 apr_status_t mshield_session_validate(session_t *session, int hard_timeout, int inactivity_timeout);
@@ -374,14 +388,11 @@ extern const command_rec mshield_cmds[];
  * mod_mshield_kafka.c
  */
 apr_status_t kafka_cleanup(void *s);
-void extract_click_to_kafka(request_rec *r, char *uuid);
-void extract_url_to_kafka(server_rec *s);
+void extract_click_to_kafka(request_rec *r, char *uuid, session_t *session);
+//void extract_url_to_kafka(server_rec *s);
 void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic,
                    int32_t partition, char *msg, const char *key);
-
-/********************************************************************
- * mod_mshield_helpers.c
- */
-const char *mshield_remove_trailing_slash(const char *arg1);
+void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
+                   const char *topic, const char **rk_topic, const char *key);
 
 #endif /* MOD_MSHIELD_H */

@@ -225,16 +225,6 @@ mshield_access_checker(request_rec *r)
 
 	ERRLOG_INFO("Request %s", r->uri);
 
-    /****************************** PART 0 *******************************************************
-	 * First of all, set the unknown user a new UUID
-	 */
-    /*if (!uuid) {
-        uuid = generate_uuid(&session);
-        if (!uuid) {
-            return STATUS_ERROR;
-        }
-        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Generated new UUID [%s]", uuid);
-    }*/
 
 	/****************************** PART 1 *******************************************************
 	 * Handle special URLs which do not require a session.
@@ -378,12 +368,10 @@ mshield_access_checker(request_rec *r)
 	 */
 
 	/* Initialize the session struct. */
-    // ToDo Philip: Check: Why is this function called twice inside this function?
 	mshield_session_init(&session, r, config);
 
 	/* Look up the session and save it to session, if it's found. */
     /*FIND*/
-    // ToDo Philip: Note: Here the old UUID gets writen to the new initialized session back again!
     switch (mshield_session_find(&session, config->cookie_name, cr->sessionid)) {
 	case STATUS_OK:
 		break;
@@ -443,7 +431,7 @@ mshield_access_checker(request_rec *r)
     /*
      * Extract click data to kafka.
      */
-    extract_click_to_kafka(r, session.data->uuid);
+    extract_click_to_kafka(r, session.data->uuid, &session);
 
 	/*
 	 * We will first check, if the requesting URI asks for the session destroy function
@@ -727,8 +715,10 @@ static int mshield_post_config(apr_pool_t *pconf, apr_pool_t *plog,
 static void
 kafka_child_init(apr_pool_t *p, server_rec *s)
 {
-    if (s) {
-        apr_pool_cleanup_register(p, s, kafka_cleanup, kafka_cleanup);
+		mod_mshield_server_t *config;
+		config = ap_get_module_config(s->module_config, &mshield_module);
+		if (config) {
+        apr_pool_cleanup_register(p, config, kafka_cleanup, kafka_cleanup);
     }
 }
 

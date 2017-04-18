@@ -317,17 +317,34 @@ mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg) {
         conf->fraud_detection_enabled = arg;
         conf->url_store = apr_hash_make(cmd->pool);
         conf->kafka.broker = MOD_MSHIELD_KAFKA_BROKER;
+        conf->kafka.group_id = MOD_MSHIELD_KAFKA_GROUP_ID;
         conf->kafka.topic_analyse = MOD_MSHIELD_KAFKA_TOPIC_ANALYSE;
         conf->kafka.topic_analyse_result = MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT;
         conf->kafka.topic_usermapping = MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING;
         conf->kafka.topic_url_config = MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG;
-        conf->kafka.rk = NULL;
+        conf->kafka.response_query_interval = MOD_MSHIELD_KAFKA_RESULT_QUERY_INTERVAL;
+        conf->kafka.response_timeout = MOD_MSHIELD_KAFKA_RESULT_TIMEOUT;
+        conf->kafka.rk_producer = NULL;
+        conf->kafka.rk_consumer = NULL;
         conf->kafka.rk_topic_analyse = NULL;
         conf->kafka.rk_topic_analyse_result = NULL;
         conf->kafka.rk_topic_usermapping = NULL;
         conf->kafka.rk_topic_url_config = NULL;
-        conf->kafka.conf.global = apr_hash_make(cmd->pool);
-        conf->kafka.conf.topic = apr_hash_make(cmd->pool);
+        conf->kafka.topics = rd_kafka_topic_partition_list_new(1);
+        conf->kafka.conf_producer.global = apr_hash_make(cmd->pool);
+        conf->kafka.conf_producer.topic = apr_hash_make(cmd->pool);
+        conf->kafka.conf_consumer.global = apr_hash_make(cmd->pool);
+        conf->kafka.conf_consumer.topic = apr_hash_make(cmd->pool);
+
+        /* Add some default settings for Kafka consumer */
+        apr_hash_set(conf->kafka.conf_consumer.global, "queue.buffering.max.ms", APR_HASH_KEY_STRING, (const void *)"0");
+        //apr_hash_set(conf->kafka.conf_consumer.global, "debug", APR_HASH_KEY_STRING, (const void *)"cgrp,topic,fetch");
+        apr_hash_set(conf->kafka.conf_consumer.global, "offset.store.method", APR_HASH_KEY_STRING, (const void *)"broker");
+        apr_hash_set(conf->kafka.conf_consumer.global, "api.version.request", APR_HASH_KEY_STRING, (const void *)"true");
+
+        /* Add some default settings for Kafka producer */
+        apr_hash_set(conf->kafka.conf_producer.global, "queue.buffering.max.ms", APR_HASH_KEY_STRING, (const void *)"1");
+        apr_hash_set(conf->kafka.conf_producer.global, "internal.termination.signal", APR_HASH_KEY_STRING, (const void *)"0");
     }
     return OK;
 }
@@ -337,6 +354,16 @@ mshield_config_kafka_broker(cmd_parms *cmd, void *dummy, const char *arg) {
     mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
     if (arg && conf->fraud_detection_enabled) {
         conf->kafka.broker = arg;
+    }
+    return OK;
+}
+
+const char *
+mshield_config_kafka_group_id(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg && conf->fraud_detection_enabled) {
+        conf->kafka.group_id = arg;
+        apr_hash_set(conf->kafka.conf_consumer.global, "group.id", APR_HASH_KEY_STRING, (const void *)arg);
     }
     return OK;
 }
@@ -378,11 +405,29 @@ mshield_config_kafka_topic_url_config(cmd_parms *cmd, void *dummy, const char *a
 }
 
 const char *
+mshield_config_response_query_interval(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg && conf->fraud_detection_enabled) {
+        conf->kafka.response_query_interval = atoi(arg);
+    }
+    return OK;
+}
+
+const char *
+mshield_config_response_timeout(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg && conf->fraud_detection_enabled) {
+        conf->kafka.response_timeout = atoi(arg);
+    }
+    return OK;
+}
+
+const char *
 mshield_config_urls(cmd_parms *cmd, void *dummy, const char *arg1, const char *arg2) {
     mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
     if (arg1 && arg2 && conf->fraud_detection_enabled) {
         if (atoi(arg2) == 0 || atoi(arg2) == 1) {
-            apr_hash_set(conf->url_store, mshield_remove_trailing_slash(arg1), APR_HASH_KEY_STRING, arg2);
+            apr_hash_set(conf->url_store, arg1, APR_HASH_KEY_STRING, arg2);
         }
     }
     return OK;
@@ -424,7 +469,10 @@ const command_rec mshield_cmds[] =
 	AP_INIT_TAKE1("MOD_MSHIELD_USERNAME_VALUE",                 mshield_config_username_value,                  NULL, RSRC_CONF, "Configure mod_mshield Username"),
 	/* Fraud detection */
 	AP_INIT_FLAG( "MOD_MSHIELD_FRAUD_DETECTION_ENABLED",        mshield_config_fraud_detection_enabled,         NULL, RSRC_CONF, "Enable fraud detection functionality"),
-	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_BROKER",                   mshield_config_kafka_broker,                    NULL, RSRC_CONF, "Set Kafka broker IP and port (syntax: 127.0.0.1:9092"),
+	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_BROKER",                   mshield_config_kafka_broker,                    NULL, RSRC_CONF, "Set Kafka broker IP and port (syntax: 127.0.0.1:9092)"),
+    AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_GROUP_ID",                 mshield_config_kafka_group_id,                  NULL, RSRC_CONF, "Set Kafka client group ID"),
+    AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_RESULT_QUERY_INTERVAL",    mshield_config_response_query_interval,         NULL, RSRC_CONF, "Set the interval in ms to query the request result"),
+    AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_RESULT_TIMEOUT",           mshield_config_response_timeout,                NULL, RSRC_CONF, "Set how long to wait at most for request analyse result (in ms)"),
 	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_ANALYSE",            mshield_config_kafka_topic_analyse,             NULL, RSRC_CONF, "Set Kafka topic on which clicks are sent to the engine"),
 	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT",     mshield_config_kafka_topic_analyse_result,      NULL, RSRC_CONF, "Set Kafka topic to receive analysed results from the engine"),
     AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING",        mshield_config_kafka_topic_usermapping,         NULL, RSRC_CONF, "Set Kafka topic on which the UUID <-> username mapping is sent"),

@@ -60,6 +60,9 @@ MOD_MSHIELD_USERNAME_VALUE                  MOD_MSHIELD_USERNAME
 
 MOD_MSHIELD_FRAUD_DETECTION_ENABLED         On
 MOD_MSHIELD_KAFKA_BROKER                    127.0.0.1:9092
+MOD_MSHIELD_KAFKA_GROUP_ID                  mshield
+MOD_MSHIELD_KAFKA_RESULT_QUERY_INTERVAL     25
+MOD_MSHIELD_KAFKA_RESULT_TIMEOUT            3000
 MOD_MSHIELD_KAFKA_TOPIC_ANALYSE             mshield-analyse
 MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT      mshield-analyse-result
 MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING         mshield-user-mapping
@@ -119,6 +122,15 @@ Post something to the topic (e.g. `mshield-analyse`):
 ```bash
 echo "Hallo" | kafkacat -P -b 192.168.56.50 -t mshield-analyse
 ```
+Post request rating to `mshield-analyse-result`:
+```bash
+echo "KEY,Test rating = SUSPICIOUS" | kafka-console-producer.sh \
+    --broker-list localhost:9092 \
+    --topic mshield-analyse-result \
+    --property parse.key=true \
+    --property key.separator=,
+kafkacat -C -b 192.168.56.50 -t mshield-analyse-result
+```
 
 ## Development
 
@@ -148,8 +160,8 @@ brew install apr apr-util homebrew/apache/httpd24 pcre
 This module needs some header file from httpd, apr and apr-utils. By default these header files are linked in the CMakeLists.txt file:
 ```
 include_directories(
-    /usr/local/Cellar/httpd24/2.4.25/include/httpd/ 
-    /usr/local/Cellar/apr-util/1.5.4_4/libexec/include/apr-1/ 
+    /usr/local/Cellar/httpd24/2.4.25/include/httpd/
+    /usr/local/Cellar/apr-util/1.5.4_4/libexec/include/apr-1/
     /usr/local/Cellar/apr/1.5.2_3/libexec/include/apr-1/
 )
 ```
@@ -171,7 +183,7 @@ Another alternative: Do it the manual way:
 cd ../mod_mshield/
 apxs -c mod_mshield.c
 ```
-**Hint:** 
+**Hint:**
 * Add parameter `-i` for automatic installation to the httpd module directory.
 * Add parameter `-a` to enable it automatically.
 * The absolute path for apxs on macOS: `/usr/local/Cellar/httpd24/2.4.25/bin/apxs`
@@ -186,6 +198,12 @@ On your development system:
 ```bash
 cd /opt/applic/httpd/bin
 sudo ./httpd -f /opt/applic/httpd/conf/httpd.conf -e debug -DFOREGROUND
+```
+
+### Kafka
+#### Show consumer groups
+```bash
+kafka-consumer-groups.sh --list --bootstrap-server localhost:9092
 ```
 
 ### Cleanup compilation stuff

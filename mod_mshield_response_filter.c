@@ -246,7 +246,7 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
      */
     if (!apr_strnatcmp(cookie_name, config->username_value)) {
         apr_cpystrn(cr->session->data->username, cookie_value, sizeof(cr->session->data->username));
-        ERRLOG_CRIT("FRAUD-ENGINE: Received USERNAME [%s] for UUID [%s]", cr->session->data->username,
+        ERRLOG_INFO("FRAUD-ENGINE: Received USERNAME [%s] for UUID [%s]", cr->session->data->username,
                     cr->session->data->uuid);
 
         cJSON *user_mapping_json;
@@ -254,7 +254,7 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
         cJSON_AddItemToObject(user_mapping_json, "userName", cJSON_CreateString(cr->session->data->username));
         cJSON_AddItemToObject(user_mapping_json, "uuid", cJSON_CreateString(cr->session->data->uuid));
 
-        ERRLOG_CRIT("FRAUD-ENGINE: Sent JSON user mapping object is: [%s]", cJSON_Print(user_mapping_json));
+        ERRLOG_INFO("FRAUD-ENGINE: Sent JSON user mapping object is: [%s]", cJSON_Print(user_mapping_json));
 
         kafka_produce(r->pool, &config->kafka, config->kafka.topic_usermapping, &config->kafka.rk_topic_usermapping,
                       RD_KAFKA_PARTITION_UA, cJSON_Print(user_mapping_json), cr->session->data->uuid);
