@@ -439,29 +439,32 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
     // ToDo Philip: Do the application logic here. The waiting and so on.
     ap_log_error(PC_LOG_INFO, NULL, "===== Starting consuming messages from %s =====", topic);
     while (msgcount != -1) {
-        rd_kafka_message_t *rkmessage;
-        rkmessage = rd_kafka_consumer_poll(kafka->rk_consumer, 1000);
-        if (rkmessage) {
-            if (rkmessage->payload) {
-                if (rkmessage->key) {
-                    ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE [%s] with key [%s]", rkmessage->payload, rkmessage->key);
-                } else {
-                    ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE [%s]", rkmessage->payload);
-                }
-                msgcount = -1;
-            } else {
-                ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE is empty");
-            }
-        } else {
-            if (rkmessage->err) {
-                ap_log_error(PC_LOG_CRIT, NULL, "Response message not received. Error: %i", rkmessage->err);
-            } else {
-                ap_log_error(PC_LOG_CRIT, NULL, "Response message not received. No error log provided.");
-            }
+      rd_kafka_message_t *rkmessage;
+      rkmessage = rd_kafka_consumer_poll(kafka->rk_consumer, 1000);
+      ap_log_error(PC_LOG_INFO, NULL, "blub1");
+      if (rkmessage ) {
+        ap_log_error(PC_LOG_INFO, NULL, "PROCESSING MESSAGE");
+        if(rkmessage->err) {
+          ap_log_error(PC_LOG_INFO, NULL, "FOUNDAEROORR");
+          if(rkmessage->err == RD_KAFKA_RESP_ERR__PARTITION_EOF){
+            ap_log_error(PC_LOG_INFO, NULL, "END of quque");
+            rd_kafka_message_destroy(rkmessage);
+            continue;
+          }
         }
-        rd_kafka_message_destroy(rkmessage);
-    }
+          //if (rkmessage->payload) {
+          ap_log_error(PC_LOG_INFO, NULL, "blub2");
+          ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE [%s]", rkmessage->payload);
+          //ap_log_error(PC_LOG_INFO, NULL, "blub3");
+          msgcount = -1;
+          //} else {
+            //  ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE is empty");
+              //msgcount = -1;
+            //}
+            rd_kafka_message_destroy(rkmessage);
+      }
 
+    }
     ap_log_error(PC_LOG_INFO, NULL, "===== Stopping consuming messages from %s =====", topic);
 }
 
