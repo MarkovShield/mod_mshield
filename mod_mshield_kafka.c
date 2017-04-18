@@ -166,11 +166,19 @@ void extract_click_to_kafka(request_rec *r, char *uuid, session_t *session) {
     config = ap_get_module_config(r->server->module_config, &mshield_module);
 
     char *url = r->parsed_uri.path;
-
+    const char *clickId;
     cJSON *click_json;
+
+    /* Try to use UNIQUE_ID for click identification. If it's not possible to use it, generate an own unique id. */
+    clickId = apr_table_get(r->subprocess_env, "UNIQUE_ID");
+    if (clickId == NULL) {
+        ap_log_error(PC_LOG_INFO, NULL, "Getting UNIQUE_ID was not successful.");
+        clickId = generate_click_id(session);
+    }
+
     click_json = cJSON_CreateObject();
     cJSON_AddItemToObject(click_json, "uuid", cJSON_CreateString(uuid));
-    cJSON_AddItemToObject(click_json, "clickId", cJSON_CreateString(generate_click_id(session)));
+    cJSON_AddItemToObject(click_json, "clickId", cJSON_CreateString(clickId));
     cJSON_AddItemToObject(click_json, "timeStamp", cJSON_CreateNumber(r->request_time / 1000));
     cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(url));
 
