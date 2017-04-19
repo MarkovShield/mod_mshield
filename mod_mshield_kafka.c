@@ -511,6 +511,7 @@ static apr_status_t kafka_consume(apr_pool_t *p, request_rec *r, mod_mshield_kaf
     if (msgcount != 1) {
         ap_log_error(PC_LOG_INFO, NULL, "Received no message from broker. Timeout [%lld ms] is expired!",
                      timeElapsed / CLOCKS_PER_SEC);
+        ap_log_error(PC_LOG_INFO, NULL, "===== Stopping consuming messages from %s =====", topic);
         return STATUS_ERROR;
     }
     ap_log_error(PC_LOG_INFO, NULL, "===== Stopping consuming messages from %s =====", topic);
