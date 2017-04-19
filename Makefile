@@ -15,7 +15,7 @@
 # APXSFLAGS=-c -i -a -Wc,-O2 -Wc,-Wall,-DMOD_MSHIELD_SESSION_COUNT=10 -Wc,-DMOD_MSHIELD_COOKIESTORE_COUNT=30
 APXSFLAGS=-I /opt/applic/pcre-8.39/include -v -c -Wc,-O0 -Wc ,-Wall -Wc, -DMOD_MSHIELD_SESSION_COUNT=10 -Wc, -DMOD_MSHIELD_COOKIESTORE_COUNT=30 -Wc
 
-LIBS =-lrdkafka -lz -lpthread -lrt -lm
+LIBS =-lrdkafka -lz -lpthread -lrt -lm -levent -lhiredis
 
 SRC= \
 	mod_mshield.c \
