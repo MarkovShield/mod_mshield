@@ -41,13 +41,13 @@ static void handle_mshield_result(redisAsyncContext *c, void *reply, void *privd
             * ToDo Philip:
             * - Redirect to conf->fraud_detected_url if analyse result is FRAUD.
             * - Redirect to step up if analyse result is SUSPICIOUS.
-            * ToDo Philip: Add event_base_loopbreak(base) somewhere here.
             */
 
             ap_log_error(PC_LOG_INFO, NULL, "REDIS SUB: [%u] %s", j, r->element[j]->str);
         }
     }
-    freeReplyObject(reply);
+    struct event_base *base = privdata;
+    event_base_loopbreak(base);
 }
 
 /*
@@ -64,7 +64,7 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
     struct event_base *base = event_base_new();
     redisAsyncContext *context = redis_connect(config);
     redisLibeventAttach(context, base);
-    redisAsyncCommand(context, handle_mshield_result, NULL, "SUBSCRIBE %s", clickUUID);
+    redisAsyncCommand(context, handle_mshield_result, NULL, "SUBSCRIBE %s", base);
 
     // ToDo Philip: Do the application logic here:
     ap_log_error(PC_LOG_INFO, NULL, "===== Starting consuming messages =====");
