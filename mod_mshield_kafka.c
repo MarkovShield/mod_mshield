@@ -232,9 +232,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid, session_t *session) {
     cJSON_AddItemToObject(click_json, "timeStamp", cJSON_CreateNumber(r->request_time / 1000));
     cJSON_AddItemToObject(click_json, "url", cJSON_CreateString(url));
 
-    // ToDo Philip: Refactor in order to use URL RegEx to match the URL
     int risk_level;
-    //risk_level = (char *) apr_hash_get(config->url_store, url, APR_HASH_KEY_STRING);
     risk_level = get_url_risk_level(r, url);
     if (risk_level) {
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] found in url_store", url);
@@ -252,7 +250,7 @@ void extract_click_to_kafka(request_rec *r, char *uuid, session_t *session) {
 
     /* If URL was critical, wait for a response message from the engine and parse it. */
     if (risk_level && risk_level > 0) {
-        kafka_consume(config->pool, &config->kafka, config->kafka.topic_analyse_result,
+        kafka_consume(config->pool, r, &config->kafka, config->kafka.topic_analyse_result,
                       &config->kafka.rk_topic_analyse_result, "test_key");
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url, risk_level);
     }
@@ -427,12 +425,16 @@ kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
  * Receive something to a specified topic. Partition is supported.
  * Note: Set partition to RD_KAFKA_PARTITION_UA if none is provided.
  */
-void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
+void kafka_consume(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
                    const char *topic, const char **rk_topic, const char *key) {
+
+    mod_mshield_server_t *config;
+    config = ap_get_module_config(r->server->module_config, &mshield_module);
 
     rd_kafka_conf_t *conf = NULL;
     rd_kafka_topic_conf_t *topic_conf = NULL;
     rd_kafka_resp_err_t err;
+    apr_status_t status;
     int msgcount = 0;
     struct timespec start, end;
     int64_t timeElapsed = 0;
@@ -483,6 +485,11 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
                     continue;
                 }
             }
+            /*
+             * ToDo Philip:
+             * - Redirect to conf->fraud_detected_url if analyse result is FRAUD.
+             * - Redirect to step up if analyse result is SUSPICIOUS.
+             */
             ap_log_error(PC_LOG_INFO, NULL, "CONSUMED MESSAGE [%s] with key [%s] within [%lld] milliseconds",
                          rkmessage->payload, rkmessage->key, timeElapsed / CLOCKS_PER_SEC);
             msgcount = 1;
@@ -492,9 +499,14 @@ void kafka_consume(apr_pool_t *p, mod_mshield_kafka_t *kafka,
         timeElapsed = timespecDiff(&end, &start);
     }
     if (msgcount != 1) {
-        // ToDo Philip: Redirect user to info page which shows him something like HTTP 500.
         ap_log_error(PC_LOG_INFO, NULL, "Received no message from broker. Timeout [%lld ms] is expired!",
                      timeElapsed / CLOCKS_PER_SEC);
+        status = mod_mshield_redirect_to_relurl(r, config->fraud_error_url);
+        if (status != HTTP_MOVED_TEMPORARILY) {
+            ap_log_error(PC_LOG_CRIT, NULL, "Redirection to fraud_error_url failed.");
+            exit(1);
+        }
+        ap_log_error(PC_LOG_INFO, NULL, "Redirection to fraud_error_url was successful.");
     }
     ap_log_error(PC_LOG_INFO, NULL, "===== Stopping consuming messages from %s =====", topic);
 }

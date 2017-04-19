@@ -315,6 +315,8 @@ mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg) {
     mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
     if (arg) {
         conf->fraud_detection_enabled = arg;
+        conf->fraud_detected_url = MOD_MSHIELD_FRAUD_DETECTED_URL;
+        conf->fraud_error_url = MOD_MSHIELD_FRAUD_ERROR_URL;
         conf->url_store = apr_hash_make(cmd->pool);
         conf->kafka.broker = MOD_MSHIELD_KAFKA_BROKER;
         conf->kafka.group_id = MOD_MSHIELD_KAFKA_GROUP_ID;
@@ -354,6 +356,24 @@ mshield_config_kafka_broker(cmd_parms *cmd, void *dummy, const char *arg) {
     mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
     if (arg && conf->fraud_detection_enabled) {
         conf->kafka.broker = arg;
+    }
+    return OK;
+}
+
+const char *
+mshield_config_fraud_detected_url(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg && conf->fraud_detection_enabled) {
+        conf->fraud_detected_url = arg;
+    }
+    return OK;
+}
+
+const char *
+mshield_config_fraud_error_url(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg && conf->fraud_detection_enabled) {
+        conf->fraud_error_url = arg;
     }
     return OK;
 }
@@ -469,6 +489,8 @@ const command_rec mshield_cmds[] =
 	AP_INIT_TAKE1("MOD_MSHIELD_USERNAME_VALUE",                 mshield_config_username_value,                  NULL, RSRC_CONF, "Configure mod_mshield Username"),
 	/* Fraud detection */
 	AP_INIT_FLAG( "MOD_MSHIELD_FRAUD_DETECTION_ENABLED",        mshield_config_fraud_detection_enabled,         NULL, RSRC_CONF, "Enable fraud detection functionality"),
+    AP_INIT_TAKE1("MOD_MSHIELD_FRAUD_DETECTED_URL",             mshield_config_fraud_detected_url,              NULL, RSRC_CONF, "URL to redirect to if a fraud is found"),
+    AP_INIT_TAKE1("MOD_MSHIELD_FRAUD_ERROR_URL",                mshield_config_fraud_error_url,                 NULL, RSRC_CONF, "URL to redirect to if the analyse fails"),
 	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_BROKER",                   mshield_config_kafka_broker,                    NULL, RSRC_CONF, "Set Kafka broker IP and port (syntax: 127.0.0.1:9092)"),
     AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_GROUP_ID",                 mshield_config_kafka_group_id,                  NULL, RSRC_CONF, "Set Kafka client group ID"),
     AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_RESULT_QUERY_INTERVAL",    mshield_config_response_query_interval,         NULL, RSRC_CONF, "Set the interval in ms to query the request result"),
