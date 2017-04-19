@@ -30,11 +30,15 @@ redisAsyncContext *redis_connect(mod_mshield_server_t *config) {
  * Callback to handle redis replies.
  */
 static void handle_mshield_result(redisAsyncContext *c, void *reply, void *privdata) {
+
     redisReply *r = reply;
+    struct event_base *base = privdata;
+    char *fraud = "FRAUD";
+
     if (reply == NULL) {
         return;
     }
-    if (r->type == REDIS_REPLY_ARRAY) {
+    if (r->type == REDIS_REPLY_ARRAY && r->elements == 3) {
         for (int j = 0; j < r->elements; j++) {
 
             /*
@@ -44,10 +48,15 @@ static void handle_mshield_result(redisAsyncContext *c, void *reply, void *privd
             */
 
             ap_log_error(PC_LOG_INFO, NULL, "REDIS SUB: [%u] %s", j, r->element[j]->str);
+            if (r->element[j]->str) {
+              if (strcmp(r->element[j]->str, fraud) == 0) {
+                ap_log_error(PC_LOG_INFO, NULL, "Engine result: %s", fraud);
+                event_base_loopbreak(base);
+              }
+            }
+
         }
     }
-    struct event_base *base = privdata;
-    event_base_loopbreak(base);
 }
 
 /*
@@ -64,7 +73,7 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
     struct event_base *base = event_base_new();
     redisAsyncContext *context = redis_connect(config);
     redisLibeventAttach(context, base);
-    redisAsyncCommand(context, handle_mshield_result, NULL, "SUBSCRIBE %s", base);
+    redisAsyncCommand(context, handle_mshield_result, base, "SUBSCRIBE %s", clickUUID);
 
     // ToDo Philip: Do the application logic here:
     ap_log_error(PC_LOG_INFO, NULL, "===== Starting consuming messages =====");
@@ -87,4 +96,3 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
     ap_log_error(PC_LOG_INFO, NULL, "===== Stopping consuming messages =====");
     return STATUS_OK;
 }
-
