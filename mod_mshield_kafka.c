@@ -5,6 +5,12 @@
  *****************************************************************************************************************/
 
 /*
+ * Receive something to a specified topic. Partition is supported.
+ */
+static apr_status_t kafka_consume(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
+                   const char *topic, const char **rk_topic, const char *key);
+
+/*
  * Helper function which calculates the time diff between two timespec structs in nanoseconds.
  */
 int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p) {
@@ -183,7 +189,7 @@ kafka_topic_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
  * Send something to a specified topic. Partition is supported.
  * Note: Set partition to RD_KAFKA_PARTITION_UA if none is provided.
  */
-void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
+apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
                    const char *topic, const char **rk_topic, int32_t partition, char *msg, const char *key) {
     rd_kafka_topic_t *rkt = kafka_topic_connect_producer(p, kafka, topic, rk_topic);
     if (rkt) {
@@ -198,19 +204,22 @@ void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
         /* Poll to handle delivery reports */
         rd_kafka_poll(kafka->rk_producer, 10);
     } else {
+        return HTTP_INTERNAL_SERVER_ERROR;
         ap_log_error(PC_LOG_CRIT, NULL, "No such kafka topic: %s", topic);
     }
+    return STATUS_OK;
 }
 
 /*
  * Use this function to extract some request information and send it to kafka
  * Note: We want milliseconds and not microseconds -> divide request_time by 1000.
  */
-void extract_click_to_kafka(request_rec *r, char *uuid, session_t *session) {
+apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *session) {
 
     mod_mshield_server_t *config;
     config = ap_get_module_config(r->server->module_config, &mshield_module);
 
+    apr_status_t status;
     char *url = r->parsed_uri.path;
 
     /* For security reasons its important to remove double slashes. */
@@ -250,11 +259,13 @@ void extract_click_to_kafka(request_rec *r, char *uuid, session_t *session) {
 
     /* If URL was critical, wait for a response message from the engine and parse it. */
     if (risk_level && risk_level > 0) {
-        kafka_consume(config->pool, r, &config->kafka, config->kafka.topic_analyse_result,
+        status = kafka_consume(config->pool, r, &config->kafka, config->kafka.topic_analyse_result,
                       &config->kafka.rk_topic_analyse_result, "test_key");
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url, risk_level);
+        return status;
     }
 
+    return STATUS_OK;
 }
 
 /*
@@ -423,9 +434,8 @@ kafka_topic_connect_consumer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
 
 /*
  * Receive something to a specified topic. Partition is supported.
- * Note: Set partition to RD_KAFKA_PARTITION_UA if none is provided.
  */
-void kafka_consume(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
+static apr_status_t kafka_consume(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
                    const char *topic, const char **rk_topic, const char *key) {
 
     mod_mshield_server_t *config;
@@ -442,14 +452,14 @@ void kafka_consume(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
     /* Create kafka RD_KAFKA_CONSUMER handle if it not exists */
     if (kafka_connect_consumer(p, kafka, &conf) != APR_SUCCESS) {
         ap_log_error(PC_LOG_CRIT, NULL, "Kafka consumer initialisation call was NOT successful.");
-        exit(1);
+        return HTTP_INTERNAL_SERVER_ERROR;
     }
 
     /* Create topic handle to consume from if it not exists */
     if (!rk_topic) {
         if (kafka_topic_connect_consumer(p, kafka, topic, rk_topic, &topic_conf) != APR_SUCCESS) {
             ap_log_error(PC_LOG_CRIT, NULL, "Could not create topic for message consumer.");
-            exit(1);
+            return HTTP_INTERNAL_SERVER_ERROR;
         }
         ap_log_error(PC_LOG_INFO, NULL, "Created topic for message consumer.");
     }
@@ -465,7 +475,7 @@ void kafka_consume(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
     err = rd_kafka_subscribe(kafka->rk_consumer, kafka->topics);
     if (err) {
         ap_log_error(PC_LOG_CRIT, NULL, "Subscribe failed: [%s]", rd_kafka_err2str(err));
-        exit(1);
+        return HTTP_INTERNAL_SERVER_ERROR;
     }
 
     // ToDo Philip: Do the application logic here. The waiting and so on.
@@ -501,14 +511,10 @@ void kafka_consume(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
     if (msgcount != 1) {
         ap_log_error(PC_LOG_INFO, NULL, "Received no message from broker. Timeout [%lld ms] is expired!",
                      timeElapsed / CLOCKS_PER_SEC);
-        status = mod_mshield_redirect_to_relurl(r, config->fraud_error_url);
-        if (status != HTTP_MOVED_TEMPORARILY) {
-            ap_log_error(PC_LOG_CRIT, NULL, "Redirection to fraud_error_url failed.");
-            exit(1);
-        }
-        ap_log_error(PC_LOG_INFO, NULL, "Redirection to fraud_error_url was successful.");
+        return STATUS_ERROR;
     }
     ap_log_error(PC_LOG_INFO, NULL, "===== Stopping consuming messages from %s =====", topic);
+    return STATUS_OK;
 }
 
 /****************************************************************************************************************

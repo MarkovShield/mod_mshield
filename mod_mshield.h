@@ -392,11 +392,11 @@ extern const command_rec mshield_cmds[];
  * mod_mshield_kafka.c
  */
 apr_status_t kafka_cleanup(void *s);
-void extract_click_to_kafka(request_rec *r, char *uuid, session_t *session);
+apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *session);
 //void extract_url_to_kafka(server_rec *s);
-void kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic,
+apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic,
                    int32_t partition, char *msg, const char *key);
-void kafka_consume(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
-                   const char *topic, const char **rk_topic, const char *key);
+//apr_status_t kafka_consume(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
+//                   const char *topic, const char **rk_topic, const char *key);
 
 #endif /* MOD_MSHIELD_H */
