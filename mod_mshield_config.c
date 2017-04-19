@@ -326,6 +326,8 @@ mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg) {
         conf->kafka.topic_url_config = MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG;
         conf->kafka.response_query_interval = MOD_MSHIELD_KAFKA_RESULT_QUERY_INTERVAL;
         conf->kafka.response_timeout = MOD_MSHIELD_KAFKA_RESULT_TIMEOUT;
+        conf->redis.server = MOD_MSHIELD_REDIS_SERVER;
+        conf->redis.port = MOD_MSHIELD_REDIS_PORT;
         conf->kafka.rk_producer = NULL;
         conf->kafka.rk_consumer = NULL;
         conf->kafka.rk_topic_analyse = NULL;
@@ -443,6 +445,24 @@ mshield_config_response_timeout(cmd_parms *cmd, void *dummy, const char *arg) {
 }
 
 const char *
+mshield_config_redis_server(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg && conf->fraud_detection_enabled) {
+        conf->redis.server = arg;
+    }
+    return OK;
+}
+
+const char *
+mshield_config_redis_port(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg && conf->fraud_detection_enabled) {
+        conf->redis.port = atoi(arg);
+    }
+    return OK;
+}
+
+const char *
 mshield_config_urls(cmd_parms *cmd, void *dummy, const char *arg1, const char *arg2) {
     mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
     if (arg1 && arg2 && conf->fraud_detection_enabled) {
@@ -499,6 +519,8 @@ const command_rec mshield_cmds[] =
 	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT",     mshield_config_kafka_topic_analyse_result,      NULL, RSRC_CONF, "Set Kafka topic to receive analysed results from the engine"),
     AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING",        mshield_config_kafka_topic_usermapping,         NULL, RSRC_CONF, "Set Kafka topic on which the UUID <-> username mapping is sent"),
     AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG",         mshield_config_kafka_topic_url_config,          NULL, RSRC_CONF, "Set Kafka topic on which the url <-> risk config is sent"),
+    AP_INIT_TAKE1("MOD_MSHIELD_REDIS_SERVER",                   mshield_config_redis_server,                    NULL, RSRC_CONF, "Set the Redis server"),
+    AP_INIT_TAKE1("MOD_MSHIELD_REDIS_PORT",                     mshield_config_redis_port,                      NULL, RSRC_CONF, "Set the Redis port on which the host listens"),
     AP_INIT_ITERATE2("MOD_MSHIELD_URL",                         mshield_config_urls,                            NULL, RSRC_CONF, "Web application url with its criticality level"),
 	/* per directory/location configuration */
 	AP_INIT_TAKE1("MOD_MSHIELD_LOGON_SERVER_URL", ap_set_string_slot, (void*)APR_OFFSETOF(mod_mshield_dir_t, logon_server_url),          OR_ALL, "Logon server relative URL for this directory"),

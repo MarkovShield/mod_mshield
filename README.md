@@ -5,11 +5,11 @@
 ### Prerequisites
 On Linux (Debian based):
 ```bash
-apt-get install librdkafka1
+apt-get install librdkafka1 libhiredis-dev libhiredis0.13
 ```
 On macOS:
 ```bash
-brew insall librdkafka
+brew insall librdkafka hiredis
 ```
 
 ### Installation itself
@@ -69,6 +69,8 @@ MOD_MSHIELD_KAFKA_TOPIC_ANALYSE             mshield-analyse
 MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT      mshield-analyse-result
 MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING         mshield-user-mapping
 MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG          mshield-url-config
+MOD_MSHIELD_REDIS_SERVER                    127.0.0.1
+MOD_MSHIELD_REDIS_PORT                      6379
 
 # Place your URL ratings in the following config file:
 Include conf/extra/mod_mshield_url_rating.conf
@@ -163,6 +165,7 @@ include_directories(
     /usr/local/Cellar/httpd24/2.4.25/include/httpd/
     /usr/local/Cellar/apr-util/1.5.4_4/libexec/include/apr-1/
     /usr/local/Cellar/apr/1.5.2_3/libexec/include/apr-1/
+    /usr/local/Cellar/hiredis/0.13.3/include/hiredis/
 )
 ```
 Change these paths to once from your OS, if you are not using macOS and Brew.

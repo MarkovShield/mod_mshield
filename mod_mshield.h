@@ -40,6 +40,10 @@
 
 #include "librdkafka/rdkafka.h"
 
+#include "hiredis/hiredis.h"
+#include "hiredis/async.h"
+#include "hiredis/adapters/libevent.h"
+
 
 /********************************************************************
  * configuration default values
@@ -76,16 +80,18 @@
 #define MOD_MSHIELD_USERNAME_VALUE                    "MOD_MSHIELD_USERNAME"                        /* login server LOGON cookie username value name (needs to be the same as in login.php) */
 /* Fraud detection stuff starts here */
 #define MOD_MSHIELD_FRAUD_DETECTION_ENABLED        0                                            /* by default the fraud detection functionality is off */
-#define MOD_MSHIELD_FRAUD_DETECTED_URL          "/error/fraud_detected.html"                            /* set the URL to redirect to if a fraud is found */
-#define MOD_MSHIELD_FRAUD_ERROR_URL             "/error/fraud_error.html"                            /* set the URL to redirect to if the analyse fails */
-#define MOD_MSHIELD_KAFKA_BROKER                "127.0.0.1:9092"                            /* set the kafka broker IP and port */
-#define MOD_MSHIELD_KAFKA_GROUP_ID              "mshield"                                   /* set the Kafka client group id */
-#define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE         "mshield-analyse"                            /* set Kafka topic on which clicks are sent to the engine */
-#define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT  "mshield-analyse-result"                    /* set Kafka topic to receive analysed results from the engine */
-#define MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING     "mshield-user-mapping"                      /* set Kafka topic on which the username <-> UUID mapping is sent to the engine */
-#define MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG      "mshield-url-config"                        /* set Kafka topic on which the url <-> risk_level configuration is sent to the engine */
-#define MOD_MSHIELD_KAFKA_RESULT_QUERY_INTERVAL    25                                      /* set the interval in ms to query the request result */
-#define MOD_MSHIELD_KAFKA_RESULT_TIMEOUT    3000                                            /* set how long to wait (in ms) for request analyse result */
+#define MOD_MSHIELD_FRAUD_DETECTED_URL          "/error/fraud_detected.html"                    /* set the URL to redirect to if a fraud is found */
+#define MOD_MSHIELD_FRAUD_ERROR_URL             "/error/fraud_error.html"                       /* set the URL to redirect to if the analyse fails */
+#define MOD_MSHIELD_KAFKA_BROKER                "127.0.0.1:9092"                                /* set the kafka broker IP and port */
+#define MOD_MSHIELD_KAFKA_GROUP_ID              "mshield"                                       /* set the Kafka client group id */
+#define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE         "mshield-analyse"                               /* set Kafka topic on which clicks are sent to the engine */
+#define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT  "mshield-analyse-result"                        /* set Kafka topic to receive analysed results from the engine */
+#define MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING     "mshield-user-mapping"                          /* set Kafka topic on which the username <-> UUID mapping is sent to the engine */
+#define MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG      "mshield-url-config"                            /* set Kafka topic on which the url <-> risk_level configuration is sent to the engine */
+#define MOD_MSHIELD_KAFKA_RESULT_QUERY_INTERVAL 25                                              /* set the interval in ms to query the request result */
+#define MOD_MSHIELD_KAFKA_RESULT_TIMEOUT        3000                                            /* set how long to wait (in ms) for request analyse result */
+#define MOD_MSHIELD_REDIS_SERVER                "127.0.0.1"                                     /* set the redis server */
+#define MOD_MSHIELD_REDIS_PORT                  6379                                            /* set the redis server's port */
 
 /********************************************************************
  * Compile time configuration
@@ -158,6 +164,11 @@ typedef struct {
 } mod_mshield_kafka_t;
 
 typedef struct {
+    const char *server;                             /* Set the Redis server */
+    int port;                                       /* Set the Redis port on which the host listens */
+} mod_mshield_redis_t;
+
+typedef struct {
     int enabled;                                    /* [On, Off] switch for enable/disable mod_mshield */
     const char *client_refuses_cookies_url;         /* Error URL, if the client refuses our mod_mshield cookie */
     const char *cookie_name;                        /* The cookie name value of the mod_mshield cookie */
@@ -204,6 +215,7 @@ typedef struct {
     const char *fraud_error_url;                    /* URL to redirect to if the analyse fails */
     apr_hash_t *url_store;                          /* url store for web application urls and its criticality */
     mod_mshield_kafka_t kafka;
+    mod_mshield_redis_t redis;
 } mod_mshield_server_t;
 
 typedef struct {
@@ -396,7 +408,11 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
 //void extract_url_to_kafka(server_rec *s);
 apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic,
                    int32_t partition, char *msg, const char *key);
-//apr_status_t kafka_consume(apr_pool_t *p, request_rec *r, mod_mshield_kafka_t *kafka,
-//                   const char *topic, const char **rk_topic, const char *key);
+
+/********************************************************************
+ * mod_mshield_redis.c
+ */
+redisAsyncContext *redis_connect(mod_mshield_server_t *config);
+apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUID);
 
 #endif /* MOD_MSHIELD_H */
