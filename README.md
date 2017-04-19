@@ -5,7 +5,7 @@
 ### Prerequisites
 On Linux (Debian based):
 ```bash
-apt-get install librdkafka1 libhiredis-dev libhiredis0.13
+apt-get install librdkafka1 libhiredis-dev libhiredis0.13 libevent-dev
 ```
 On macOS:
 ```bash
