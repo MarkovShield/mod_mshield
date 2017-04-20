@@ -316,6 +316,7 @@ mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg) {
     if (arg) {
         conf->fraud_detection_enabled = arg;
         conf->fraud_detection_learning_mode = MOD_MSHIELD_FRAUD_LEARNING_MODE;
+        conf->fraud_detection_validation_threshold = MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD;
         conf->fraud_detected_url = MOD_MSHIELD_FRAUD_DETECTED_URL;
         conf->fraud_error_url = MOD_MSHIELD_FRAUD_ERROR_URL;
         conf->url_store = apr_hash_make(cmd->pool);
@@ -355,10 +356,19 @@ mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg) {
 }
 
 const char *
-mshield_config_fraud_detection_learning_mode(cmd_parms *cmd, void *dummy, int arg) {
+mshield_config_fraud_learning_mode(cmd_parms *cmd, void *dummy, int arg) {
     mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
     if (arg && conf->fraud_detection_enabled) {
         conf->fraud_detection_learning_mode = arg;
+    }
+    return OK;
+}
+
+const char *
+mshield_config_fraud_validation_threshold(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg && conf->fraud_detection_enabled) {
+        conf->fraud_detection_validation_threshold = atoi(arg);
     }
     return OK;
 }
@@ -519,7 +529,8 @@ const command_rec mshield_cmds[] =
 	AP_INIT_TAKE1("MOD_MSHIELD_USERNAME_VALUE",                 mshield_config_username_value,                  NULL, RSRC_CONF, "Configure mod_mshield Username"),
 	/* Fraud detection */
 	AP_INIT_FLAG( "MOD_MSHIELD_FRAUD_DETECTION_ENABLED",        mshield_config_fraud_detection_enabled,         NULL, RSRC_CONF, "Enable or disable fraud detection functionality"),
-    AP_INIT_FLAG( "MOD_MSHIELD_FRAUD_LEARNING_MODE",            mshield_config_fraud_detection_learning_mode,   NULL, RSRC_CONF, "Enable or disable fraud detection learning mode"),
+    AP_INIT_FLAG( "MOD_MSHIELD_FRAUD_LEARNING_MODE",            mshield_config_fraud_learning_mode,             NULL, RSRC_CONF, "Enable or disable fraud detection learning mode"),
+    AP_INIT_TAKE1("MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD",     mshield_config_fraud_validation_threshold,      NULL, RSRC_CONF, "Threshold which fixes if the session with risk level X should be rated by the engine"),
     AP_INIT_TAKE1("MOD_MSHIELD_FRAUD_DETECTED_URL",             mshield_config_fraud_detected_url,              NULL, RSRC_CONF, "URL to redirect to if a fraud is found"),
     AP_INIT_TAKE1("MOD_MSHIELD_FRAUD_ERROR_URL",                mshield_config_fraud_error_url,                 NULL, RSRC_CONF, "URL to redirect to if the analyse fails"),
 	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_BROKER",                   mshield_config_kafka_broker,                    NULL, RSRC_CONF, "Set Kafka broker IP and port (syntax: 127.0.0.1:9092)"),
