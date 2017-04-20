@@ -368,6 +368,10 @@ const char *
 mshield_config_fraud_validation_threshold(cmd_parms *cmd, void *dummy, const char *arg) {
     mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
     if (arg && conf->fraud_detection_enabled) {
+        int threshold = atoi(arg);
+        if (threshold <1 || threshold >5) {
+            return "ERROR: MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD needs to be between 1 and 5.";
+        }
         conf->fraud_detection_validation_threshold = atoi(arg);
     }
     return OK;
