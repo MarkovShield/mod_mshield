@@ -247,8 +247,8 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
 
     cJSON_Delete(click_json);
 
-    /* If URL was critical, wait for a response message from the engine and parse it. */
-    if (risk_level && risk_level > 0) {
+    /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
+    if (risk_level && risk_level > 0 && !config->fraud_detection_learning_mode) {
         status = redis_subscribe(config->pool, r, clickUUID);
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url, risk_level);
     } else {

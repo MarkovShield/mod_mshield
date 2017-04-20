@@ -81,6 +81,7 @@
 #define MOD_MSHIELD_USERNAME_VALUE                    "MOD_MSHIELD_USERNAME"                        /* login server LOGON cookie username value name (needs to be the same as in login.php) */
 /* Fraud detection stuff starts here */
 #define MOD_MSHIELD_FRAUD_DETECTION_ENABLED        0                                            /* by default the fraud detection functionality is off */
+#define MOD_MSHIELD_FRAUD_LEARNING_MODE            0                                            /* by default the fraud detection learning mode is off */
 #define MOD_MSHIELD_FRAUD_DETECTED_URL          "/error/fraud_detected.html"                    /* set the URL to redirect to if a fraud is found */
 #define MOD_MSHIELD_FRAUD_ERROR_URL             "/error/fraud_error.html"                       /* set the URL to redirect to if the analyse fails */
 #define MOD_MSHIELD_KAFKA_BROKER                "127.0.0.1:9092"                                /* set the kafka broker IP and port */
@@ -212,6 +213,7 @@ typedef struct {
     /* fraud detection stuff */
     apr_pool_t *pool;
     int fraud_detection_enabled;                    /* Enable or disable fraud detection functionality */
+    int fraud_detection_learning_mode;              /* Enable or disable learning mode */
     const char *fraud_detected_url;                 /* URL to redirect to if a fraud is found */
     const char *fraud_error_url;                    /* URL to redirect to if the analyse fails */
     apr_hash_t *url_store;                          /* url store for web application urls and its criticality */

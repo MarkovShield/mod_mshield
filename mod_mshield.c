@@ -431,25 +431,26 @@ mshield_access_checker(request_rec *r)
     /*
      * Extract click data to kafka.
      */
-    switch (extract_click_to_kafka(r, session.data->uuid, &session)) {
-        case STATUS_ERROR:
-            status = mod_mshield_redirect_to_relurl(r, config->fraud_error_url);
-            if (status != HTTP_MOVED_TEMPORARILY) {
-                ap_log_error(PC_LOG_CRIT, NULL, "Redirection to fraud_error_url failed.");
-            }
-            ap_log_error(PC_LOG_INFO, NULL, "Redirection to fraud_error_url was successful.");
-            apr_global_mutex_unlock(mshield_mutex);
-            return status;
+    if (config->fraud_detection_enabled) {
+        switch (extract_click_to_kafka(r, session.data->uuid, &session)) {
+            case STATUS_ERROR:
+                status = mod_mshield_redirect_to_relurl(r, config->fraud_error_url);
+                if (status != HTTP_MOVED_TEMPORARILY) {
+                    ap_log_error(PC_LOG_CRIT, NULL, "Redirection to fraud_error_url failed.");
+                }
+                ap_log_error(PC_LOG_INFO, NULL, "Redirection to fraud_error_url was successful.");
+                apr_global_mutex_unlock(mshield_mutex);
+                return status;
 
-        case STATUS_OK:
-            break;
+            case STATUS_OK:
+                break;
 
-        case HTTP_INTERNAL_SERVER_ERROR:
-        default:
-            apr_global_mutex_unlock(mshield_mutex);
-            return HTTP_INTERNAL_SERVER_ERROR;
+            case HTTP_INTERNAL_SERVER_ERROR:
+            default:
+                apr_global_mutex_unlock(mshield_mutex);
+                return HTTP_INTERNAL_SERVER_ERROR;
+        }
     }
-
 
 	/*
 	 * We will first check, if the requesting URI asks for the session destroy function
