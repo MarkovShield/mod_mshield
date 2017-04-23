@@ -101,9 +101,11 @@ For the URL criticality level definitions, create another file `conf/extra/mod_m
 #################################################################################
 
 MOD_MSHIELD_URL "^/public*" 0
-MOD_MSHIELD_URL "^/login/login.php*" 1
-MOD_MSHIELD_URL "^/private*" 1
+MOD_MSHIELD_URL "^/login/login.php*" 3
+MOD_MSHIELD_URL "^/private*" 4
+MOD_MSHIELD_URL "^/transaction*" 5
 ```
+**Hint:** Possible criticality levels are from 0 to 5 where 0 means "not critical at all" and 5 means "super critical".
 
 Finally restart apache httpd in order to apply the new module and its configuration:
 ```bash
@@ -134,6 +136,12 @@ echo "KEY,Test rating = SUSPICIOUS" | kafka-console-producer.sh \
     --property parse.key=true \
     --property key.separator=,
 kafkacat -C -b 192.168.56.50 -t mshield-analyse-result
+```
+
+### Test Redis connection
+Publish engine result (e.g. `FRAUD`) to channel `123` :
+```bash
+redis-cli publish 123 FRAUD
 ```
 
 ## Development

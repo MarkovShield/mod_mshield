@@ -126,6 +126,12 @@
 #define MOD_MSHIELD_COOKIESTORE_COUNT    200    /* Default cookiestore size (SHM) */
 #endif
 
+/*
+ * Return values from the engine rating
+ */
+#define MOD_MSHIELD_RESULT_FRAUD        "FRAUD"
+#define MOD_MSHIELD_RESULT_SUSPICIOUS   "SUSPICIOUS"
+#define MOD_MSHIELD_RESULT_OK           "OK"
 
 #define MOD_MSHIELD_HASH_LENGTH        100
 

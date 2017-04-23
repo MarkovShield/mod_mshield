@@ -33,7 +33,6 @@ static void handle_mshield_result(redisAsyncContext *c, void *reply, void *privd
 
     redisReply *r = reply;
     struct event_base *base = privdata;
-    char *fraud = "FRAUD";
 
     if (reply == NULL) {
         return;
@@ -49,10 +48,18 @@ static void handle_mshield_result(redisAsyncContext *c, void *reply, void *privd
 
             ap_log_error(PC_LOG_INFO, NULL, "REDIS SUB: [%u] %s", j, r->element[j]->str);
             if (r->element[j]->str) {
-              if (strcmp(r->element[j]->str, fraud) == 0) {
-                ap_log_error(PC_LOG_INFO, NULL, "Engine result: %s", fraud);
-                event_base_loopbreak(base);
-              }
+                if (strcmp(r->element[j]->str, MOD_MSHIELD_RESULT_FRAUD) == 0) {
+                    ap_log_error(PC_LOG_CRIT, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_FRAUD);
+                    event_base_loopbreak(base);
+                }
+                if (strcmp(r->element[j]->str, MOD_MSHIELD_RESULT_SUSPICIOUS) == 0) {
+                    ap_log_error(PC_LOG_CRIT, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_SUSPICIOUS);
+                    event_base_loopbreak(base);
+                }
+                if (strcmp(r->element[j]->str, MOD_MSHIELD_RESULT_OK) == 0) {
+                    ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_OK);
+                    event_base_loopbreak(base);
+                }
             }
 
         }
@@ -80,9 +87,9 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
     clock_gettime(CLOCK_MONOTONIC, &start);
     //while ((timeElapsed / CLOCKS_PER_SEC) < config->kafka.response_timeout && msgcount != 1) {
 
-        // ToDo Philip: Do some waiting here to slow down the busy loop.
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        timeElapsed = timespecDiff(&end, &start);
+    // ToDo Philip: Do some waiting here to slow down the busy loop.
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    timeElapsed = timespecDiff(&end, &start);
     //}
     //redisAsyncCommand(context, handle_mshield_result, NULL, "UNSUBSCRIBE %s", clickUUID);
     //redisAsyncDisconnect(context);

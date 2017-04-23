@@ -10,7 +10,7 @@
  */
 apr_status_t
 mod_mshield_regexp_match(request_rec *r, const char *pattern, const char *subject) {
-	return mod_mshield_regexp_match_ex(r, pattern, 0, subject);
+    return mod_mshield_regexp_match_ex(r, pattern, 0, subject);
 }
 
 /*
@@ -24,7 +24,7 @@ mod_mshield_regexp_match(request_rec *r, const char *pattern, const char *subjec
  */
 apr_status_t
 mod_mshield_regexp_imatch(request_rec *r, const char *pattern, const char *subject) {
-	return mod_mshield_regexp_match_ex(r, pattern, PCRE_CASELESS, subject);
+    return mod_mshield_regexp_match_ex(r, pattern, PCRE_CASELESS, subject);
 }
 
 /*
@@ -39,30 +39,30 @@ mod_mshield_regexp_imatch(request_rec *r, const char *pattern, const char *subje
  */
 apr_status_t
 mod_mshield_regexp_match_ex(request_rec *r, const char *pattern, int opts, const char *subject) {
-	pcre *re;
-	const char *error;
-	int offset, rc;
+    pcre *re;
+    const char *error;
+    int offset, rc;
 
-	if (pattern == NULL || subject == NULL) {
-		ERRLOG_CRIT("Internal error: pattern or subject is NULL.");
-		return STATUS_ERROR;
-	}
+    if (pattern == NULL || subject == NULL) {
+        ap_log_error(PC_LOG_CRIT, NULL, "Internal error: pattern or subject is NULL.");
+        return STATUS_ERROR;
+    }
 
-	re = pcre_compile(pattern, opts, &error, &offset, NULL);
-	if (re == NULL) {
-		ERRLOG_CRIT("Cannot compile regexp /%s/ at offset %d: %s", pattern, offset, error);
-		return STATUS_ERROR;
-	}
+    re = pcre_compile(pattern, opts, &error, &offset, NULL);
+    if (re == NULL) {
+        ap_log_error(PC_LOG_CRIT, NULL, "Cannot compile regexp /%s/ at offset %d: %s", pattern, offset, error);
+        return STATUS_ERROR;
+    }
 
-	rc = pcre_exec(re, NULL, subject, strlen(subject), 0, 0, NULL, 0);
-	if (rc >= 0) {
-		return STATUS_MATCH;
-	} else if (rc == PCRE_ERROR_NOMATCH) {
-		return STATUS_NOMATCH;
-	} else {
-		ERRLOG_CRIT("Cannot match regexp /%s/ against '%s' (%d)", pattern, subject, rc);
-		return STATUS_ERROR;
-	}
+    rc = pcre_exec(re, NULL, subject, strlen(subject), 0, 0, NULL, 0);
+    if (rc >= 0) {
+        return STATUS_MATCH;
+    } else if (rc == PCRE_ERROR_NOMATCH) {
+        return STATUS_NOMATCH;
+    } else {
+        ap_log_error(PC_LOG_CRIT, NULL, "Cannot match regexp /%s/ against '%s' (%d)", pattern, subject, rc);
+        return STATUS_ERROR;
+    }
 }
 
 
