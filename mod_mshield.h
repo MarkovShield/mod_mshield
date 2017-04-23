@@ -129,6 +129,12 @@
 /*
  * Return values from the engine rating
  */
+#define MOD_MSHIELD_URL_CRITICALITY_LEVEL_MIN    0
+#define MOD_MSHIELD_URL_CRITICALITY_LEVEL_MAX    5
+
+/*
+ * Return values from the engine rating
+ */
 #define MOD_MSHIELD_RESULT_FRAUD        "FRAUD"
 #define MOD_MSHIELD_RESULT_SUSPICIOUS   "SUSPICIOUS"
 #define MOD_MSHIELD_RESULT_OK           "OK"

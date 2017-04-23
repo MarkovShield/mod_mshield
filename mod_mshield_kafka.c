@@ -5,6 +5,27 @@
  *****************************************************************************************************************/
 
 /*
+ * Print the url store. This function can be used for debugging purposes.
+ */
+static void print_url_store(mod_mshield_server_t *config) {
+
+    apr_hash_index_t *hi;
+    const char *key;
+    const char *value;
+
+    ap_log_error(PC_LOG_INFO, NULL, "==== Printing URL store ====");
+    ap_log_error(PC_LOG_INFO, NULL, "URL Store has %d entries.", apr_hash_count(config->url_store));
+
+    for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
+        apr_hash_this(hi, (const void **) &key, NULL, (void **) &value);
+        ap_log_error(PC_LOG_INFO, NULL, "REGEX: Current Entry. KEY: %s VALUE: %s", key, value);
+    }
+
+    ap_log_error(PC_LOG_INFO, NULL, "==== Printing URL store end ====");
+
+}
+
+/*
  * Get the risk level of a URL
  */
 static int get_url_risk_level(request_rec *r, const char *url) {
@@ -16,8 +37,10 @@ static int get_url_risk_level(request_rec *r, const char *url) {
     const char *key;
     const char *value;
 
+    print_url_store(config);
+
     for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
-        apr_hash_this(hi, (const void**)&key, NULL, (void**)&value);
+        apr_hash_this(hi, (const void **) &key, NULL, (void **) &value);
         ap_log_error(PC_LOG_INFO, NULL, "REGEX: Current Entry. KEY: %s VALUE: %s", key, value);
 
         switch (mod_mshield_regexp_match(r, key, url)) {
@@ -26,10 +49,12 @@ static int get_url_risk_level(request_rec *r, const char *url) {
                 return atoi(value);
                 break;
             case STATUS_NOMATCH:
-                ap_log_error(PC_LOG_INFO, NULL, "REGEX: NOT matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value, url);
+                ap_log_error(PC_LOG_INFO, NULL, "REGEX: NOT matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value,
+                             url);
             case STATUS_ERROR:
             default:
-                ap_log_error(PC_LOG_CRIT, NULL, "REGEX: Error happened during RegEx comparison RegEx: [%s] URL: [%s]", key, url);
+                ap_log_error(PC_LOG_CRIT, NULL, "REGEX: Error happened during RegEx comparison RegEx: [%s] URL: [%s]",
+                             key, url);
         }
 
     }
@@ -176,7 +201,7 @@ kafka_topic_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
  * Note: Set partition to RD_KAFKA_PARTITION_UA if none is provided.
  */
 apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
-                   const char *topic, const char **rk_topic, int32_t partition, char *msg, const char *key) {
+                           const char *topic, const char **rk_topic, int32_t partition, char *msg, const char *key) {
 
     rd_kafka_topic_t *rkt = kafka_topic_connect_producer(p, kafka, topic, rk_topic);
 
@@ -243,7 +268,8 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(0));
     }
     // ToDo Philip: Is the risk_level condition needed down here? -> Check!
-    if (risk_level && risk_level >= config->fraud_detection_validation_threshold && !config->fraud_detection_learning_mode) {
+    if (risk_level && risk_level >= config->fraud_detection_validation_threshold &&
+        !config->fraud_detection_learning_mode) {
         cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(true));
     } else {
         cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(false));
@@ -256,7 +282,8 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
 
     // ToDo Philip: Is the risk_level condition needed down here? -> Check!
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
-    if (risk_level && risk_level >= config->fraud_detection_validation_threshold && !config->fraud_detection_learning_mode) {
+    if (risk_level && risk_level >= config->fraud_detection_validation_threshold &&
+        !config->fraud_detection_learning_mode) {
         status = redis_subscribe(config->pool, r, clickUUID);
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url, risk_level);
     } else {
