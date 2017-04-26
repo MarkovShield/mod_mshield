@@ -38,8 +38,8 @@ static void handle_mshield_result(redisAsyncContext *c, void *reply, void *cb_ob
 
     config = ap_get_module_config(cb_data_obj->request->server->module_config, &mshield_module);
 
-    //struct timeval timeout;
-    //timeout.tv_sec = 3;
+    struct timeval timeout;
+    timeout.tv_sec = 6;
     //event_base_loopexit(cb_data_obj->base, &timeout);
 
     if (reply == NULL) {
@@ -103,14 +103,35 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
     cb_data_obj->base = base;
     cb_data_obj->request = r;
     redisAsyncCommand(context, handle_mshield_result, cb_data_obj, "SUBSCRIBE %s", clickUUID, r);
-    //redisAsyncCommand(context, handle_mshield_result, NULL, "UNSUBSCRIBE %s", clickUUID);
-    event_base_dispatch(base);
+
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    /* Check every 25 milliseconds if result from engine was received. */
+    timeout.tv_usec = (25 * 1000);
+
+    while (true) {
+        event_base_loopexit(base, &timeout);
+        int result = event_base_dispatch(base);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
+        if (result < 0) {
+            ap_log_error(PC_LOG_CRIT, NULL, "Error occured while looping event_base_loop.");
+        } else if (result == 1) {
+            ap_log_error(PC_LOG_CRIT, NULL, "No events were pending or active.");
+            continue;
+        } else if (event_base_got_break(base)) {
+            ap_log_error(PC_LOG_DEBUG, NULL, "Leaving event_base_dispatch because engine result was received.");
+            break;
+        }
+        if (timeElapsed > config->kafka.response_timeout) {
+            // ToDo Philip: Forward request here.
+            ap_log_error(PC_LOG_CRIT, NULL, "Received no message from redis. Timeout %d ms is expired!", timeElapsed);
+            break;
+        }
+    }
+
     event_base_free(base);
     redisAsyncFree(context);
-
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-    ap_log_error(PC_LOG_INFO, NULL, "Received no message from redis. Timeout %ld ms is expired!", (long) timeElapsed);
     ap_log_error(PC_LOG_DEBUG, NULL, "===== Waiting for engine rating ended =====");
 
     if (apr_table_get(r->err_headers_out, "Location")) {
