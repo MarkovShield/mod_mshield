@@ -242,6 +242,14 @@ typedef struct {
     const int mod_mshield_auth_strength;            /* required authentication strength per directory */
 } mod_mshield_dir_t;
 
+/********************************************************************
+ * Helper structures
+ */
+
+typedef struct {
+    struct event_base *base;                   /* event base object */
+    request_rec *request;                      /* Request object */
+} mod_mshield_redis_cb_data_obj_t;
 
 /********************************************************************
  * SHM structures

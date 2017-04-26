@@ -37,7 +37,7 @@ static int get_url_risk_level(request_rec *r, const char *url) {
     const char *key;
     const char *value;
 
-    print_url_store(config);
+    //print_url_store(config);
 
     for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
         apr_hash_this(hi, (const void **) &key, NULL, (void **) &value);
@@ -234,6 +234,8 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     mod_mshield_server_t *config;
     config = ap_get_module_config(r->server->module_config, &mshield_module);
 
+    bool validationRequired;
+
     apr_status_t status;
     char *url = r->parsed_uri.path;
 
@@ -258,7 +260,6 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
 
     int risk_level;
     risk_level = get_url_risk_level(r, url);
-    // ToDo Philip: Is the risk_level condition needed down here? -> Check!
     if (risk_level) {
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] found in url_store", url);
         cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(risk_level));
@@ -267,28 +268,24 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] NOT found in url_store", url);
         cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(0));
     }
-    // ToDo Philip: Is the risk_level condition needed down here? -> Check!
-    if (risk_level && risk_level >= config->fraud_detection_validation_threshold &&
-        !config->fraud_detection_learning_mode) {
-        cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(true));
-    } else {
-        cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(false));
-    }
+
+    validationRequired = risk_level && risk_level >= config->fraud_detection_validation_threshold &&
+                         !config->fraud_detection_learning_mode;
+
+    cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(validationRequired));
 
     kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(click_json), uuid);
 
-    cJSON_Delete(click_json);
-
-    // ToDo Philip: Is the risk_level condition needed down here? -> Check!
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
-    if (risk_level && risk_level >= config->fraud_detection_validation_threshold &&
-        !config->fraud_detection_learning_mode) {
+    if (validationRequired) {
         status = redis_subscribe(config->pool, r, clickUUID);
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url, risk_level);
     } else {
         status = STATUS_OK;
     }
+
+    cJSON_Delete(click_json);
 
     return status;
 }
