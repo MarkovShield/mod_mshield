@@ -22,7 +22,6 @@ redisAsyncContext *redis_connect(mod_mshield_server_t *config) {
         redisAsyncFree(context);
         exit(1);
     }
-    ap_log_error(PC_LOG_INFO, NULL, "Successfully connected to redis.");
     return context;
 }
 
@@ -47,15 +46,17 @@ static void handle_mshield_result(redisAsyncContext *c, void *reply, void *cb_ob
         return;
     }
     if (redis_reply->type == REDIS_REPLY_ARRAY && redis_reply->elements == 3) {
+        ap_log_error(PC_LOG_INFO, NULL, "Waiting for redis result for request [%s]...", apr_table_get(cb_data_obj->request->subprocess_env, "UNIQUE_ID"));
         for (int j = 0; j < redis_reply->elements; j++) {
-
-            ap_log_error(PC_LOG_INFO, NULL, "REDIS SUB: [%u] %s", j, redis_reply->element[j]->str);
+            //ap_log_error(PC_LOG_INFO, NULL, "REDIS SUB: [%u] %s", j, redis_reply->element[j]->str);
             if (redis_reply->element[j]->str) {
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_FRAUD) == 0) {
                     ap_log_error(PC_LOG_CRIT, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_FRAUD);
                     status = mod_mshield_redirect_to_relurl(cb_data_obj->request, config->fraud_detected_url);
                     if (status != HTTP_MOVED_TEMPORARILY) {
                         ap_log_error(PC_LOG_CRIT, NULL, "Redirection to fraud_detected_url failed.");
+                    } else {
+                        ap_log_error(PC_LOG_INFO, NULL, "Redirection to fraud_detected_url was successful.");
                     }
                     event_base_loopbreak(cb_data_obj->base);
                 }
@@ -64,6 +65,8 @@ static void handle_mshield_result(redisAsyncContext *c, void *reply, void *cb_ob
                     status = mod_mshield_redirect_to_relurl(cb_data_obj->request, config->global_logon_server_url_1);
                     if (status != HTTP_MOVED_TEMPORARILY) {
                         ap_log_error(PC_LOG_CRIT, NULL, "Redirection to global_logon_server_url_1 failed.");
+                    } else {
+                        ap_log_error(PC_LOG_INFO, NULL, "Redirection to global_logon_server_url_1 was successful.");
                     }
                     event_base_loopbreak(cb_data_obj->base);
                 }
@@ -95,7 +98,7 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
     redisAsyncContext *context = redis_connect(config);
     redisLibeventAttach(context, base);
     mod_mshield_redis_cb_data_obj_t *cb_data_obj = NULL;
-    // ToDo Philip: Check this!
+    cb_data_obj = apr_palloc(p, sizeof(mod_mshield_redis_cb_data_obj_t));
     cb_data_obj->base = base;
     cb_data_obj->request = r;
     redisAsyncCommand(context, handle_mshield_result, cb_data_obj, "SUBSCRIBE %s", clickUUID, r);
@@ -106,8 +109,7 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
 
     clock_gettime(CLOCK_MONOTONIC, &end);
     timeElapsed = timespecDiff(&end, &start);
-    ap_log_error(PC_LOG_INFO, NULL, "Received no message from redis. Timeout [%lld] ms is expired!",
-                 timeElapsed / CLOCKS_PER_SEC);
+    //ap_log_error(PC_LOG_INFO, NULL, "Received no message from redis. Timeout [%lld] ms is expired!", timeElapsed / CLOCKS_PER_SEC);
 
     ap_log_error(PC_LOG_INFO, NULL, "===== Waiting for engine rating ended =====");
     return STATUS_OK;

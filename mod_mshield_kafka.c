@@ -41,16 +41,16 @@ static int get_url_risk_level(request_rec *r, const char *url) {
 
     for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
         apr_hash_this(hi, (const void **) &key, NULL, (void **) &value);
-        ap_log_error(PC_LOG_INFO, NULL, "REGEX: Current Entry. KEY: %s VALUE: %s", key, value);
+        //ap_log_error(PC_LOG_INFO, NULL, "REGEX: Current Entry. KEY: %s VALUE: %s", key, value);
 
         switch (mod_mshield_regexp_match(r, key, url)) {
             case STATUS_MATCH:
-                ap_log_error(PC_LOG_INFO, NULL, "REGEX: Matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value, url);
+                //ap_log_error(PC_LOG_INFO, NULL, "REGEX: Matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value, url);
                 return atoi(value);
                 break;
             case STATUS_NOMATCH:
-                ap_log_error(PC_LOG_INFO, NULL, "REGEX: NOT matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value,
-                             url);
+                //ap_log_error(PC_LOG_INFO, NULL, "REGEX: NOT matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value,
+                //             url);
             case STATUS_ERROR:
             default:
                 ap_log_error(PC_LOG_CRIT, NULL, "REGEX: Error happened during RegEx comparison RegEx: [%s] URL: [%s]",
@@ -58,7 +58,6 @@ static int get_url_risk_level(request_rec *r, const char *url) {
         }
 
     }
-    ap_log_error(PC_LOG_INFO, NULL, "REGEX: Getting risk level was not successful for URL: [%s]", url);
     return 0;
 
 }
@@ -202,27 +201,20 @@ kafka_topic_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
  */
 apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
                            const char *topic, const char **rk_topic, int32_t partition, char *msg, const char *key) {
-
     rd_kafka_topic_t *rkt = kafka_topic_connect_producer(p, kafka, topic, rk_topic);
-
     if (rkt) {
-        ap_log_error(PC_LOG_INFO, NULL, "produce: (%s:%i) %s", topic, partition, msg);
-
         /* Produce send */
         if (rd_kafka_produce(rkt, partition, RD_KAFKA_MSG_F_COPY,
                              msg, strlen(msg), key, strlen(key), NULL) == -1) {
             ap_log_error(PC_LOG_CRIT, NULL, "Kafka produce failed! Topic: %s", topic);
         }
-
         /* Poll to handle delivery reports */
         rd_kafka_poll(kafka->rk_producer, 10);
     } else {
         return HTTP_INTERNAL_SERVER_ERROR;
         ap_log_error(PC_LOG_CRIT, NULL, "No such kafka topic: %s", topic);
     }
-
     return STATUS_OK;
-
 }
 
 /*
@@ -279,7 +271,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
 
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
     if (validationRequired) {
-        status = redis_subscribe(config->pool, r, clickUUID);
+        status = redis_subscribe(r->pool, r, clickUUID);
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url, risk_level);
     } else {
         status = STATUS_OK;
