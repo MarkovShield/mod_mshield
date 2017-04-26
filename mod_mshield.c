@@ -441,10 +441,11 @@ mshield_access_checker(request_rec *r)
                 ap_log_error(PC_LOG_INFO, NULL, "Redirection to fraud_error_url was successful.");
                 apr_global_mutex_unlock(mshield_mutex);
                 return status;
-
+						case HTTP_MOVED_TEMPORARILY:
+								apr_global_mutex_unlock(mshield_mutex);
+								return HTTP_MOVED_TEMPORARILY;
             case STATUS_OK:
                 break;
-
             case HTTP_INTERNAL_SERVER_ERROR:
             default:
                 apr_global_mutex_unlock(mshield_mutex);

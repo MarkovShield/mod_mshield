@@ -226,16 +226,14 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     mod_mshield_server_t *config;
     config = ap_get_module_config(r->server->module_config, &mshield_module);
 
+    const char *clickUUID;
+    cJSON *click_json;
     bool validationRequired;
-
     apr_status_t status;
     char *url = r->parsed_uri.path;
 
     /* For security reasons its important to remove double slashes. */
     ap_no2slash(url);
-
-    const char *clickUUID;
-    cJSON *click_json;
 
     /* Try to use UNIQUE_ID for click identification. If it's not possible to use it, generate an own unique id. */
     clickUUID = apr_table_get(r->subprocess_env, "UNIQUE_ID");
@@ -260,24 +258,19 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] NOT found in url_store", url);
         cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(0));
     }
-
     validationRequired = risk_level && risk_level >= config->fraud_detection_validation_threshold &&
                          !config->fraud_detection_learning_mode;
-
     cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(validationRequired));
-
     kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(click_json), uuid);
-
+    cJSON_Delete(click_json);
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
     if (validationRequired) {
-        status = redis_subscribe(r->pool, r, clickUUID);
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url, risk_level);
+        status = redis_subscribe(r->pool, r, clickUUID);
     } else {
         status = STATUS_OK;
     }
-
-    cJSON_Delete(click_json);
 
     return status;
 }

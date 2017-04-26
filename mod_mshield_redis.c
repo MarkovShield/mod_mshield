@@ -89,7 +89,7 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
     config = ap_get_module_config(r->server->module_config, &mshield_module);
 
     struct timespec start, end;
-    int64_t timeElapsed = 1;
+    int64_t timeElapsed = 0;
 
     ap_log_error(PC_LOG_INFO, NULL, "===== Waiting for engine rating =====");
     clock_gettime(CLOCK_MONOTONIC, &start);
@@ -108,9 +108,12 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
     redisAsyncFree(context);
 
     clock_gettime(CLOCK_MONOTONIC, &end);
-    timeElapsed = timespecDiff(&end, &start);
-    //ap_log_error(PC_LOG_INFO, NULL, "Received no message from redis. Timeout [%lld] ms is expired!", timeElapsed / CLOCKS_PER_SEC);
-
+    timeElapsed = timespecDiff(&end, &start)/CLOCKS_PER_SEC;
+    ap_log_error(PC_LOG_INFO, NULL, "Received no message from redis. Timeout %ld ms is expired!", (long)timeElapsed);
     ap_log_error(PC_LOG_INFO, NULL, "===== Waiting for engine rating ended =====");
+
+    if (apr_table_get(r->err_headers_out, "Location")) {
+        return HTTP_MOVED_TEMPORARILY;
+    }
     return STATUS_OK;
 }
