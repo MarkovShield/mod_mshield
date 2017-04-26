@@ -13,15 +13,15 @@ static void print_url_store(mod_mshield_server_t *config) {
     const char *key;
     const char *value;
 
-    ap_log_error(PC_LOG_INFO, NULL, "==== Printing URL store ====");
-    ap_log_error(PC_LOG_INFO, NULL, "URL Store has %d entries.", apr_hash_count(config->url_store));
+    ap_log_error(PC_LOG_DEBUG, NULL, "==== Printing URL store ====");
+    ap_log_error(PC_LOG_DEBUG, NULL, "URL Store has %d entries.", apr_hash_count(config->url_store));
 
     for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
         apr_hash_this(hi, (const void **) &key, NULL, (void **) &value);
-        ap_log_error(PC_LOG_INFO, NULL, "REGEX: Current Entry. KEY: %s VALUE: %s", key, value);
+        ap_log_error(PC_LOG_DEBUG, NULL, "REGEX: Current Entry. KEY: %s VALUE: %s", key, value);
     }
 
-    ap_log_error(PC_LOG_INFO, NULL, "==== Printing URL store end ====");
+    ap_log_error(PC_LOG_DEBUG, NULL, "==== Printing URL store end ====");
 
 }
 
@@ -36,21 +36,21 @@ static int get_url_risk_level(request_rec *r, const char *url) {
     apr_hash_index_t *hi;
     const char *key;
     const char *value;
-
-    //print_url_store(config);
-
+#ifdef DEBUG
+    print_url_store(config);
+#endif
     for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
         apr_hash_this(hi, (const void **) &key, NULL, (void **) &value);
-        //ap_log_error(PC_LOG_INFO, NULL, "REGEX: Current Entry. KEY: %s VALUE: %s", key, value);
+        ap_log_error(PC_LOG_DEBUG, NULL, "REGEX: Current Entry. KEY: %s VALUE: %s", key, value);
 
         switch (mod_mshield_regexp_match(r, key, url)) {
             case STATUS_MATCH:
-                //ap_log_error(PC_LOG_INFO, NULL, "REGEX: Matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value, url);
+                ap_log_error(PC_LOG_DEBUG, NULL, "REGEX: Matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value, url);
                 return atoi(value);
-                break;
             case STATUS_NOMATCH:
-                //ap_log_error(PC_LOG_INFO, NULL, "REGEX: NOT matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value,
-                //             url);
+                ap_log_error(PC_LOG_DEBUG, NULL, "REGEX: NOT matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value,
+                             url);
+                break;
             case STATUS_ERROR:
             default:
                 ap_log_error(PC_LOG_CRIT, NULL, "REGEX: Error happened during RegEx comparison RegEx: [%s] URL: [%s]",
@@ -58,7 +58,8 @@ static int get_url_risk_level(request_rec *r, const char *url) {
         }
 
     }
-    return 0;
+    /* Return -1 to let the caller know that its an unknown URL. */
+    return -1;
 
 }
 
@@ -94,7 +95,7 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
         void *value = NULL;
         apr_hash_this(hash, &property, NULL, &value);
         if (value) {
-            ap_log_error(PC_LOG_INFO, NULL, "global producer configration: %s = %s", (char *) property, (char *) value);
+            ap_log_error(PC_LOG_DEBUG, NULL, "global producer configration: %s = %s", (char *) property, (char *) value);
 
             if (rd_kafka_conf_set(conf, (char *) property, (char *) value,
                                   errstr, sizeof(errstr)) != RD_KAFKA_CONF_OK) {
@@ -118,7 +119,7 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
 
     /* Add brokers */
     if (rd_kafka_brokers_add(kafka->rk_producer, brokers) == 0) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Add Kafka brokers: %s", brokers);
+        ap_log_error(PC_LOG_INFO, NULL, "Add Kafka brokers: %s", brokers);
         rd_kafka_destroy(kafka->rk_producer);
         kafka->rk_producer = NULL;
         return APR_EINIT;
@@ -170,7 +171,7 @@ kafka_topic_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
         apr_hash_this(hash, &property, NULL, &value);
         if (value) {
             char err[512];
-            ap_log_error(PC_LOG_INFO, NULL, "topic producer configration: %s = %s", (char *) property, (char *) value);
+            ap_log_error(PC_LOG_DEBUG, NULL, "topic producer configration: %s = %s", (char *) property, (char *) value);
 
             if (rd_kafka_topic_conf_set(topic_conf, (char *) property, (char *) value,
                                         err, sizeof(err)) != RD_KAFKA_CONF_OK) {
@@ -250,20 +251,25 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
 
     int risk_level;
     risk_level = get_url_risk_level(r, url);
-    if (risk_level) {
-        ap_log_error(PC_LOG_INFO, NULL, "URL [%s] found in url_store", url);
-        cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(risk_level));
+    if (risk_level != -1) {
+        ap_log_error(PC_LOG_DEBUG, NULL, "URL [%s] found in url_store", url);
     } else {
-        /* Default value for unknown urls is 0. This means they are not rated in the engine. */
-        ap_log_error(PC_LOG_INFO, NULL, "URL [%s] NOT found in url_store", url);
-        cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(0));
+        /* Default risk level for unknown urls is 0. This means they are not rated in the engine. */
+        ap_log_error(PC_LOG_DEBUG, NULL, "URL [%s] NOT found in url_store", url);
+        risk_level = 0;
     }
-    validationRequired = risk_level && risk_level >= config->fraud_detection_validation_threshold &&
+
+    validationRequired = risk_level >= config->fraud_detection_validation_threshold &&
                          !config->fraud_detection_learning_mode;
+
+    cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(risk_level));
     cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(validationRequired));
+
     kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(click_json), uuid);
+
     cJSON_Delete(click_json);
+
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
     if (validationRequired) {
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url, risk_level);

@@ -31,7 +31,7 @@ redisAsyncContext *redis_connect(mod_mshield_server_t *config) {
 static void handle_mshield_result(redisAsyncContext *c, void *reply, void *cb_obj) {
 
     redisReply *redis_reply = reply;
-    mod_mshield_redis_cb_data_obj_t *cb_data_obj = (mod_mshield_redis_cb_data_obj_t *)cb_obj;
+    mod_mshield_redis_cb_data_obj_t *cb_data_obj = (mod_mshield_redis_cb_data_obj_t *) cb_obj;
 
     apr_status_t status;
     mod_mshield_server_t *config;
@@ -46,27 +46,28 @@ static void handle_mshield_result(redisAsyncContext *c, void *reply, void *cb_ob
         return;
     }
     if (redis_reply->type == REDIS_REPLY_ARRAY && redis_reply->elements == 3) {
-        ap_log_error(PC_LOG_INFO, NULL, "Waiting for redis result for request [%s]...", apr_table_get(cb_data_obj->request->subprocess_env, "UNIQUE_ID"));
+        ap_log_error(PC_LOG_DEBUG, NULL, "Waiting for redis result for request [%s]...",
+                     apr_table_get(cb_data_obj->request->subprocess_env, "UNIQUE_ID"));
         for (int j = 0; j < redis_reply->elements; j++) {
             //ap_log_error(PC_LOG_INFO, NULL, "REDIS SUB: [%u] %s", j, redis_reply->element[j]->str);
             if (redis_reply->element[j]->str) {
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_FRAUD) == 0) {
-                    ap_log_error(PC_LOG_CRIT, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_FRAUD);
+                    ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_FRAUD);
                     status = mod_mshield_redirect_to_relurl(cb_data_obj->request, config->fraud_detected_url);
                     if (status != HTTP_MOVED_TEMPORARILY) {
                         ap_log_error(PC_LOG_CRIT, NULL, "Redirection to fraud_detected_url failed.");
                     } else {
-                        ap_log_error(PC_LOG_INFO, NULL, "Redirection to fraud_detected_url was successful.");
+                        ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to fraud_detected_url was successful.");
                     }
                     event_base_loopbreak(cb_data_obj->base);
                 }
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_SUSPICIOUS) == 0) {
-                    ap_log_error(PC_LOG_CRIT, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_SUSPICIOUS);
+                    ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_SUSPICIOUS);
                     status = mod_mshield_redirect_to_relurl(cb_data_obj->request, config->global_logon_server_url_1);
                     if (status != HTTP_MOVED_TEMPORARILY) {
                         ap_log_error(PC_LOG_CRIT, NULL, "Redirection to global_logon_server_url_1 failed.");
                     } else {
-                        ap_log_error(PC_LOG_INFO, NULL, "Redirection to global_logon_server_url_1 was successful.");
+                        ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to global_logon_server_url_1 was successful.");
                     }
                     event_base_loopbreak(cb_data_obj->base);
                 }
@@ -91,7 +92,7 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
     struct timespec start, end;
     int64_t timeElapsed = 0;
 
-    ap_log_error(PC_LOG_INFO, NULL, "===== Waiting for engine rating =====");
+    ap_log_error(PC_LOG_DEBUG, NULL, "===== Waiting for engine rating =====");
     clock_gettime(CLOCK_MONOTONIC, &start);
 
     struct event_base *base = event_base_new();
@@ -108,9 +109,9 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
     redisAsyncFree(context);
 
     clock_gettime(CLOCK_MONOTONIC, &end);
-    timeElapsed = timespecDiff(&end, &start)/CLOCKS_PER_SEC;
-    ap_log_error(PC_LOG_INFO, NULL, "Received no message from redis. Timeout %ld ms is expired!", (long)timeElapsed);
-    ap_log_error(PC_LOG_INFO, NULL, "===== Waiting for engine rating ended =====");
+    timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
+    ap_log_error(PC_LOG_INFO, NULL, "Received no message from redis. Timeout %ld ms is expired!", (long) timeElapsed);
+    ap_log_error(PC_LOG_DEBUG, NULL, "===== Waiting for engine rating ended =====");
 
     if (apr_table_get(r->err_headers_out, "Location")) {
         return HTTP_MOVED_TEMPORARILY;
