@@ -103,8 +103,7 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
 
     struct timeval timeout;
     timeout.tv_sec = 0;
-    /* Check every 25 milliseconds if result from engine was received. */
-    timeout.tv_usec = (25 * 1000);
+    timeout.tv_usec = (config->redis.response_query_interval * 1000);
 
     while (true) {
         event_base_loopexit(base, &timeout);
@@ -120,7 +119,7 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
             ap_log_error(PC_LOG_INFO, NULL, "Leaving event_base_dispatch because engine result was received.");
             break;
         }
-        if (timeElapsed > config->kafka.response_timeout) {
+        if (timeElapsed > config->redis.response_timeout) {
             ap_log_error(PC_LOG_CRIT, NULL, "Received no message from redis. Timeout %ld ms is expired!", (long)timeElapsed);
             break;
         }

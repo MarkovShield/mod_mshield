@@ -86,15 +86,13 @@
 #define MOD_MSHIELD_FRAUD_DETECTED_URL          "/error/fraud_detected.html"                    /* set the URL to redirect to if a fraud is found */
 #define MOD_MSHIELD_FRAUD_ERROR_URL             "/error/fraud_error.html"                       /* set the URL to redirect to if the analyse fails */
 #define MOD_MSHIELD_KAFKA_BROKER                "127.0.0.1:9092"                                /* set the kafka broker IP and port */
-#define MOD_MSHIELD_KAFKA_GROUP_ID              "mshield"                                       /* set the Kafka client group id */
-#define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE         "mshield-analyse"                               /* set Kafka topic on which clicks are sent to the engine */
-#define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE_RESULT  "mshield-analyse-result"                        /* set Kafka topic to receive analysed results from the engine */
-#define MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING     "mshield-user-mapping"                          /* set Kafka topic on which the username <-> UUID mapping is sent to the engine */
-#define MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG      "mshield-url-config"                            /* set Kafka topic on which the url <-> risk_level configuration is sent to the engine */
+#define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE         "MarkovClicks"                                  /* set Kafka topic on which clicks are sent to the engine */
+#define MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING     "MarkovLogins"                                  /* set Kafka topic on which the username <-> UUID mapping is sent to the engine */
+#define MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG      "MarkovUrlConfigs"                              /* set Kafka topic on which the url <-> risk_level configuration is sent to the engine */
 #define MOD_MSHIELD_KAFKA_RESULT_QUERY_INTERVAL 25                                              /* set the interval in ms to query the request result */
-#define MOD_MSHIELD_KAFKA_RESULT_TIMEOUT        3000                                            /* set how long to wait (in ms) for request analyse result */
 #define MOD_MSHIELD_REDIS_SERVER                "127.0.0.1"                                     /* set the redis server */
 #define MOD_MSHIELD_REDIS_PORT                  6379                                            /* set the redis server's port */
+#define MOD_MSHIELD_REDIS_RESULT_TIMEOUT        3000                                            /* set how long to wait (in ms) for request analyse result */
 
 /********************************************************************
  * Compile time configuration
@@ -163,24 +161,20 @@ typedef struct {
     } conf_consumer;
     const char *topic_analyse;                      /* Set the kafka topic on which clicks are sent to the engine */
     const char *rk_topic_analyse;                   /* topic_analyse handle */
-    const char *topic_analyse_result;               /* Set the kafka topic on which analysed results from the engine comes back */
-    const char *rk_topic_analyse_result;            /* topic_analyse_result handle */
     const char *topic_usermapping;                  /* Set the kafka topic on which the username <-> UUID mapping is sent */
     const char *rk_topic_usermapping;               /* topic_analyse_usermapping handle */
     const char *topic_url_config;                   /* Set the kafka topic on which the url <-> risk_level configuration is sent */
     const char *rk_topic_url_config;                /* topic_url_config handle */
     const char *broker;                             /* Set the IP of the Kafka broker */
-    const char *group_id;                           /* Kafka client group id string. */
-    int response_query_interval;                    /* The interval in ms to query request result */
-    int response_timeout;                           /* How long to wait at most for request analyse result (in ms) */
     rd_kafka_t *rk_producer;                        /* Kafka producer handle */
-    rd_kafka_t *rk_consumer;                        /* Kafka consumer handle */
     rd_kafka_topic_partition_list_t *topics;        /* Kafka topics for high-level consumer */
 } mod_mshield_kafka_t;
 
 typedef struct {
     const char *server;                             /* Set the Redis server */
     int port;                                       /* Set the Redis port on which the host listens */
+    int response_query_interval;                    /* The interval in ms to query request result */
+    int response_timeout;                           /* How long to wait at most for request analyse result (in ms) */
 } mod_mshield_redis_t;
 
 typedef struct {
@@ -430,7 +424,7 @@ extern const command_rec mshield_cmds[];
  */
 apr_status_t kafka_cleanup(void *s);
 apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *session);
-//void extract_url_to_kafka(server_rec *s);
+void extract_url_to_kafka(server_rec *s);
 apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic,
                    int32_t partition, char *msg, const char *key);
 

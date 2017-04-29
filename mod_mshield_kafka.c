@@ -284,7 +284,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
 /*
  * Use this function to extract the url configurations and send it to kafka
  */
-/*void extract_url_to_kafka(server_rec *s) {
+void extract_url_to_kafka(server_rec *s) {
 
     mod_mshield_server_t *config;
     config = ap_get_module_config(s->module_config, &mshield_module);
@@ -303,10 +303,10 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     }
 
     kafka_produce(config->pool, &config->kafka, config->kafka.topic_url_config, &config->kafka.rk_topic_url_config,
-                  RD_KAFKA_PARTITION_UA, cJSON_Print(root), key);
+                  RD_KAFKA_PARTITION_UA, cJSON_Print(root), NULL);
     cJSON_Delete(root);
     kafka_cleanup(s);
-}*/
+}
 
 /****************************************************************************************************************
  * Cleanup
