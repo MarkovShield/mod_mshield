@@ -212,8 +212,8 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
         /* Poll to handle delivery reports */
         rd_kafka_poll(kafka->rk_producer, 10);
     } else {
-        return HTTP_INTERNAL_SERVER_ERROR;
         ap_log_error(PC_LOG_CRIT, NULL, "No such kafka topic: %s", topic);
+        return HTTP_INTERNAL_SERVER_ERROR;
     }
     return STATUS_OK;
 }
@@ -265,10 +265,15 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(risk_level));
     cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(validationRequired));
 
-    kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
+    status = kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(click_json), uuid);
 
     cJSON_Delete(click_json);
+
+    if(status != STATUS_OK) {
+        ap_log_error(PC_LOG_CRIT, NULL, "Extract clicks to kafka was not successful.");
+        return status;
+    }
 
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
     if (validationRequired) {
