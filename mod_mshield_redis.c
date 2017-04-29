@@ -85,6 +85,7 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
 
     mod_mshield_server_t *config;
     config = ap_get_module_config(r->server->module_config, &mshield_module);
+    apr_status_t status;
 
     struct timespec start, end;
     int64_t timeElapsed = 0;
@@ -121,6 +122,12 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
         }
         if (timeElapsed > config->redis.response_timeout) {
             ap_log_error(PC_LOG_CRIT, NULL, "Received no message from redis. Timeout %ld ms is expired!", (long)timeElapsed);
+            status = mod_mshield_redirect_to_relurl(r, config->fraud_error_url);
+            if (status != HTTP_MOVED_TEMPORARILY) {
+                ap_log_error(PC_LOG_CRIT, NULL, "Redirection to fraud_error_url failed.");
+            } else {
+                ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to fraud_error_url was successful.");
+            }
             break;
         }
     }
