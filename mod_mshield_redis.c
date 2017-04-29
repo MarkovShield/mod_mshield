@@ -11,39 +11,31 @@ int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p) {
 /*
  * Connect to redis and return a redis context.
  */
-redisAsyncContext *redis_connect(mod_mshield_server_t *config) {
+redisContext *redis_connect(mod_mshield_server_t *config) {
     if (!config) {
         ap_log_error(PC_LOG_CRIT, NULL, "No server config for redis provided ");
         exit(1);
     }
-    redisAsyncContext *context = redisAsyncConnect(config->redis.server, config->redis.port);
-    if (context != NULL && context->err) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Error connection to redis: %s", context->errstr);
-        redisAsyncFree(context);
+
+    struct timeval timeout = { 1, 500000 }; // 1.5 seconds
+    redisContext *context = redisConnectWithTimeout(config->redis.server, config->redis.port, timeout);
+    if (context == NULL || context->err) {
+        if (context) {
+            ap_log_error(PC_LOG_CRIT, NULL, "Error connection to redis: %s", context->errstr);
+            redisFree(context);
+        } else {
+            ap_log_error(PC_LOG_CRIT, NULL, "Redis connection error: Can't allocate redis context\n");
+        }
         exit(1);
     }
+
     return context;
 }
 
-void connectCallback(const redisAsyncContext *c, int status) {
-    if (status != REDIS_OK) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Not connected to redis: %s", c->errstr);
-        return;
-    }
-    ap_log_error(PC_LOG_INFO, NULL, "Connected to redis.");
-}
-
-void disconnectCallback(const redisAsyncContext *c, int status) {
-    if (status != REDIS_OK) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Not disconnected from redis: %s", c->errstr);
-        return;
-    }
-    ap_log_error(PC_LOG_INFO, NULL, "Disconnected from redis.");
-}
 /*
  * Callback to handle redis replies.
  */
-static void handle_mshield_result(redisAsyncContext *c, void *reply, void *cb_obj) {
+static void handle_mshield_result(redisContext *c, void *reply, void *cb_obj) {
 
     redisReply *redis_reply = reply;
     mod_mshield_redis_cb_data_obj_t *cb_data_obj = (mod_mshield_redis_cb_data_obj_t *) cb_obj;
@@ -71,7 +63,6 @@ static void handle_mshield_result(redisAsyncContext *c, void *reply, void *cb_ob
                     } else {
                         ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to fraud_detected_url was successful.");
                     }
-                    event_base_loopbreak(cb_data_obj->base);
                 }
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_SUSPICIOUS) == 0) {
                     ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_SUSPICIOUS);
@@ -81,11 +72,9 @@ static void handle_mshield_result(redisAsyncContext *c, void *reply, void *cb_ob
                     } else {
                         ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to global_logon_server_url_1 was successful.");
                     }
-                    event_base_loopbreak(cb_data_obj->base);
                 }
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_OK) == 0) {
                     ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_OK);
-                    event_base_loopbreak(cb_data_obj->base);
                 }
             }
 
@@ -108,35 +97,28 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
     ap_log_error(PC_LOG_DEBUG, NULL, "===== Waiting for engine rating =====");
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    struct event_base *base = event_base_new();
-    redisAsyncContext *context = redis_connect(config);
-    redisLibeventAttach(context, base);
-    redisAsyncSetConnectCallback(context, connectCallback);
-    redisAsyncSetDisconnectCallback(context, disconnectCallback);
-    mod_mshield_redis_cb_data_obj_t *cb_data_obj = NULL;
-    cb_data_obj = apr_palloc(p, sizeof(mod_mshield_redis_cb_data_obj_t));
-    cb_data_obj->base = base;
-    cb_data_obj->request = r;
-    redisAsyncCommand(context, handle_mshield_result, cb_data_obj, "SUBSCRIBE %s", clickUUID, r);
+    redisReply *reply;
+    redisContext *context = redis_connect(config);
 
     struct timeval timeout;
     timeout.tv_sec = 0;
     timeout.tv_usec = (config->redis.response_query_interval * 1000);
 
     while (true) {
-        event_base_loopexit(base, &timeout);
-        int result = event_base_dispatch(base);
+
         clock_gettime(CLOCK_MONOTONIC, &end);
         timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-        if (result < 0) {
-            ap_log_error(PC_LOG_CRIT, NULL, "Error occurred while looping event_base_loop.");
-        } else if (result == 1) {
-            ap_log_error(PC_LOG_CRIT, NULL, "No events were pending or active.");
-            continue;
-        } else if (event_base_got_break(base)) {
-            ap_log_error(PC_LOG_INFO, NULL, "Leaving event_base_dispatch because engine result was received.");
-            break;
-        }
+
+        redisSetTimeout(context, timeout);
+        reply = redisCommand(context, "SUBSCRIBE %s", clickUUID);
+
+        mod_mshield_redis_cb_data_obj_t *cb_data_obj = NULL;
+        cb_data_obj = apr_palloc(p, sizeof(mod_mshield_redis_cb_data_obj_t));
+        cb_data_obj->request = r;
+
+        handle_mshield_result(context, reply, cb_data_obj);
+        freeReplyObject(reply);
+
         if (timeElapsed > config->redis.response_timeout) {
             ap_log_error(PC_LOG_CRIT, NULL, "Received no message from redis. Timeout %ld ms is expired!", (long)timeElapsed);
             status = mod_mshield_redirect_to_relurl(r, config->fraud_error_url);
@@ -149,8 +131,7 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
         }
     }
 
-    event_base_free(base);
-    redisAsyncFree(context);
+    redisFree(context);
     ap_log_error(PC_LOG_DEBUG, NULL, "===== Waiting for engine rating ended =====");
 
     if (apr_table_get(r->err_headers_out, "Location")) {

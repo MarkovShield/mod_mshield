@@ -431,7 +431,7 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char
 /********************************************************************
  * mod_mshield_redis.c
  */
-redisAsyncContext *redis_connect(mod_mshield_server_t *config);
+redisContext *redis_connect(mod_mshield_server_t *config);
 apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUID);
 
 #endif /* MOD_MSHIELD_H */
