@@ -64,13 +64,13 @@ MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD      3
 MOD_MSHIELD_FRAUD_DETECTED_URL              /error/fraud_detected.html
 MOD_MSHIELD_FRAUD_ERROR_URL                 /error/fraud_error.html
 MOD_MSHIELD_KAFKA_BROKER                    127.0.0.1:9092
-MOD_MSHIELD_KAFKA_RESULT_QUERY_INTERVAL     25
 MOD_MSHIELD_KAFKA_TOPIC_ANALYSE             MarkovClicks
 MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING         MarkovLogins
 MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG          MarkovUrlConfigs
 MOD_MSHIELD_REDIS_SERVER                    127.0.0.1
 MOD_MSHIELD_REDIS_PORT                      6379
 MOD_MSHIELD_REDIS_RESULT_TIMEOUT            3000
+MOD_MSHIELD_REDIS_RESULT_QUERY_INTERVAL     25
 
 # Place your URL ratings in the following config file:
 Include conf/extra/mod_mshield_url_rating.conf
