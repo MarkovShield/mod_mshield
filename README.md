@@ -118,22 +118,13 @@ tail -f /opt/applic/httpd/logs/error_log
 ```
 
 ### Test kafka connection
-Listen on topic (e.g. `mshield-analyse`):
+Listen on topic (e.g. `MarkovClicks`):
 ```bash
 kafkacat -C -b 192.168.56.50 -t MarkovClicks
 ```
-Post something to the topic (e.g. `mshield-analyse`):
+Post something to the topic (e.g. `MarkovClicks`):
 ```bash
 echo "Hallo" | kafkacat -P -b 192.168.56.50 -t MarkovClicks
-```
-Post request rating to `mshield-analyse-result`:
-```bash
-echo "KEY,Test rating = SUSPICIOUS" | kafka-console-producer.sh \
-    --broker-list localhost:9092 \
-    --topic mshield-analyse-result \
-    --property parse.key=true \
-    --property key.separator=,
-kafkacat -C -b 192.168.56.50 -t mshield-analyse-result
 ```
 
 ### Test Redis connection

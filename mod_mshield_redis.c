@@ -25,6 +25,21 @@ redisAsyncContext *redis_connect(mod_mshield_server_t *config) {
     return context;
 }
 
+void connectCallback(const redisAsyncContext *c, int status) {
+    if (status != REDIS_OK) {
+        ap_log_error(PC_LOG_CRIT, NULL, "Not connected to redis: %s", c->errstr);
+        return;
+    }
+    ap_log_error(PC_LOG_INFO, NULL, "Connected to redis.");
+}
+
+void disconnectCallback(const redisAsyncContext *c, int status) {
+    if (status != REDIS_OK) {
+        ap_log_error(PC_LOG_CRIT, NULL, "Not disconnected from redis: %s", c->errstr);
+        return;
+    }
+    ap_log_error(PC_LOG_INFO, NULL, "Disconnected from redis.");
+}
 /*
  * Callback to handle redis replies.
  */
@@ -96,6 +111,8 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
     struct event_base *base = event_base_new();
     redisAsyncContext *context = redis_connect(config);
     redisLibeventAttach(context, base);
+    redisAsyncSetConnectCallback(context, connectCallback);
+    redisAsyncSetDisconnectCallback(context, disconnectCallback);
     mod_mshield_redis_cb_data_obj_t *cb_data_obj = NULL;
     cb_data_obj = apr_palloc(p, sizeof(mod_mshield_redis_cb_data_obj_t));
     cb_data_obj->base = base;
