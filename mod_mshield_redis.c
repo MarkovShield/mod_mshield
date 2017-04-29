@@ -16,19 +16,10 @@ redisContext *redis_connect(mod_mshield_server_t *config) {
         ap_log_error(PC_LOG_CRIT, NULL, "No server config for redis provided ");
         exit(1);
     }
-
-    struct timeval timeout = { 1, 500000 }; // 1.5 seconds
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = (config->redis.connection_timeout * 1000);
     redisContext *context = redisConnectWithTimeout(config->redis.server, config->redis.port, timeout);
-    if (context == NULL || context->err) {
-        if (context) {
-            ap_log_error(PC_LOG_CRIT, NULL, "Error connection to redis: %s", context->errstr);
-            redisFree(context);
-        } else {
-            ap_log_error(PC_LOG_CRIT, NULL, "Redis connection error: Can't allocate redis context\n");
-        }
-        exit(1);
-    }
-
     return context;
 }
 
@@ -99,6 +90,16 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
 
     redisReply *reply;
     redisContext *context = redis_connect(config);
+    if (context == NULL || context->err) {
+        if (context) {
+            ap_log_error(PC_LOG_CRIT, NULL, "Redis: %s", context->errstr);
+            redisFree(context);
+        } else {
+            ap_log_error(PC_LOG_CRIT, NULL, "Redis connection error: Can't allocate redis context\n");
+        }
+        mod_mshield_redirect_to_relurl(r, config->fraud_error_url);
+        return HTTP_MOVED_TEMPORARILY;
+    }
 
     struct timeval timeout;
     timeout.tv_sec = 0;

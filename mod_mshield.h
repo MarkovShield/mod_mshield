@@ -89,7 +89,8 @@
 #define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE         "MarkovClicks"                                  /* set Kafka topic on which clicks are sent to the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING     "MarkovLogins"                                  /* set Kafka topic on which the username <-> UUID mapping is sent to the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG      "MarkovUrlConfigs"                              /* set Kafka topic on which the url <-> risk_level configuration is sent to the engine */
-#define MOD_MSHIELD_KAFKA_RESULT_QUERY_INTERVAL 25                                              /* set the interval in ms to query the request result */
+#define MOD_MSHIELD_REDIS_CONNECTION_TIMEOUT    1000                                            /* set Redis connect timeout in ms */
+#define MOD_MSHIELD_REDIS_RESULT_QUERY_INTERVAL 25                                              /* set the interval in ms to query the request result */
 #define MOD_MSHIELD_REDIS_SERVER                "127.0.0.1"                                     /* set the redis server */
 #define MOD_MSHIELD_REDIS_PORT                  6379                                            /* set the redis server's port */
 #define MOD_MSHIELD_REDIS_RESULT_TIMEOUT        3000                                            /* set how long to wait (in ms) for request analyse result */
@@ -173,6 +174,7 @@ typedef struct {
 typedef struct {
     const char *server;                             /* Set the Redis server */
     int port;                                       /* Set the Redis port on which the host listens */
+    int connection_timeout;                         /* Set Redis connect timeout in ms */
     int response_query_interval;                    /* The interval in ms to query request result */
     int response_timeout;                           /* How long to wait at most for request analyse result (in ms) */
 } mod_mshield_redis_t;

@@ -71,6 +71,7 @@ MOD_MSHIELD_REDIS_SERVER                    127.0.0.1
 MOD_MSHIELD_REDIS_PORT                      6379
 MOD_MSHIELD_REDIS_RESULT_TIMEOUT            3000
 MOD_MSHIELD_REDIS_RESULT_QUERY_INTERVAL     25
+MOD_MSHIELD_REDIS_CONNECTION_TIMEOUT        1000
 
 # Place your URL ratings in the following config file:
 Include conf/extra/mod_mshield_url_rating.conf
