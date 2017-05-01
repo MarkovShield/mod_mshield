@@ -444,7 +444,7 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char
 /********************************************************************
  * mod_mshield_redis.c
  */
-void handle_mshield_result(void *reply, void *cb_obj);
+apr_status_t handle_mshield_result(void *reply, void *cb_obj);
 apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, struct event_base *base, mod_mshield_server_t *config, redisContext *context);
 int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p);
 

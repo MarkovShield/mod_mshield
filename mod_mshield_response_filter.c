@@ -252,7 +252,7 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
         cJSON *user_mapping_json;
         user_mapping_json = cJSON_CreateObject();
         cJSON_AddItemToObject(user_mapping_json, "userName", cJSON_CreateString(cr->session->data->username));
-        cJSON_AddItemToObject(user_mapping_json, "uuid", cJSON_CreateString(cr->session->data->uuid));
+        cJSON_AddItemToObject(user_mapping_json, "sessionUUID", cJSON_CreateString(cr->session->data->uuid));
 
         ERRLOG_INFO("FRAUD-ENGINE: Sent JSON user mapping object is: [%s]", cJSON_Print(user_mapping_json));
 

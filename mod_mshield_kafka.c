@@ -227,7 +227,9 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
     int served_msg = 0;
     struct timespec sleep_interval;
 
-    sleep_interval.tv_nsec = ((kafka->delivery_check_interval % 1000) * CLOCKS_PER_SEC);
+    sleep_interval.tv_sec = 0;
+    sleep_interval.tv_nsec = 100000;
+    //sleep_interval.tv_nsec = ((kafka->delivery_check_interval % 1000) * CLOCKS_PER_SEC);
     clock_gettime(CLOCK_MONOTONIC, &start);
 
     rd_kafka_topic_t *rkt = kafka_topic_connect_producer(p, kafka, topic, rk_topic);
@@ -314,7 +316,9 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
             redisFree(context);
             exit(1);
         }
-        response_timeout.tv_usec = (config->redis.response_timeout * 1000);
+        response_timeout.tv_sec = 1;
+        response_timeout.tv_usec = 0;
+        //response_timeout.tv_usec = (config->redis.response_timeout * 1000);
         redisSetTimeout(context, response_timeout);
         reply = redisCommand(context, "SUBSCRIBE %s", clickUUID);
         freeReplyObject(reply);
@@ -336,9 +340,16 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         mod_mshield_redis_cb_data_obj_t *cb_data_obj = apr_palloc(r->pool, sizeof(mod_mshield_redis_cb_data_obj_t));
         cb_data_obj->request = r;
         while(context->err != REDIS_ERR_IO && redisGetReply(context, (void**) &reply) == REDIS_OK) {
-            ap_log_error(PC_LOG_INFO, NULL, "context->err is [%d] and context->errstr is [%s]", context->err, context->errstr);
-            handle_mshield_result(reply, cb_data_obj);
+            status = handle_mshield_result(reply, cb_data_obj);
+            if (status == STATUS_OK) {
+                break;
+            } else if (status == HTTP_INTERNAL_SERVER_ERROR) {
+                break;
+            }
             freeReplyObject(reply);
+        }
+        if (context->err && context->errstr) {
+            ap_log_error(PC_LOG_INFO, NULL, "context->err is [%d] and context->errstr is [%s]", context->err, context->errstr);
         }
     } else {
         status = STATUS_OK;

@@ -18,7 +18,7 @@ int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p) {
 /*
  * Callback to handle redis replies.
  */
-void handle_mshield_result(void *reply, void *cb_obj) {
+apr_status_t handle_mshield_result(void *reply, void *cb_obj) {
 
     redisReply *redis_reply = reply;
     mod_mshield_redis_cb_data_obj_t *cb_data_obj = (mod_mshield_redis_cb_data_obj_t *) cb_obj;
@@ -29,7 +29,7 @@ void handle_mshield_result(void *reply, void *cb_obj) {
     config = ap_get_module_config(cb_data_obj->request->server->module_config, &mshield_module);
 
     if (reply == NULL) {
-        return;
+        return STATUS_ERROR;
     }
 
     if (redis_reply->type == REDIS_REPLY_ARRAY && redis_reply->elements == 3) {
@@ -43,8 +43,10 @@ void handle_mshield_result(void *reply, void *cb_obj) {
                     status = mod_mshield_redirect_to_relurl(cb_data_obj->request, config->fraud_detected_url);
                     if (status != HTTP_MOVED_TEMPORARILY) {
                         ap_log_error(PC_LOG_CRIT, NULL, "Redirection to fraud_detected_url failed.");
+                        return HTTP_INTERNAL_SERVER_ERROR;
                     } else {
                         ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to fraud_detected_url was successful.");
+                        return STATUS_OK;
                     }
                 }
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_SUSPICIOUS) == 0) {
@@ -52,17 +54,21 @@ void handle_mshield_result(void *reply, void *cb_obj) {
                     status = mod_mshield_redirect_to_relurl(cb_data_obj->request, config->global_logon_server_url_1);
                     if (status != HTTP_MOVED_TEMPORARILY) {
                         ap_log_error(PC_LOG_CRIT, NULL, "Redirection to global_logon_server_url_1 failed.");
+                        return HTTP_INTERNAL_SERVER_ERROR;
                     } else {
                         ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to global_logon_server_url_1 was successful.");
+                        return STATUS_OK;
                     }
                 }
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_OK) == 0) {
                     ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_OK);
+                    return STATUS_OK;
                 }
             }
 
         }
     }
+    return STATUS_ERROR;
 }
 
 /*
