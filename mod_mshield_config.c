@@ -324,6 +324,8 @@ mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg) {
         conf->kafka.topic_analyse = MOD_MSHIELD_KAFKA_TOPIC_ANALYSE;
         conf->kafka.topic_usermapping = MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING;
         conf->kafka.topic_url_config = MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG;
+        conf->kafka.delivery_check_interval = MOD_MSHIELD_KAFKA_DELIVERY_CHECK_INTERVAL;
+        conf->kafka.msg_delivery_timeout = MOD_MSHIELD_KAFKA_RESPONSE_TIMEOUT;
         conf->redis.connection_timeout = MOD_MSHIELD_REDIS_CONNECTION_TIMEOUT;
         conf->redis.response_query_interval = MOD_MSHIELD_REDIS_RESULT_QUERY_INTERVAL;
         conf->redis.response_timeout = MOD_MSHIELD_REDIS_RESULT_TIMEOUT;
@@ -429,6 +431,24 @@ mshield_config_kafka_topic_url_config(cmd_parms *cmd, void *dummy, const char *a
 }
 
 const char *
+mshield_config_kafka_delivery_check_interval(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg && conf->fraud_detection_enabled) {
+        conf->kafka.delivery_check_interval = atoi(arg);
+    }
+    return OK;
+}
+
+const char *
+mshield_config_msg_delivery_timeout(cmd_parms *cmd, void *dummy, const char *arg) {
+    mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
+    if (arg && conf->fraud_detection_enabled) {
+        conf->kafka.msg_delivery_timeout = atoi(arg);
+    }
+    return OK;
+}
+
+const char *
 mshield_config_connection_timeout(cmd_parms *cmd, void *dummy, const char *arg) {
     mod_mshield_server_t *conf = ap_get_module_config(cmd->server->module_config, &mshield_module);
     if (arg && conf->fraud_detection_enabled) {
@@ -528,6 +548,8 @@ const command_rec mshield_cmds[] =
 	AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_ANALYSE",            mshield_config_kafka_topic_analyse,             NULL, RSRC_CONF, "Set Kafka topic on which clicks are sent to the engine"),
     AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING",        mshield_config_kafka_topic_usermapping,         NULL, RSRC_CONF, "Set Kafka topic on which the UUID <-> username mapping is sent"),
     AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG",         mshield_config_kafka_topic_url_config,          NULL, RSRC_CONF, "Set Kafka topic on which the url <-> risk config is sent"),
+    AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_RESPONSE_TIMEOUT",         mshield_config_msg_delivery_timeout,            NULL, RSRC_CONF, "Set timeout to wait at most (in ms) to check if the Kafka message was successful delivered"),
+    AP_INIT_TAKE1("MOD_MSHIELD_KAFKA_DELIVERY_CHECK_INTERVAL",  mshield_config_kafka_delivery_check_interval,   NULL, RSRC_CONF, "Set the interval in ms to check for the message delivery report"),
     AP_INIT_TAKE1("MOD_MSHIELD_REDIS_SERVER",                   mshield_config_redis_server,                    NULL, RSRC_CONF, "Set the Redis server"),
     AP_INIT_TAKE1("MOD_MSHIELD_REDIS_PORT",                     mshield_config_redis_port,                      NULL, RSRC_CONF, "Set the Redis port on which the host listens"),
     AP_INIT_TAKE1("MOD_MSHIELD_REDIS_CONNECTION_TIMEOUT",       mshield_config_connection_timeout,              NULL, RSRC_CONF, "Set Redis connect timeout in ms"),

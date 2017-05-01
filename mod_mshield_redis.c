@@ -42,6 +42,7 @@ void disconnectCallback(const redisAsyncContext *c, int status) {
     }
     ap_log_error(PC_LOG_INFO, NULL, "Disconnected from redis.");
 }
+
 /*
  * Callback to handle redis replies.
  */
@@ -119,10 +120,9 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
     cb_data_obj = apr_palloc(p, sizeof(mod_mshield_redis_cb_data_obj_t));
     cb_data_obj->base = base;
     cb_data_obj->request = r;
-    redisAsyncCommand(context, handle_mshield_result, cb_data_obj, "SUBSCRIBE %s", clickUUID, r);
+    redisAsyncCommand(context, handle_mshield_result, cb_data_obj, "SUBSCRIBE %s", clickUUID);
 
     struct timeval timeout;
-    timeout.tv_sec = 0;
     timeout.tv_usec = (config->redis.response_query_interval * 1000);
 
     while (true) {
@@ -136,11 +136,13 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
             ap_log_error(PC_LOG_CRIT, NULL, "No events were pending or active.");
             continue;
         } else if (event_base_got_break(base)) {
-            ap_log_error(PC_LOG_INFO, NULL, "Leaving event_base_dispatch because engine result was received.");
+            ap_log_error(PC_LOG_DEBUG, NULL, "Leaving event_base_dispatch because engine result was received.");
             break;
         }
         if (timeElapsed > config->redis.response_timeout) {
-            ap_log_error(PC_LOG_CRIT, NULL, "Received no message from redis. Timeout %ld ms is expired!", (long)timeElapsed);
+            ap_log_error(PC_LOG_CRIT, NULL,
+                         "Received no message from redis. Timeout [%d] ms is expired [%ld] ms!. Check Redis connection and the Redis load.",
+                         config->redis.response_timeout, (long) timeElapsed);
             status = mod_mshield_redirect_to_relurl(r, config->fraud_error_url);
             if (status != HTTP_MOVED_TEMPORARILY) {
                 ap_log_error(PC_LOG_CRIT, NULL, "Redirection to fraud_error_url failed.");

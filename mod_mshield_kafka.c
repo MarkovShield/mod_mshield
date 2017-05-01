@@ -45,7 +45,8 @@ static int get_url_risk_level(request_rec *r, const char *url) {
 
         switch (mod_mshield_regexp_match(r, key, url)) {
             case STATUS_MATCH:
-                ap_log_error(PC_LOG_DEBUG, NULL, "REGEX: Matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value, url);
+                ap_log_error(PC_LOG_DEBUG, NULL, "REGEX: Matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value,
+                             url);
                 return atoi(value);
             case STATUS_NOMATCH:
                 ap_log_error(PC_LOG_DEBUG, NULL, "REGEX: NOT matched KEY: [%s] RISK_LEVEL: [%s] URL: [%s]", key, value,
@@ -66,6 +67,20 @@ static int get_url_risk_level(request_rec *r, const char *url) {
 /****************************************************************************************************************
  * Producer part
  *****************************************************************************************************************/
+
+/*
+ * Callback which will be called after each message produce
+ */
+static void dr_msg_cb(rd_kafka_t *rk,
+                      const rd_kafka_message_t *rkmessage, void *opaque) {
+    if (rkmessage->err) {
+        ap_log_error(PC_LOG_DEBUG, NULL, "Message delivery failed: %s", rd_kafka_err2str(rkmessage->err));
+    } else {
+        ap_log_error(PC_LOG_DEBUG, NULL, "Message delivered (%zd bytes, partition %"
+                PRId32
+                ")\n", rkmessage->len, rkmessage->partition);
+    }
+}
 
 /*
  * Connect to Kafka broker
@@ -95,7 +110,8 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
         void *value = NULL;
         apr_hash_this(hash, &property, NULL, &value);
         if (value) {
-            ap_log_error(PC_LOG_DEBUG, NULL, "global producer configration: %s = %s", (char *) property, (char *) value);
+            ap_log_error(PC_LOG_DEBUG, NULL, "global producer configration: %s = %s", (char *) property,
+                         (char *) value);
 
             if (rd_kafka_conf_set(conf, (char *) property, (char *) value,
                                   errstr, sizeof(errstr)) != RD_KAFKA_CONF_OK) {
@@ -106,6 +122,8 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
         }
         hash = apr_hash_next(hash);
     }
+
+    rd_kafka_conf_set_dr_msg_cb(conf, dr_msg_cb);
 
     /* Create producer handle */
     kafka->rk_producer = rd_kafka_new(RD_KAFKA_PRODUCER, conf, NULL, 0);
@@ -202,6 +220,15 @@ kafka_topic_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
  */
 apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
                            const char *topic, const char **rk_topic, int32_t partition, char *msg, const char *key) {
+
+    struct timespec start, end;
+    int64_t timeElapsed = 0;
+    int served_msg = 0;
+    struct timespec sleep_interval;
+
+    sleep_interval.tv_nsec = ((kafka->delivery_check_interval % 1000) * CLOCKS_PER_SEC);
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
     rd_kafka_topic_t *rkt = kafka_topic_connect_producer(p, kafka, topic, rk_topic);
     if (rkt) {
         /* Produce send */
@@ -209,8 +236,19 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
                              msg, strlen(msg), key, strlen(key), NULL) == -1) {
             ap_log_error(PC_LOG_CRIT, NULL, "Kafka produce failed! Topic: %s", topic);
         }
-        /* Poll to handle delivery reports */
-        rd_kafka_poll(kafka->rk_producer, 10);
+        /* Do not continue until we god the kafka delivery report which says our message was delivered successful.. */
+        while (served_msg == 0) {
+            served_msg = rd_kafka_poll(kafka->rk_producer, 10);
+            nanosleep(&sleep_interval, NULL);
+            clock_gettime(CLOCK_MONOTONIC, &end);
+            timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
+            if (timeElapsed > kafka->msg_delivery_timeout) {
+                ap_log_error(PC_LOG_CRIT, NULL,
+                             "Kafka message delivery report not received. Timeout [%d] ms is expired [%ld] ms!. Check Kafka connection and the Kafka load.",
+                             kafka->msg_delivery_timeout, (long) timeElapsed);
+                return HTTP_INTERNAL_SERVER_ERROR;
+            }
+        }
     } else {
         ap_log_error(PC_LOG_CRIT, NULL, "No such kafka topic: %s", topic);
         return HTTP_INTERNAL_SERVER_ERROR;
@@ -266,11 +304,11 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(validationRequired));
 
     status = kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
-                  RD_KAFKA_PARTITION_UA, cJSON_Print(click_json), uuid);
+                           RD_KAFKA_PARTITION_UA, cJSON_Print(click_json), uuid);
 
     cJSON_Delete(click_json);
 
-    if(status != STATUS_OK) {
+    if (status != STATUS_OK) {
         ap_log_error(PC_LOG_CRIT, NULL, "Extract clicks to kafka was not successful.");
         return status;
     }
@@ -299,7 +337,7 @@ void extract_url_to_kafka(server_rec *s) {
     const char *key;
     const char *value;
     for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
-        apr_hash_this(hi, (const void**)&key, NULL, (void**)&value);
+        apr_hash_this(hi, (const void **) &key, NULL, (void **) &value);
         ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-DETECTION: URL config. KEY: %s VALUE: %s", key, value);
         cJSON *temp;
         cJSON_AddItemToObject(root, "url_entry", temp = cJSON_CreateObject());

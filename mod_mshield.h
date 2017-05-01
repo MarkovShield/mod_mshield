@@ -89,6 +89,8 @@
 #define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE         "MarkovClicks"                                  /* set Kafka topic on which clicks are sent to the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING     "MarkovLogins"                                  /* set Kafka topic on which the username <-> UUID mapping is sent to the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG      "MarkovUrlConfigs"                              /* set Kafka topic on which the url <-> risk_level configuration is sent to the engine */
+#define MOD_MSHIELD_KAFKA_RESPONSE_TIMEOUT      1000                                            /* set timeout to wait at most (in ms) to check if the Kafka message was successful delivered */
+#define MOD_MSHIELD_KAFKA_DELIVERY_CHECK_INTERVAL 25                                            /* set the interval in ms to check for the message delivery report */
 #define MOD_MSHIELD_REDIS_CONNECTION_TIMEOUT    1000                                            /* set Redis connect timeout in ms */
 #define MOD_MSHIELD_REDIS_RESULT_QUERY_INTERVAL 25                                              /* set the interval in ms to query the request result */
 #define MOD_MSHIELD_REDIS_SERVER                "127.0.0.1"                                     /* set the redis server */
@@ -167,6 +169,8 @@ typedef struct {
     const char *topic_url_config;                   /* Set the kafka topic on which the url <-> risk_level configuration is sent */
     const char *rk_topic_url_config;                /* topic_url_config handle */
     const char *broker;                             /* Set the IP of the Kafka broker */
+    int delivery_check_interval;                    /* The interval in ms to check for the message delivery report */
+    int msg_delivery_timeout;                           /* How long to wait at most (in ms) to check if the Kafka message was successful delivered. */
     rd_kafka_t *rk_producer;                        /* Kafka producer handle */
     rd_kafka_topic_partition_list_t *topics;        /* Kafka topics for high-level consumer */
 } mod_mshield_kafka_t;
@@ -435,5 +439,6 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char
  */
 redisAsyncContext *redis_connect(mod_mshield_server_t *config);
 apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUID);
+int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p);
 
 #endif /* MOD_MSHIELD_H */
