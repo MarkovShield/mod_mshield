@@ -103,23 +103,8 @@ static void handle_mshield_result(redisAsyncContext *c, void *reply, void *cb_ob
     }
 }
 
-/*
- * Subscribe to a redis channel (with channel ID = clickUUID)
- */
-apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUID) {
 
-    mod_mshield_server_t *config;
-    config = ap_get_module_config(r->server->module_config, &mshield_module);
-    apr_status_t status;
-
-    struct timespec start, end;
-    int64_t timeElapsed = 0;
-
-    ap_log_error(PC_LOG_DEBUG, NULL, "===== Waiting for engine rating =====");
-    clock_gettime(CLOCK_MONOTONIC, &start);
-
-    struct event_base *base = event_base_new();
-    redisAsyncContext *context = redis_connect(config);
+apr_status_t redis_prepare_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUID, struct event_base *base, redisAsyncContext *context) {
     redisLibeventAttach(context, base);
     redisAsyncSetConnectCallback(context, connectCallback);
     redisAsyncSetDisconnectCallback(context, disconnectCallback);
@@ -128,6 +113,23 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUI
     cb_data_obj->base = base;
     cb_data_obj->request = r;
     redisAsyncCommand(context, handle_mshield_result, cb_data_obj, "SUBSCRIBE %s", clickUUID);
+    return STATUS_OK;
+}
+
+/*
+ * Subscribe to a redis channel (with channel ID = clickUUID)
+ */
+apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, struct event_base *base, mod_mshield_server_t *config, redisAsyncContext *context) {
+
+    apr_status_t status;
+
+    struct timespec start, end;
+    int64_t timeElapsed = 0;
+
+    ap_log_error(PC_LOG_DEBUG, NULL, "===== Waiting for engine rating =====");
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+
 
     struct timeval timeout;
     timeout.tv_usec = (config->redis.response_query_interval * 1000);

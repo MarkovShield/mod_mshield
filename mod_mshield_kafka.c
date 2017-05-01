@@ -133,7 +133,8 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
         return APR_EINIT;
     }
 
-    rd_kafka_set_log_level(kafka->rk_producer, 0);
+    rd_kafka_set_log_level(kafka->rk_producer, 7);
+    //rd_kafka_set_log_level(kafka->rk_producer, 0);
 
     /* Add brokers */
     if (rd_kafka_brokers_add(kafka->rk_producer, brokers) == 0) {
@@ -270,6 +271,8 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     bool validationRequired;
     apr_status_t status;
     char *url = r->parsed_uri.path;
+    struct event_base *base;
+    redisAsyncContext *context;
 
     /* For security reasons its important to remove double slashes. */
     ap_no2slash(url);
@@ -303,6 +306,15 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     cJSON_AddItemToObject(click_json, "urlRiskLevel", cJSON_CreateNumber(risk_level));
     cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(validationRequired));
 
+    if (validationRequired) {
+        base = event_base_new();
+        context = redis_connect(config);
+        if (redis_prepare_subscribe(r->pool, r, clickUUID, base, context) != STATUS_OK) {
+            // ToDo
+
+        };
+    }
+
     status = kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
                            RD_KAFKA_PARTITION_UA, cJSON_Print(click_json), uuid);
 
@@ -316,7 +328,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
     if (validationRequired) {
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url, risk_level);
-        status = redis_subscribe(r->pool, r, clickUUID);
+        status = redis_subscribe(r->pool, r, base, config, context);
     } else {
         status = STATUS_OK;
     }
