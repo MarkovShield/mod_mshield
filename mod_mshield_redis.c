@@ -1,3 +1,10 @@
+/**
+ * @file mod_mshield_redis.c
+ * @author Philip Schmid
+ * @date 1. May 2017
+ * @brief File containing mod_mshield Redis related code.
+ */
+
 #include "mod_mshield.h"
 
 /*

@@ -153,15 +153,14 @@ extern apr_global_mutex_t *mshield_mutex;
  * configuration structures
  */
 
+/**
+ * @brief mod_mshield Kafka struct which stores the Kafka configuration.
+ */
 typedef struct {
     struct {
         apr_hash_t *global;
         apr_hash_t *topic;
     } conf_producer;
-    struct {
-        apr_hash_t *global;
-        apr_hash_t *topic;
-    } conf_consumer;
     const char *topic_analyse;                      /* Set the kafka topic on which clicks are sent to the engine */
     const char *rk_topic_analyse;                   /* topic_analyse handle */
     const char *topic_usermapping;                  /* Set the kafka topic on which the username <-> UUID mapping is sent */
@@ -175,6 +174,9 @@ typedef struct {
     rd_kafka_topic_partition_list_t *topics;        /* Kafka topics for high-level consumer */
 } mod_mshield_kafka_t;
 
+/**
+ * @brief mod_mshield Redis struct which stores the Redis configuration.
+ */
 typedef struct {
     const char *server;                             /* Set the Redis server */
     int port;                                       /* Set the Redis port on which the host listens */
@@ -183,6 +185,9 @@ typedef struct {
     int response_timeout;                           /* How long to wait at most for request analyse result (in ms) */
 } mod_mshield_redis_t;
 
+/**
+ * @brief mod_mshield struct which contains all global configurations
+ */
 typedef struct {
     int enabled;                                    /* [On, Off] switch for enable/disable mod_mshield */
     const char *client_refuses_cookies_url;         /* Error URL, if the client refuses our mod_mshield cookie */
@@ -235,6 +240,9 @@ typedef struct {
     mod_mshield_redis_t redis;
 } mod_mshield_server_t;
 
+/**
+ * @brief mod_mshield directory level configuration
+ */
 typedef struct {
     const char *logon_server_url;                   /* Logon Server URI */
     const int logon_required;                       /* is logon required? */
@@ -242,17 +250,16 @@ typedef struct {
     const int mod_mshield_auth_strength;            /* required authentication strength per directory */
 } mod_mshield_dir_t;
 
-/********************************************************************
- * Helper structures
+/**
+ * @brief Redis callback object.
  */
-
 typedef struct {
     struct event_base *base;                   /* event base object */
     request_rec *request;                      /* Request object */
 } mod_mshield_redis_cb_data_obj_t;
 
-/********************************************************************
- * SHM structures
+/**
+ * @brief mod_mshield shared memory structures
  */
 /* session data */
 typedef struct {
