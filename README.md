@@ -67,13 +67,12 @@ MOD_MSHIELD_KAFKA_BROKER                    127.0.0.1:9092
 MOD_MSHIELD_KAFKA_TOPIC_ANALYSE             MarkovClicks
 MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING         MarkovLogins
 MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG          MarkovUrlConfigs
-MOD_MSHIELD_KAFKA_RESPONSE_TIMEOUT          1000
-MOD_MSHIELD_KAFKA_DELIVERY_CHECK_INTERVAL   25
+MOD_MSHIELD_KAFKA_MSG_DELIVERY_TIMEOUT      3
+MOD_MSHIELD_KAFKA_DELIVERY_CHECK_INTERVAL   100000
 MOD_MSHIELD_REDIS_SERVER                    127.0.0.1
 MOD_MSHIELD_REDIS_PORT                      6379
-MOD_MSHIELD_REDIS_RESULT_TIMEOUT            3000
-MOD_MSHIELD_REDIS_RESULT_QUERY_INTERVAL     25
-MOD_MSHIELD_REDIS_CONNECTION_TIMEOUT        1000
+MOD_MSHIELD_REDIS_RESPONSE_TIMEOUT          3
+MOD_MSHIELD_REDIS_CONNECTION_TIMEOUT        3
 
 # Place your URL ratings in the following config file:
 Include conf/extra/mod_mshield_url_rating.conf
@@ -209,6 +208,15 @@ sudo ./httpd -f /opt/applic/httpd/conf/httpd.conf -e debug -DFOREGROUND
 #### Show consumer groups
 ```bash
 kafka-consumer-groups.sh --list --bootstrap-server localhost:9092
+```
+
+#### Send test message to Kafka
+```bash
+echo $'xtTALCofbVIMEmuJzd95Me0pardFNKt%{"sessionUUID":	"xtTALCofbVIMEmuJzd95Me0pardFNKt","clickUUID":	"zugbwerz23g8gzbhb","timeStamp":	1493639064719,"url":	"/private/request-header/","urlRiskLevel":	4,"validationRequired":	true}' | kafka-console-producer.sh \
+    --broker-list localhost:9092 \
+    --topic MarkovClicks \
+    --property parse.key=true \
+    --property key.separator=% 
 ```
 
 ### Cleanup compilation stuff
