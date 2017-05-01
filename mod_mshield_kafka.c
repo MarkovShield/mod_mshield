@@ -271,8 +271,9 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     bool validationRequired;
     apr_status_t status;
     char *url = r->parsed_uri.path;
-    struct event_base *base;
-    redisAsyncContext *context;
+    redisContext *context = NULL;
+    redisReply *reply;
+    struct timeval response_timeout;
 
     /* For security reasons its important to remove double slashes. */
     ap_no2slash(url);
@@ -307,12 +308,16 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(validationRequired));
 
     if (validationRequired) {
-        base = event_base_new();
-        context = redis_connect(config);
-        if (redis_prepare_subscribe(r->pool, r, clickUUID, base, context) != STATUS_OK) {
-            // ToDo
-
-        };
+        context = redisConnect(config->redis.server, config->redis.port);
+        if (context != NULL && context->err) {
+            ap_log_error(PC_LOG_CRIT, NULL, "Error connection to redis: %s", context->errstr);
+            redisFree(context);
+            exit(1);
+        }
+        response_timeout.tv_usec = (config->redis.response_timeout * 1000);
+        redisSetTimeout(context, response_timeout);
+        reply = redisCommand(context, "SUBSCRIBE %s", clickUUID);
+        freeReplyObject(reply);
     }
 
     status = kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
@@ -328,7 +333,13 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
     if (validationRequired) {
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url, risk_level);
-        status = redis_subscribe(r->pool, r, base, config, context);
+        mod_mshield_redis_cb_data_obj_t *cb_data_obj = apr_palloc(r->pool, sizeof(mod_mshield_redis_cb_data_obj_t));
+        cb_data_obj->request = r;
+        while(context->err != REDIS_ERR_IO && redisGetReply(context, (void**) &reply) == REDIS_OK) {
+            ap_log_error(PC_LOG_INFO, NULL, "context->err is [%d] and context->errstr is [%s]", context->err, context->errstr);
+            handle_mshield_result(reply, cb_data_obj);
+            freeReplyObject(reply);
+        }
     } else {
         status = STATUS_OK;
     }

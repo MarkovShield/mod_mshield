@@ -16,44 +16,9 @@ int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p) {
 }
 
 /*
- * Connect to redis and return a redis context.
- */
-redisAsyncContext *redis_connect(mod_mshield_server_t *config) {
-    if (!config) {
-        ap_log_error(PC_LOG_CRIT, NULL, "No server config for redis provided ");
-        exit(1);
-    }
-
-    redisAsyncContext *context = redisAsyncConnect(config->redis.server, config->redis.port);
-    if (context != NULL && context->err) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Error connection to redis: %s", context->errstr);
-        redisAsyncFree(context);
-        exit(1);
-    }
-
-    return context;
-}
-
-void connectCallback(const redisAsyncContext *c, int status) {
-    if (status != REDIS_OK) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Not connected to redis: %s", c->errstr);
-        return;
-    }
-    ap_log_error(PC_LOG_INFO, NULL, "Connected to redis.");
-}
-
-void disconnectCallback(const redisAsyncContext *c, int status) {
-    if (status != REDIS_OK) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Not disconnected from redis: %s", c->errstr);
-        return;
-    }
-    ap_log_error(PC_LOG_INFO, NULL, "Disconnected from redis.");
-}
-
-/*
  * Callback to handle redis replies.
  */
-static void handle_mshield_result(redisAsyncContext *c, void *reply, void *cb_obj) {
+void handle_mshield_result(void *reply, void *cb_obj) {
 
     redisReply *redis_reply = reply;
     mod_mshield_redis_cb_data_obj_t *cb_data_obj = (mod_mshield_redis_cb_data_obj_t *) cb_obj;
@@ -68,10 +33,10 @@ static void handle_mshield_result(redisAsyncContext *c, void *reply, void *cb_ob
     }
 
     if (redis_reply->type == REDIS_REPLY_ARRAY && redis_reply->elements == 3) {
-        ap_log_error(PC_LOG_DEBUG, NULL, "Waiting for redis result for request [%s]...",
+        ap_log_error(PC_LOG_INFO, NULL, "Waiting for redis result for request [%s]...",
                      apr_table_get(cb_data_obj->request->subprocess_env, "UNIQUE_ID"));
         for (int j = 0; j < redis_reply->elements; j++) {
-            ap_log_error(PC_LOG_DEBUG, NULL, "REDIS SUB: [%u] %s", j, redis_reply->element[j]->str);
+            ap_log_error(PC_LOG_INFO, NULL, "REDIS SUB: [%u] %s", j, redis_reply->element[j]->str);
             if (redis_reply->element[j]->str) {
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_FRAUD) == 0) {
                     ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_FRAUD);
@@ -81,7 +46,6 @@ static void handle_mshield_result(redisAsyncContext *c, void *reply, void *cb_ob
                     } else {
                         ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to fraud_detected_url was successful.");
                     }
-                    event_base_loopbreak(cb_data_obj->base);
                 }
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_SUSPICIOUS) == 0) {
                     ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_SUSPICIOUS);
@@ -91,11 +55,9 @@ static void handle_mshield_result(redisAsyncContext *c, void *reply, void *cb_ob
                     } else {
                         ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to global_logon_server_url_1 was successful.");
                     }
-                    event_base_loopbreak(cb_data_obj->base);
                 }
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_OK) == 0) {
                     ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_OK);
-                    event_base_loopbreak(cb_data_obj->base);
                 }
             }
 
@@ -103,23 +65,10 @@ static void handle_mshield_result(redisAsyncContext *c, void *reply, void *cb_ob
     }
 }
 
-
-apr_status_t redis_prepare_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUID, struct event_base *base, redisAsyncContext *context) {
-    redisLibeventAttach(context, base);
-    redisAsyncSetConnectCallback(context, connectCallback);
-    redisAsyncSetDisconnectCallback(context, disconnectCallback);
-    mod_mshield_redis_cb_data_obj_t *cb_data_obj = NULL;
-    cb_data_obj = apr_palloc(p, sizeof(mod_mshield_redis_cb_data_obj_t));
-    cb_data_obj->base = base;
-    cb_data_obj->request = r;
-    redisAsyncCommand(context, handle_mshield_result, cb_data_obj, "SUBSCRIBE %s", clickUUID);
-    return STATUS_OK;
-}
-
 /*
  * Subscribe to a redis channel (with channel ID = clickUUID)
  */
-apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, struct event_base *base, mod_mshield_server_t *config, redisAsyncContext *context) {
+apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, struct event_base *base, mod_mshield_server_t *config, redisContext *context) {
 
     apr_status_t status;
 
@@ -163,7 +112,7 @@ apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, struct event_base *b
     }
 
     event_base_free(base);
-    redisAsyncFree(context);
+    redisFree(context);
     ap_log_error(PC_LOG_DEBUG, NULL, "===== Waiting for engine rating ended =====");
 
     if (apr_table_get(r->err_headers_out, "Location")) {
