@@ -243,12 +243,10 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
             served_msg = rd_kafka_poll(kafka->rk_producer, 10);
             nanosleep(&sleep_interval, NULL);
             clock_gettime(CLOCK_MONOTONIC, &end);
-            // ToDo Philip: Refactor timeElapsed to seconds!
             timeElapsed = timespecDiff(&end, &start) / (CLOCKS_PER_SEC*1000);
-            ap_log_error(PC_LOG_CRIT, NULL, "Kafka timeElapsed is: %ld", (long)timeElapsed);
             if (timeElapsed > kafka->msg_delivery_timeout) {
                 ap_log_error(PC_LOG_CRIT, NULL,
-                             "Kafka message delivery report not received. Timeout [%d]s is expired [%ld]s!. Check Kafka connection and the Kafka load.",
+                             "Kafka message delivery report not received. Timeout %ds is expired %lds!. Check Kafka connection and the Kafka load.",
                              kafka->msg_delivery_timeout, (long)timeElapsed);
                 return HTTP_INTERNAL_SERVER_ERROR;
             }
@@ -277,7 +275,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     redisContext *context = NULL;
     redisReply *reply;
     struct timeval response_timeout;
-    //struct timeval connection_timeout;
+    struct timeval connection_timeout;
 
     /* For security reasons its important to remove double slashes. */
     ap_no2slash(url);
@@ -312,11 +310,9 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(validationRequired));
 
     if (validationRequired) {
-        // ToDo Philip: Switch to redisConnectWithTimeout()
-        //connection_timeout.tv_sec = config->redis.connection_timeout;
-        //connection_timeout.tv_usec = 0;
-        //context = redisConnectWithTimeout(config->redis.server, config->redis.port, connection_timeout);
-        context = redisConnect(config->redis.server, config->redis.port);
+        connection_timeout.tv_sec = config->redis.connection_timeout;
+        connection_timeout.tv_usec = 0;
+        context = redisConnectWithTimeout(config->redis.server, config->redis.port, connection_timeout);
         if (context != NULL && context->err) {
             ap_log_error(PC_LOG_CRIT, NULL, "Error connection to redis: %s", context->errstr);
             redisFree(context);
@@ -335,7 +331,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     cJSON_Delete(click_json);
 
     if (status != STATUS_OK) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Extract clicks to kafka was not successful.");
+        ap_log_error(PC_LOG_CRIT, NULL, "Extract clicks to kafka was not successful");
         return status;
     }
 
@@ -346,10 +342,8 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         cb_data_obj->request = r;
         while(context->err != REDIS_ERR_IO && redisGetReply(context, (void**) &reply) == REDIS_OK) {
             status = handle_mshield_result(reply, cb_data_obj);
-            // ToDo: Clean me up
-            if (status == STATUS_OK) {
-                break;
-            } else if (status == HTTP_INTERNAL_SERVER_ERROR) {
+            /* Leave the waiting loop if the rating result was received or the redirection failed */
+            if (status == STATUS_OK || status == HTTP_INTERNAL_SERVER_ERROR) {
                 break;
             }
             freeReplyObject(reply);

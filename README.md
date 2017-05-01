@@ -101,7 +101,6 @@ For the URL criticality level definitions, create another file `conf/extra/mod_m
 #################################################################################
 
 MOD_MSHIELD_URL "^/public*" 0
-MOD_MSHIELD_URL "^/login/login.php*" 3
 MOD_MSHIELD_URL "^/private*" 4
 MOD_MSHIELD_URL "^/transaction*" 5
 ```
@@ -212,7 +211,7 @@ kafka-consumer-groups.sh --list --bootstrap-server localhost:9092
 
 #### Send test message to Kafka
 ```bash
-echo $'xtTALCofbVIMEmuJzd95Me0pardFNKt%{"sessionUUID":	"xtTALCofbVIMEmuJzd95Me0pardFNKt","clickUUID":	"zugbwerz23g8gzbhb","timeStamp":	1493639064719,"url":	"/private/request-header/","urlRiskLevel":	4,"validationRequired":	true}' | kafka-console-producer.sh \
+echo $'xtTALCofbVIMEmuJzd95Me0prdFNKt%{"sessionUUID":	"xtTALCofbVIMEmuJzd95Me0prdFNKt","clickUUID":	"zugbwerz23g8gzbhb","timeStamp":	1493639064719,"url":	"/private/request-header/","urlRiskLevel":	4,"validationRequired":	true}' | kafka-console-producer.sh \
     --broker-list localhost:9092 \
     --topic MarkovClicks \
     --property parse.key=true \

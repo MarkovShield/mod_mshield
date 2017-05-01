@@ -33,19 +33,19 @@ apr_status_t handle_mshield_result(void *reply, void *cb_obj) {
     }
 
     if (redis_reply->type == REDIS_REPLY_ARRAY && redis_reply->elements == 3) {
-        ap_log_error(PC_LOG_INFO, NULL, "Waiting for redis result for request [%s]...",
+        ap_log_error(PC_LOG_DEBUG, NULL, "Waiting for redis result for request [%s]...",
                      apr_table_get(cb_data_obj->request->subprocess_env, "UNIQUE_ID"));
         for (int j = 0; j < redis_reply->elements; j++) {
-            ap_log_error(PC_LOG_INFO, NULL, "REDIS SUB: [%u] %s", j, redis_reply->element[j]->str);
+            ap_log_error(PC_LOG_DEBUG, NULL, "REDIS SUB: [%u] %s", j, redis_reply->element[j]->str);
             if (redis_reply->element[j]->str) {
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_FRAUD) == 0) {
                     ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_FRAUD);
                     status = mod_mshield_redirect_to_relurl(cb_data_obj->request, config->fraud_detected_url);
                     if (status != HTTP_MOVED_TEMPORARILY) {
-                        ap_log_error(PC_LOG_CRIT, NULL, "Redirection to fraud_detected_url failed.");
+                        ap_log_error(PC_LOG_CRIT, NULL, "Redirection to fraud_detected_url failed");
                         return HTTP_INTERNAL_SERVER_ERROR;
                     } else {
-                        ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to fraud_detected_url was successful.");
+                        ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to fraud_detected_url was successful");
                         return STATUS_OK;
                     }
                 }
@@ -53,10 +53,10 @@ apr_status_t handle_mshield_result(void *reply, void *cb_obj) {
                     ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_SUSPICIOUS);
                     status = mod_mshield_redirect_to_relurl(cb_data_obj->request, config->global_logon_server_url_1);
                     if (status != HTTP_MOVED_TEMPORARILY) {
-                        ap_log_error(PC_LOG_CRIT, NULL, "Redirection to global_logon_server_url_1 failed.");
+                        ap_log_error(PC_LOG_CRIT, NULL, "Redirection to global_logon_server_url_1 failed");
                         return HTTP_INTERNAL_SERVER_ERROR;
                     } else {
-                        ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to global_logon_server_url_1 was successful.");
+                        ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to global_logon_server_url_1 was successful");
                         return STATUS_OK;
                     }
                 }
