@@ -227,7 +227,8 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
     int served_msg = 0;
     struct timespec sleep_interval;
 
-    sleep_interval.tv_nsec = ((kafka->delivery_check_interval % 1000) * CLOCKS_PER_SEC);
+    sleep_interval.tv_sec = 0;
+    sleep_interval.tv_nsec = kafka->delivery_check_interval;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
     rd_kafka_topic_t *rkt = kafka_topic_connect_producer(p, kafka, topic, rk_topic);
@@ -242,11 +243,11 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
             served_msg = rd_kafka_poll(kafka->rk_producer, 10);
             nanosleep(&sleep_interval, NULL);
             clock_gettime(CLOCK_MONOTONIC, &end);
-            timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
+            timeElapsed = timespecDiff(&end, &start) / (CLOCKS_PER_SEC*1000);
             if (timeElapsed > kafka->msg_delivery_timeout) {
                 ap_log_error(PC_LOG_CRIT, NULL,
-                             "Kafka message delivery report not received. Timeout [%d] ms is expired [%ld] ms!. Check Kafka connection and the Kafka load.",
-                             kafka->msg_delivery_timeout, (long) timeElapsed);
+                             "Kafka message delivery report not received. Timeout %ds is expired %lds!. Check Kafka connection and the Kafka load.",
+                             kafka->msg_delivery_timeout, (long)timeElapsed);
                 return HTTP_INTERNAL_SERVER_ERROR;
             }
         }
@@ -271,8 +272,10 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     bool validationRequired;
     apr_status_t status;
     char *url = r->parsed_uri.path;
-    struct event_base *base;
-    redisAsyncContext *context;
+    redisContext *context = NULL;
+    redisReply *reply;
+    struct timeval response_timeout;
+    struct timeval connection_timeout;
 
     /* For security reasons its important to remove double slashes. */
     ap_no2slash(url);
@@ -307,12 +310,19 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(validationRequired));
 
     if (validationRequired) {
-        base = event_base_new();
-        context = redis_connect(config);
-        if (redis_prepare_subscribe(r->pool, r, clickUUID, base, context) != STATUS_OK) {
-            // ToDo
-
-        };
+        connection_timeout.tv_sec = config->redis.connection_timeout;
+        connection_timeout.tv_usec = 0;
+        context = redisConnectWithTimeout(config->redis.server, config->redis.port, connection_timeout);
+        if (context != NULL && context->err) {
+            ap_log_error(PC_LOG_CRIT, NULL, "Error connection to redis: %s", context->errstr);
+            redisFree(context);
+            return HTTP_INTERNAL_SERVER_ERROR;
+        }
+        response_timeout.tv_sec = config->redis.response_timeout;
+        response_timeout.tv_usec = 0;
+        redisSetTimeout(context, response_timeout);
+        reply = redisCommand(context, "SUBSCRIBE %s", clickUUID);
+        freeReplyObject(reply);
     }
 
     status = kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
@@ -321,14 +331,30 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     cJSON_Delete(click_json);
 
     if (status != STATUS_OK) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Extract clicks to kafka was not successful.");
+        ap_log_error(PC_LOG_CRIT, NULL, "Extract clicks to kafka was not successful");
         return status;
     }
 
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
     if (validationRequired) {
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url, risk_level);
-        status = redis_subscribe(r->pool, r, base, config, context);
+        mod_mshield_redis_cb_data_obj_t *cb_data_obj = apr_palloc(r->pool, sizeof(mod_mshield_redis_cb_data_obj_t));
+        cb_data_obj->request = r;
+        while(context->err != REDIS_ERR_IO && redisGetReply(context, (void**) &reply) == REDIS_OK) {
+            status = handle_mshield_result(reply, cb_data_obj);
+            /* Leave the waiting loop if the rating result was received or the redirection failed */
+            if (status == STATUS_OK || status == HTTP_INTERNAL_SERVER_ERROR) {
+                break;
+            }
+            freeReplyObject(reply);
+        }
+        if (context->err) {
+            ap_log_error(PC_LOG_INFO, NULL, "Redis error: context->err is [%d] and context->errstr is [%s]", context->err, context->errstr);
+            if (context->err == REDIS_ERR_IO) {
+                return STATUS_ERROR;
+            }
+            return HTTP_INTERNAL_SERVER_ERROR;
+        }
     } else {
         status = STATUS_OK;
     }

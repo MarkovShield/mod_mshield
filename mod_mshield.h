@@ -80,22 +80,22 @@
 #define MOD_MSHIELD_ENABLED_RETURN_TO_ORIG_URL    "^/.*$"                                        /* from what r->uri LOGON=ok cookies are accepted */
 #define MOD_MSHIELD_USERNAME_VALUE                    "MOD_MSHIELD_USERNAME"                        /* login server LOGON cookie username value name (needs to be the same as in login.php) */
 /* Fraud detection stuff starts here */
-#define MOD_MSHIELD_FRAUD_DETECTION_ENABLED        0                                            /* by default the fraud detection functionality is off */
-#define MOD_MSHIELD_FRAUD_LEARNING_MODE            0                                            /* by default the fraud detection learning mode is off */
-#define MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD     3                                            /* If a risk level surpass or equals this threshold, a session ration result from the engine is required. */
-#define MOD_MSHIELD_FRAUD_DETECTED_URL          "/error/fraud_detected.html"                    /* set the URL to redirect to if a fraud is found */
-#define MOD_MSHIELD_FRAUD_ERROR_URL             "/error/fraud_error.html"                       /* set the URL to redirect to if the analyse fails */
-#define MOD_MSHIELD_KAFKA_BROKER                "127.0.0.1:9092"                                /* set the kafka broker IP and port */
-#define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE         "MarkovClicks"                                  /* set Kafka topic on which clicks are sent to the engine */
-#define MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING     "MarkovLogins"                                  /* set Kafka topic on which the username <-> UUID mapping is sent to the engine */
-#define MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG      "MarkovUrlConfigs"                              /* set Kafka topic on which the url <-> risk_level configuration is sent to the engine */
-#define MOD_MSHIELD_KAFKA_RESPONSE_TIMEOUT      1000                                            /* set timeout to wait at most (in ms) to check if the Kafka message was successful delivered */
-#define MOD_MSHIELD_KAFKA_DELIVERY_CHECK_INTERVAL 25                                            /* set the interval in ms to check for the message delivery report */
-#define MOD_MSHIELD_REDIS_CONNECTION_TIMEOUT    1000                                            /* set Redis connect timeout in ms */
-#define MOD_MSHIELD_REDIS_RESULT_QUERY_INTERVAL 25                                              /* set the interval in ms to query the request result */
-#define MOD_MSHIELD_REDIS_SERVER                "127.0.0.1"                                     /* set the redis server */
-#define MOD_MSHIELD_REDIS_PORT                  6379                                            /* set the redis server's port */
-#define MOD_MSHIELD_REDIS_RESULT_TIMEOUT        3000                                            /* set how long to wait (in ms) for request analyse result */
+#define MOD_MSHIELD_FRAUD_DETECTION_ENABLED         0                                   /* by default the fraud detection functionality is off */
+#define MOD_MSHIELD_FRAUD_LEARNING_MODE             0                                   /* by default the fraud detection learning mode is off */
+#define MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD      3                                   /* If a risk level surpass or equals this threshold, a session ration result from the engine is required. */
+#define MOD_MSHIELD_FRAUD_DETECTED_URL              "/error/fraud_detected.html"        /* set the URL to redirect to if a fraud is found */
+#define MOD_MSHIELD_FRAUD_ERROR_URL                 "/error/fraud_error.html"           /* set the URL to redirect to if the analyse fails */
+#define MOD_MSHIELD_KAFKA_BROKER                    "127.0.0.1:9092"                    /* set the kafka broker IP and port */
+#define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE             "MarkovClicks"                      /* set Kafka topic on which clicks are sent to the engine */
+#define MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING         "MarkovLogins"                      /* set Kafka topic on which the username <-> UUID mapping is sent to the engine */
+#define MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG          "MarkovUrlConfigs"                  /* set Kafka topic on which the url <-> risk_level configuration is sent to the engine */
+#define MOD_MSHIELD_KAFKA_MSG_DELIVERY_TIMEOUT      3                                   /* timeout for the Kafka message delivery check (in seconds!) */
+#define MOD_MSHIELD_KAFKA_DELIVERY_CHECK_INTERVAL   100000                              /* time to sleep between kafka produce delivery report polls (in ns!) */
+#define MOD_MSHIELD_REDIS_SERVER                    "127.0.0.1"                         /* set the redis server */
+#define MOD_MSHIELD_REDIS_PORT                      6379                                /* set the redis server's port */
+#define MOD_MSHIELD_REDIS_RESPONSE_TIMEOUT          3                                   /* set how long to wait for request analyse result (in seconds!) */
+#define MOD_MSHIELD_REDIS_CONNECTION_TIMEOUT        3                                   /* set Redis connection timeout (in seconds!) */
+
 
 /********************************************************************
  * Compile time configuration
@@ -140,8 +140,6 @@
 #define MOD_MSHIELD_RESULT_SUSPICIOUS   "SUSPICIOUS"
 #define MOD_MSHIELD_RESULT_OK           "OK"
 
-#define MOD_MSHIELD_HASH_LENGTH        100
-
 
 /********************************************************************
  * module declaration
@@ -169,7 +167,7 @@ typedef struct {
     const char *rk_topic_url_config;                /* topic_url_config handle */
     const char *broker;                             /* Set the IP of the Kafka broker */
     int delivery_check_interval;                    /* The interval in ms to check for the message delivery report */
-    int msg_delivery_timeout;                           /* How long to wait at most (in ms) to check if the Kafka message was successful delivered. */
+    int msg_delivery_timeout;                       /* Timeout for the Kafka message delivery check (in seconds!) */
     rd_kafka_t *rk_producer;                        /* Kafka producer handle */
     rd_kafka_topic_partition_list_t *topics;        /* Kafka topics for high-level consumer */
 } mod_mshield_kafka_t;
@@ -180,9 +178,9 @@ typedef struct {
 typedef struct {
     const char *server;                             /* Set the Redis server */
     int port;                                       /* Set the Redis port on which the host listens */
-    int connection_timeout;                         /* Set Redis connect timeout in ms */
+    int connection_timeout;                         /* Set Redis connection timeout (in seconds!) */
     int response_query_interval;                    /* The interval in ms to query request result */
-    int response_timeout;                           /* How long to wait at most for request analyse result (in ms) */
+    int response_timeout;                           /* How long to wait at most for request analyse result (in seconds!) */
 } mod_mshield_redis_t;
 
 /**
@@ -444,9 +442,8 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char
 /********************************************************************
  * mod_mshield_redis.c
  */
-apr_status_t redis_prepare_subscribe(apr_pool_t *p, request_rec *r, const char *clickUUID, struct event_base *base, redisAsyncContext *context);
-redisAsyncContext *redis_connect(mod_mshield_server_t *config);
-apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, struct event_base *base, mod_mshield_server_t *config, redisAsyncContext *context);
+apr_status_t handle_mshield_result(void *reply, void *cb_obj);
+apr_status_t redis_subscribe(apr_pool_t *p, request_rec *r, struct event_base *base, mod_mshield_server_t *config, redisContext *context);
 int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p);
 
 #endif /* MOD_MSHIELD_H */
