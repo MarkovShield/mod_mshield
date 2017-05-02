@@ -38,6 +38,13 @@ mod_mshield: $(SRC)
 #	$(APXS) $(APXSFLAGS) $(SRC)
 	apxs $(APXSFLAGS) $(SRC) $(LIBS)
 
+docs:
+	doxygen Doxyfile
+	@echo "Documentation generated in docs"
+
+clean-docs:
+	rm -rf docs
+
 clean:
 	rm -rf *.la *.slo *.o *.lo .libs
 

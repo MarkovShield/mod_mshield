@@ -1,11 +1,16 @@
+/**
+ * @file mod_mshield_kafka.c
+ * @author Philip Schmid
+ * @date 1. May 2017
+ * @brief File containing mod_mshield Kafka related code.
+ */
+
 #include "mod_mshield.h"
 
-/****************************************************************************************************************
- * Some kafka helper functions
- *****************************************************************************************************************/
-
-/*
- * Print the url store. This function can be used for debugging purposes.
+/**
+ * @brief Print the url store. This function can be used for debugging purposes.
+ *
+ * @param config mod_mshield server configuration
  */
 static void print_url_store(mod_mshield_server_t *config) {
 
@@ -25,8 +30,13 @@ static void print_url_store(mod_mshield_server_t *config) {
 
 }
 
-/*
- * Get the risk level of a URL
+/**
+ * @brief Get the risk level of a URL.
+ *
+ * @param r current Request
+ * @param url of the current request. Make sure there are no double slashes (@see ap_no2slash()).
+ * @returns URL risk level as int if URL was found in url_store.
+ * @returns -1 if the URL was not found in the url_store.
  */
 static int get_url_risk_level(request_rec *r, const char *url) {
 
@@ -59,17 +69,14 @@ static int get_url_risk_level(request_rec *r, const char *url) {
         }
 
     }
-    /* Return -1 to let the caller know that its an unknown URL. */
     return -1;
 
 }
 
-/****************************************************************************************************************
- * Producer part
- *****************************************************************************************************************/
-
-/*
- * Callback which will be called after each message produce
+/**
+ * @brief Callback which will be called after each message produce.
+ *
+ * This callback is helpful for debug purposes to see if the message was transmitted successfully to Kafka.
  */
 static void dr_msg_cb(rd_kafka_t *rk,
                       const rd_kafka_message_t *rkmessage, void *opaque) {
@@ -82,8 +89,13 @@ static void dr_msg_cb(rd_kafka_t *rk,
     }
 }
 
-/*
- * Connect to Kafka broker
+/**
+ * @brief Connect to Kafka broker.
+ *
+ * @param p Memory pool where to allocate the apr_hash_index_t iterator
+ * @param kafka mod_mshield Kafka configuration
+ * @return APR_SUCCESS If Kafka producer handle could be opened and the brokers be added
+ * @return NULL If an error occurred during the Kafka producer setup
  */
 static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *kafka) {
     const char *brokers = kafka->broker;
@@ -96,7 +108,7 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
     rd_kafka_conf_t *conf = rd_kafka_conf_new();
     if (!conf) {
         ap_log_error(PC_LOG_CRIT, NULL, "Init Kafka conf failed");
-        return APR_EINIT;
+        return NULL;
     }
 
     /* Quick termination */
@@ -117,7 +129,7 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
                                   errstr, sizeof(errstr)) != RD_KAFKA_CONF_OK) {
                 ap_log_error(PC_LOG_CRIT, NULL, "Kafka config: %s", errstr);
                 rd_kafka_conf_destroy(conf);
-                return APR_EINIT;
+                return NULL;
             }
         }
         hash = apr_hash_next(hash);
@@ -130,25 +142,32 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
     if (!kafka->rk_producer) {
         ap_log_error(PC_LOG_CRIT, NULL, "Kafka producer init failed");
         rd_kafka_conf_destroy(conf);
-        return APR_EINIT;
+        return NULL;
     }
 
+    // ToDo: Make "7" configurable in header file.
     rd_kafka_set_log_level(kafka->rk_producer, 7);
-    //rd_kafka_set_log_level(kafka->rk_producer, 0);
 
     /* Add brokers */
     if (rd_kafka_brokers_add(kafka->rk_producer, brokers) == 0) {
         ap_log_error(PC_LOG_INFO, NULL, "Add Kafka brokers: %s", brokers);
         rd_kafka_destroy(kafka->rk_producer);
         kafka->rk_producer = NULL;
-        return APR_EINIT;
+        return NULL;
     }
 
     return APR_SUCCESS;
 }
 
-/*
- * Connect to a specific Kafka topic and save its handle
+/**
+ * @brief Connect to a specific Kafka topic and save its handle.
+ *
+ * @param p Memory pool where to allocate the apr_hash_index_t iterator
+ * @param kafka mod_mshield Kafka configuration
+ * @param topic Kafka topic which to connect to.
+ * @param rk_topic Pointer to the topic handle.
+ * @return rd_kafka_topic_t topic handle
+ * @return NULL If an error occurred during the Kafka producer setup
  */
 static rd_kafka_topic_t *
 kafka_topic_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char *topic, const char **rk_topic) {
@@ -215,9 +234,26 @@ kafka_topic_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
     return rkt;
 }
 
-/*
- * Send something to a specified topic. Partition is supported.
- * Note: Set partition to RD_KAFKA_PARTITION_UA if none is provided.
+/**
+ * @brief Send something to a specified topic. Partition is supported.
+ *
+ * @note Set partition to RD_KAFKA_PARTITION_UA if none is provided.
+ *
+ * @param p Memory pool where to allocate the apr_hash_index_t iterator
+ * @param kafka mod_mshield Kafka configuration
+ * @param topic Kafka topic which to connect to.
+ * @param rk_topic Pointer to the topic handle.
+ * @param partition Kafka topic partition where to produce to.
+ * @param msg Message which should be produced/published to Kafka.
+ * @param key The message key
+ *
+ * @return STATUS_OK If the message could be produced successfully.
+ * @return HTTP_INTERNAL_SERVER_ERROR If the message couldn't be produced to Kafka.
+ *
+ * A reason for HTTP_INTERNAL_SERVER_ERROR could be:
+ *   * the Kafka topic handle wasn't set up properly
+ *   * the message wasn't produced within the set msg_delivery_timeout timeout
+ *
  */
 apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
                            const char *topic, const char **rk_topic, int32_t partition, char *msg, const char *key) {
@@ -243,11 +279,11 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
             served_msg = rd_kafka_poll(kafka->rk_producer, 10);
             nanosleep(&sleep_interval, NULL);
             clock_gettime(CLOCK_MONOTONIC, &end);
-            timeElapsed = timespecDiff(&end, &start) / (CLOCKS_PER_SEC*1000);
+            timeElapsed = timespecDiff(&end, &start) / (CLOCKS_PER_SEC * 1000);
             if (timeElapsed > kafka->msg_delivery_timeout) {
                 ap_log_error(PC_LOG_CRIT, NULL,
                              "Kafka message delivery report not received. Timeout %ds is expired %lds!. Check Kafka connection and the Kafka load.",
-                             kafka->msg_delivery_timeout, (long)timeElapsed);
+                             kafka->msg_delivery_timeout, (long) timeElapsed);
                 return HTTP_INTERNAL_SERVER_ERROR;
             }
         }
@@ -258,9 +294,20 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
     return STATUS_OK;
 }
 
-/*
- * Use this function to extract some request information and send it to kafka
- * Note: We want milliseconds and not microseconds -> divide request_time by 1000.
+/**
+ * @brief Extract request information and send it to kafka
+ *
+ * @param r The apache request itself
+ * @param uuid Current session UUID, which uniquely identifies the logical user session.
+ * @param session Current session which the request belongs to
+ *
+ * @return STATUS_OK If the Kafka request information extraction was successful.
+*          Additional, if the URL risk level was > MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD,
+ *         then the Redis result subscription had to be successful too.
+ * @return HTTP_INTERNAL_SERVER_ERROR If the connection to Redis was not successful or the request redirection failed.
+ * @return STATUS_ERROR If Redis got an REDIS_ERR_IO error.
+ *
+ * @note Because of the engine, we want milliseconds and not microseconds for the request time. Therefore divide request_time by 1000.
  */
 apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *session) {
 
@@ -340,7 +387,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url, risk_level);
         mod_mshield_redis_cb_data_obj_t *cb_data_obj = apr_palloc(r->pool, sizeof(mod_mshield_redis_cb_data_obj_t));
         cb_data_obj->request = r;
-        while(context->err != REDIS_ERR_IO && redisGetReply(context, (void**) &reply) == REDIS_OK) {
+        while (context->err != REDIS_ERR_IO && redisGetReply(context, (void **) &reply) == REDIS_OK) {
             status = handle_mshield_result(reply, cb_data_obj);
             /* Leave the waiting loop if the rating result was received or the redirection failed */
             if (status == STATUS_OK || status == HTTP_INTERNAL_SERVER_ERROR) {
@@ -349,7 +396,8 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
             freeReplyObject(reply);
         }
         if (context->err) {
-            ap_log_error(PC_LOG_INFO, NULL, "Redis error: context->err is [%d] and context->errstr is [%s]", context->err, context->errstr);
+            ap_log_error(PC_LOG_INFO, NULL, "Redis error: context->err is [%d] and context->errstr is [%s]",
+                         context->err, context->errstr);
             if (context->err == REDIS_ERR_IO) {
                 return STATUS_ERROR;
             }
@@ -362,8 +410,10 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     return status;
 }
 
-/*
- * Use this function to extract the url configurations and send it to kafka
+/**
+ * @brief Extract the url configurations and send it to kafka
+ *
+ * @param s The apache server_rec
  */
 void extract_url_to_kafka(server_rec *s) {
 
@@ -386,15 +436,18 @@ void extract_url_to_kafka(server_rec *s) {
     kafka_produce(config->pool, &config->kafka, config->kafka.topic_url_config, &config->kafka.rk_topic_url_config,
                   RD_KAFKA_PARTITION_UA, cJSON_Print(root), NULL);
     cJSON_Delete(root);
-    kafka_cleanup(s);
 }
 
-/****************************************************************************************************************
- * Cleanup
- *****************************************************************************************************************/
-
-/*
- * Cleans up kafka stuff when apache is shutting down
+/**
+ * @brief Cleans up kafka stuff when apache is shutting down
+ *
+ * @param arg The apache server_rec
+ *
+ * @return APR_SUCCESS If the clean up was successful.
+ * @return APR_Error If mshield_mutex couldn't be locked.
+ * @see apr_global_mutex_lock() for more return type details.
+ *
+ * This callback function is registered via apr_pool_cleanup_register and is executed when an apache pool is cleared or destroyed.
  */
 apr_status_t kafka_cleanup(void *arg) {
     server_rec *s = arg;

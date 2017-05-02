@@ -257,7 +257,7 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
         ERRLOG_INFO("FRAUD-ENGINE: Sent JSON user mapping object is: [%s]", cJSON_Print(user_mapping_json));
 
         if (config->fraud_detection_enabled) {
-            kafka_produce(r->pool, &config->kafka, config->kafka.topic_usermapping, &config->kafka.rk_topic_usermapping,
+            kafka_produce(config->pool, &config->kafka, config->kafka.topic_usermapping, &config->kafka.rk_topic_usermapping,
                           RD_KAFKA_PARTITION_UA, cJSON_Print(user_mapping_json), cr->session->data->uuid);
         }
 

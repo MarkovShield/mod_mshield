@@ -224,9 +224,10 @@ make clean
 ```
 
 
+## Documentation
+In order to generate the documentation, use `make docs`. The documentation is now available at docs/index.html
 
-
-
+Use `make clean-docs` if you want to clean them back again.
 
 
 

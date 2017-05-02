@@ -834,11 +834,11 @@ mshield_register_hooks(apr_pool_t *p)
  */
 module AP_MODULE_DECLARE_DATA mshield_module =
 {
-	STANDARD20_MODULE_STUFF,	    /* standard Apache 2.0 module stuff              */
-	mshield_create_dir_conf,		/* create per-directory configuration structures */
-	NULL,				            /* merge per-directory                           */
-	mshield_create_server_conf,		/* create per-server configuration structures    */
-	NULL,				            /* merge per-server                              */
-	mshield_cmds,			        /* configuration directive handlers              */
-	mshield_register_hooks,		    /* request handlers                              */
+	STANDARD20_MODULE_STUFF,	    /** standard Apache 2.0 module stuff              */
+	mshield_create_dir_conf,		/** create per-directory configuration structures */
+	NULL,				            /** merge per-directory                           */
+	mshield_create_server_conf,		/** create per-server configuration structures    */
+	NULL,				            /** merge per-server                              */
+	mshield_cmds,			        /** configuration directive handlers              */
+	mshield_register_hooks,		    /** request handlers                              */
 };
