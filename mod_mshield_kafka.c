@@ -95,7 +95,7 @@ static void dr_msg_cb(rd_kafka_t *rk,
  * @param p Memory pool where to allocate the apr_hash_index_t iterator
  * @param kafka mod_mshield Kafka configuration
  * @return APR_SUCCESS If Kafka producer handle could be opened and the brokers be added
- * @return NULL If an error occurred during the Kafka producer setup
+ * @return APR_INCOMPLETE If an error occurred during the Kafka producer setup
  */
 static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *kafka) {
     const char *brokers = kafka->broker;
@@ -108,7 +108,7 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
     rd_kafka_conf_t *conf = rd_kafka_conf_new();
     if (!conf) {
         ap_log_error(PC_LOG_CRIT, NULL, "Init Kafka conf failed");
-        return NULL;
+        return APR_INCOMPLETE;
     }
 
     /* Quick termination */
@@ -129,7 +129,7 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
                                   errstr, sizeof(errstr)) != RD_KAFKA_CONF_OK) {
                 ap_log_error(PC_LOG_CRIT, NULL, "Kafka config: %s", errstr);
                 rd_kafka_conf_destroy(conf);
-                return NULL;
+                return APR_EINIT;
             }
         }
         hash = apr_hash_next(hash);
@@ -142,7 +142,7 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
     if (!kafka->rk_producer) {
         ap_log_error(PC_LOG_CRIT, NULL, "Kafka producer init failed");
         rd_kafka_conf_destroy(conf);
-        return NULL;
+        return APR_EINIT;
     }
 
     // ToDo: Make "7" configurable in header file.
@@ -150,10 +150,10 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
 
     /* Add brokers */
     if (rd_kafka_brokers_add(kafka->rk_producer, brokers) == 0) {
-        ap_log_error(PC_LOG_INFO, NULL, "Add Kafka brokers: %s", brokers);
+        ap_log_error(PC_LOG_INFO, NULL, "Add Kafka brokers failed. Defined brokers: %s", brokers);
         rd_kafka_destroy(kafka->rk_producer);
         kafka->rk_producer = NULL;
-        return NULL;
+        return APR_EINIT;
     }
 
     return APR_SUCCESS;
