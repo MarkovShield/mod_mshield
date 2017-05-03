@@ -145,8 +145,7 @@ static apr_status_t kafka_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *k
         return APR_EINIT;
     }
 
-    // ToDo: Make "7" configurable in header file.
-    rd_kafka_set_log_level(kafka->rk_producer, 7);
+    rd_kafka_set_log_level(kafka->rk_producer, MOD_MSHIELD_KAFKA_LOG_LEVEL);
 
     /* Add brokers */
     if (rd_kafka_brokers_add(kafka->rk_producer, brokers) == 0) {
@@ -385,10 +384,8 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
     if (validationRequired) {
         ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url, risk_level);
-        mod_mshield_redis_cb_data_obj_t *cb_data_obj = apr_palloc(r->pool, sizeof(mod_mshield_redis_cb_data_obj_t));
-        cb_data_obj->request = r;
         while (context->err != REDIS_ERR_IO && redisGetReply(context, (void **) &reply) == REDIS_OK) {
-            status = handle_mshield_result(reply, cb_data_obj);
+            status = handle_mshield_result(reply, r);
             /* Leave the waiting loop if the rating result was received or the redirection failed */
             if (status == STATUS_OK || status == HTTP_INTERNAL_SERVER_ERROR) {
                 break;

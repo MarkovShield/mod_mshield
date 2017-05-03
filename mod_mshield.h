@@ -165,6 +165,11 @@
  */
 #define MOD_MSHIELD_RESULT_OK           "OK"
 
+/**
+ * Kafka log level. Has to be between 0 (LOG_EMERG) and 7 (LOG_DEBUG).
+ */
+#define MOD_MSHIELD_KAFKA_LOG_LEVEL          LOG_WARNING
+
 extern module AP_MODULE_DECLARE_DATA mshield_module;        /**< mod_mshield apache module name */
 extern apr_global_mutex_t *mshield_mutex;                   /**< mod_mshield mutex to secure shared memory access */
 
@@ -264,14 +269,6 @@ typedef struct {
     const int mod_mshield_location_id;              /**< to group the backend sessions */
     const int mod_mshield_auth_strength;            /**< required authentication strength per directory */
 } mod_mshield_dir_t;
-
-/**
- * @brief Redis callback object.
- */
-typedef struct {
-    struct event_base *base;                        /**< event base object */
-    request_rec *request;                           /**< Request object */
-} mod_mshield_redis_cb_data_obj_t;
 
 /**
  * @brief mod_mshield shared memory structures
@@ -461,7 +458,7 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka, const char
 /********************************************************************
  * <!-- mod_mshield_redis.c -->
  */
-apr_status_t handle_mshield_result(void *reply, void *cb_obj);
+apr_status_t handle_mshield_result(void *reply, void *request);
 int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p);
 
 #endif /* MOD_MSHIELD_H */

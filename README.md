@@ -31,6 +31,7 @@ See [License](LICENSE.md) for our code.
 
 ## Credit
 Thanks to:
+
 * [kjdev/apache-mod-kafka](https://github.com/kjdev/apache-mod-kafka) for the Kafka producer part on with our implementation is based
 * [edenhill/librdkafka](https://github.com/edenhill/librdkafka) for the Kafka C/C++ library
 * [DaveGamble/cJSON](https://github.com/DaveGamble/cJSON) for the cJSON parser
