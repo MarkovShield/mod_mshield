@@ -3,6 +3,7 @@
 ## Content
 * [Basic module configuration](#markdown-header-basic-module-configuration)
 * [Basic mod_mshield configuration](#markdown-header-basic-mod_mshield-configuration)
+* [Configuration value explanations](#markdown-header-configuration-value-explanations)
 * [URL configurations](#markdown-header-url-configurations)
 
 ## Basic module configuration
@@ -81,8 +82,11 @@ Include conf/extra/mod_mshield_url_rating.conf
 </Location>
 ```
 
+## Configuration value explanations
+Check [SETTINGS](SETTINGS.md) to get an explanation of all possible configuration values.
+
 ## URL configurations
-For the URL criticality level definitions, create another file `conf/extra/mod_mshield_url_rating.conf`. Use the following format (`0` = non-critical, `1` = critical) and make sure to define the URLs **without** trailing slash::
+For the URL criticality level definitions, create another file `conf/extra/mod_mshield_url_rating.conf`. Use the following format:
 ```bash
 #################################################################################
 #   MOD_MSHIELD url ratings

@@ -1,10 +1,10 @@
 # Installation
 
 ## Content
-* [The smooth way (Docker)](#markdown-header-the-smooth-way)
+* [The smooth way](#markdown-header-the-smooth-way)
     * [Prerequisites](#markdown-header-prerequisites)
     * [Installation itself](#markdown-header-installation-itself)
-* [The manual way (Docker)](#markdown-header-the-manual-way)
+* [The manual way](#markdown-header-the-manual-way)
     * [Prerequisites](#markdown-header-prerequisites)
     * [Installation itself](#markdown-header-installation-itself)
 
@@ -29,7 +29,7 @@ chmod +x docker_compile.sh
 ./docker_compile.sh
 ```
 
-Finally place the `mod_mshield.so` module in your apache module directory and continue with the [CONFIGURATION](documentations/CONFIGURATION.md).
+Finally place the `mod_mshield.so` module in your apache module directory and continue with the [CONFIGURATION](CONFIGURATION.md).
 
 ## The manual way
 

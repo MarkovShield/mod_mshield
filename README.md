@@ -27,7 +27,7 @@ Use `make clean-docs` if you want to clean them back again.
 * [Development](documentations/DEVELOPMENT.md)
 
 ## Licence
-See [License](LICENSE.md)) for our code.
+See [License](LICENSE.md) for our code.
 
 ## Credit
 Thanks to:
