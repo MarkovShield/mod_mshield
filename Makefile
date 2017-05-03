@@ -3,21 +3,22 @@
 # mod_mshield Makefile V1.0 by MSHIELD
 #
 #############################################
-# $Id: Makefile 160 2011-02-01 16:45:08Z rblum $
 
-# Please add apxs to your path.
-#APXS=/usr/bin/apxs2
-#APXS=/opt/applic/httpd/bin/apxs
+# Change the pcre path to your real pcre path:
+PCRE = /opt/applic/pcre-8.39/include
 
-# APXSFLAGS=-c -i -a -Wc,-O2 -Wc,-Wall -I /zpool/applic/pcre/pcre-8.0/
-# APXSFLAGS=-c -i -a -Wc,-O2 -Wc,-Wall -I /root/httpd-2.2.14/srclib/pcre/
-# CentOS APXSFLAGS=-c -i -a -Wc,-O2 -Wc,-Wall -I /usr/include
-# APXSFLAGS=-c -i -a -Wc,-O2 -Wc,-Wall,-DMOD_MSHIELD_SESSION_COUNT=10 -Wc,-DMOD_MSHIELD_COOKIESTORE_COUNT=30
-APXSFLAGS=-I /opt/applic/pcre-8.39/include -v -c -Wc,-O0 -Wc ,-Wall -Wc, -DMOD_MSHIELD_SESSION_COUNT=10 -Wc, -DMOD_MSHIELD_COOKIESTORE_COUNT=30 -Wc
+APXSFLAGS = -I$(PCRE) -v -c
+APXSFLAGSEND = -Wc,-O0 -Wc ,-Wall -Wc, -DMOD_MSHIELD_SESSION_COUNT=10 -Wc, -DMOD_MSHIELD_COOKIESTORE_COUNT=30 -Wc
 
-LIBS =-lrdkafka -lz -lpthread -lrt -lm -levent -lhiredis
+UNAME = $(shell uname)
 
-SRC= \
+LIBS = -lrdkafka -lz -lpthread -lm -levent -lhiredis
+
+ifeq ($(UNAME), Linux)
+LIBS += -lrt
+endif
+
+SRC = \
 	mod_mshield.c \
 	mod_mshield_regexp.c \
 	mod_mshield_redirect.c \
@@ -32,11 +33,19 @@ SRC= \
 	mod_mshield_redis.c \
 	cJSON.c
 
-all: mod_mshield
+dev: APXSCMD = apxs
+dev: APXSFLAGS += $(APXSFLAGSEND)
+
+deploy: APXSCMD = /opt/applic/httpd/bin/apxs
+deploy: APXSFLAGS += -a -i $(APXSFLAGSEND)
+
+all: APXSCMD = apxs
+all: APXSFLAGS += $(APXSFLAGSEND)
+
+all dev deploy: mod_mshield
 
 mod_mshield: $(SRC)
-#	$(APXS) $(APXSFLAGS) $(SRC)
-	apxs $(APXSFLAGS) $(SRC) $(LIBS)
+	$(APXSCMD) $(APXSFLAGS) $(SRC) $(LIBS)
 
 docs:
 	doxygen Doxyfile
@@ -48,4 +57,4 @@ clean-docs:
 clean:
 	rm -rf *.la *.slo *.o *.lo .libs
 
-.PHONY: all mod_mshield clean
+.PHONY: mod_mshield dev deploy all docs clean-docs clean

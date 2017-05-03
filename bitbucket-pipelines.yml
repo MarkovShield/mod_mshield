@@ -10,10 +10,4 @@ pipelines:
     - step:
         script:
           - git config --global http.sslVerify false
-          - git submodule update --init
-          - cd librdkafka/
-          - ./configure
-          - make
-          - make install
-          - cd ../
-          - make
+          - make dev
