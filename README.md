@@ -1,4 +1,4 @@
-![MarkovShield](resources/markovshield_logo.png)
+![MarkovShield](https://bitbucket.org/markovshield/mod_mshield/raw/develop/resources/markovshield_logo.png)
 
 # mod_mshield - Apache HTTPD reverse proxy module
 
