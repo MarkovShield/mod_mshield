@@ -1,37 +1,33 @@
 # Development
 
-<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:0 orderedList:0 -->
-
-- [Development](#markdown-header-development)
-	- [Prerequisites](#markdown-header-prerequisites)
-		- [Dependent packages](#markdown-header-dependent-packages)
-			- [macOS](#markdown-header-macos)
-		- [httpd, apr, apr-util header files](#markdown-header-httpd-apr-apr-util-header-files)
-	- [How to compile](#markdown-header-how-to-compile)
-	- [Test the module](#markdown-header-test-the-module)
-	- [Cleanup compilation stuff](#markdown-header-cleanup-compilation-stuff)
-	- [Debugging & helpful commands](#markdown-header-debugging-helpful-commands)
-		- [Apache logs](#markdown-header-apache-logs)
-		- [Kafka](#markdown-header-kafka)
-			- [Test kafka connection](#markdown-header-test-kafka-connection)
-			- [Show consumer groups](#markdown-header-show-consumer-groups)
-			- [Send test message to Kafka](#markdown-header-send-test-message-to-kafka)
-		- [Redis](#markdown-header-redis)
-			- [Test Redis connection](#markdown-header-test-redis-connection)
-
-<!-- /TOC -->
+## Content
+* [Prerequisites](#markdown-header-prerequisites)
+    * [Dependent packages](#markdown-header-dependent-packages)
+        * [macOS](#markdown-header-macos)
+    * [httpd, apr, apr-util header files](#markdown-header-httpd-apr-apr-util-header-files)
+* [How to compile](#markdown-header-how-to-compile)
+* [Test the module](#markdown-header-test-the-module)
+* [Cleanup compilation stuff](#markdown-header-cleanup-compilation-stuff)
+* [Debugging & helpful commands](#markdown-header-debugging-helpful-commands)
+    * [Apache logs](#markdown-header-apache-logs)
+    * [Kafka](#markdown-header-kafka)
+        * [Test kafka connection](#markdown-header-test-kafka-connection)
+        * [Show consumer groups](#markdown-header-show-consumer-groups)
+        * [Send test message to Kafka](#markdown-header-send-test-message-to-kafka)
+    * [Redis](#markdown-header-redis)
+        * [Test Redis connection](#markdown-header-test-redis-connection)
 
 ## Prerequisites
 
 ### Dependent packages
 In order to compile this module, you will need the sources of the following packages:
-- `apr`
-- `apr-utils`
-- `httpd`
-- `pcre`
-- `libevent` (see [nmathewson/Libevent](https://github.com/nmathewson/Libevent))
-- `librdkafka` (see [edenhill/librdkafka](https://github.com/edenhill/librdkafka))
-- `hiredis` (see [redis/hiredis](https://github.com/redis/hiredis))
+* `apr`
+* `apr-utils`
+* `httpd`
+* `pcre`
+* `libevent` (see [nmathewson/Libevent](https://github.com/nmathewson/Libevent))
+* `librdkafka` (see [edenhill/librdkafka](https://github.com/edenhill/librdkafka))
+* `hiredis` (see [redis/hiredis](https://github.com/redis/hiredis))
 
 Depending on your OS you can also install these packages via package manager.
 

@@ -1,13 +1,9 @@
 # Configuration
 
-<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:0 orderedList:0 -->
-
-- [Configuration](#configuration)
-	- [Basic module configuration](#basic-module-configuration)
-	- [Basic mod_mshield configuration](#basic-mod_mshield-configuration)
-	- [URL configurations](#url-configurations)
-
-<!-- /TOC -->
+## Content
+* [Basic module configuration](#markdown-header-basic-module-configuration)
+* [Basic mod_mshield configuration](#markdown-header-basic-mod_mshield-configuration)
+* [URL configurations](#markdown-header-url-configurations)
 
 ## Basic module configuration
 In `httpd.conf` load the module:

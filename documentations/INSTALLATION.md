@@ -1,16 +1,12 @@
 # Installation
 
-<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:0 orderedList:0 -->
-
-- [Installation](#markdown-header-installation)
-	- [The smooth way (Docker)](#markdown-header-the-smooth-way)
-		- [Prerequisites](#markdown-header-prerequisites)
-		- [Installation itself](#markdown-header-installation-itself)
-	- [The manual way (Docker)](#markdown-header-the-manual-way)
-		- [Prerequisites](#markdown-header-prerequisites)
-		- [Installation itself](#markdown-header-installation-itself)
-
-<!-- /TOC -->
+## Content
+* [The smooth way (Docker)](#markdown-header-the-smooth-way)
+    * [Prerequisites](#markdown-header-prerequisites)
+    * [Installation itself](#markdown-header-installation-itself)
+* [The manual way (Docker)](#markdown-header-the-manual-way)
+    * [Prerequisites](#markdown-header-prerequisites)
+    * [Installation itself](#markdown-header-installation-itself)
 
 ## The smooth way
 Using this way you won't have to install multiple requirements.
@@ -33,7 +29,7 @@ chmod +x docker_compile.sh
 ./docker_compile.sh
 ```
 
-Finally place the `mod_mshield.so` module in your apache module directory and continue with the [CONFIGURATION](CONFIGURATION.md).
+Finally place the `mod_mshield.so` module in your apache module directory and continue with the [CONFIGURATION](documentations/CONFIGURATION.md).
 
 ## The manual way
 
