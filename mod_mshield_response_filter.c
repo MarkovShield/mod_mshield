@@ -133,7 +133,6 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
         /* Authentication strength */
         if (!apr_strnatcmp(cookie_name, "MOD_MSHIELD_AUTH_STRENGTH")) { /* XXX make cookie name configurable */
             int auth_strength = atoi(cookie_value);
-            // FIXME: || wrong? -> && better?
             ap_log_error(PC_LOG_INFO, NULL, "Received auth_strength from login server: %d", auth_strength);
             if ((auth_strength >= 0) && (auth_strength <= 2)) {
                 /*SET*/
