@@ -68,14 +68,14 @@ apr_status_t handle_mshield_result(void *reply, void *request, session_t *sessio
                     ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_SUSPICIOUS);
                     ap_log_error(PC_LOG_INFO, NULL, "Current auth_strength of session is [%d]", session->data->auth_strength);
                     if (session->data->auth_strength < 2) {
-                        status = mod_mshield_redirect_to_relurl(req, config->global_logon_server_url_1);
-                        if (status != HTTP_MOVED_TEMPORARILY) {
-                            ap_log_error(PC_LOG_CRIT, NULL, "Redirection to global_logon_server_url_1 failed");
-                            return HTTP_INTERNAL_SERVER_ERROR;
-                        } else {
-                            ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to global_logon_server_url_1 was successful");
-                            return STATUS_OK;
-                        }
+                        status = mod_mshield_redirect_to_relurl(req, config->global_logon_server_url_2);
+                    }
+                    if (status != HTTP_MOVED_TEMPORARILY) {
+                        ap_log_error(PC_LOG_CRIT, NULL, "Redirection to global_logon_server_url_1 failed");
+                        return HTTP_INTERNAL_SERVER_ERROR;
+                    } else {
+                        ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to global_logon_server_url_1 was successful");
+                        return STATUS_OK;
                     }
                     return STATUS_OK;
                 }
