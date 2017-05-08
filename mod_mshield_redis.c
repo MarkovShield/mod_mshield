@@ -56,12 +56,12 @@ apr_status_t handle_mshield_result(void *reply, void *request, session_t *sessio
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_FRAUD) == 0) {
                     ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_FRAUD);
                     status = mod_mshield_redirect_to_relurl(req, config->fraud_detected_url);
-                    if (status != HTTP_MOVED_TEMPORARILY) {
+                    if (status == HTTP_MOVED_TEMPORARILY) {
+                        ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to fraud_detected_url was successful");
+                        return status;
+                    } else {
                         ap_log_error(PC_LOG_CRIT, NULL, "Redirection to fraud_detected_url failed");
                         return HTTP_INTERNAL_SERVER_ERROR;
-                    } else {
-                        ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to fraud_detected_url was successful");
-                        return STATUS_OK;
                     }
                 }
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_SUSPICIOUS) == 0) {
