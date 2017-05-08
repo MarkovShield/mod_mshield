@@ -387,7 +387,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         while (context->err != REDIS_ERR_IO && redisGetReply(context, (void **) &reply) == REDIS_OK) {
             status = handle_mshield_result(reply, r, session);
             /* Leave the waiting loop if the rating result was received or the redirection failed */
-            if (status == STATUS_OK || status == HTTP_INTERNAL_SERVER_ERROR) {
+            if (status == STATUS_OK || status == HTTP_INTERNAL_SERVER_ERROR || status == HTTP_MOVED_TEMPORARILY) {
                 break;
             }
             freeReplyObject(reply);
