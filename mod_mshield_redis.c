@@ -69,13 +69,11 @@ apr_status_t handle_mshield_result(void *reply, void *request, session_t *sessio
                     ap_log_error(PC_LOG_INFO, NULL, "Current auth_strength of session is [%d]", session->data->auth_strength);
                     if (session->data->auth_strength < 2) {
                         status = mod_mshield_redirect_to_relurl(req, config->global_logon_server_url_2);
-                    }
-                    if (status) {
                         if (status == HTTP_MOVED_TEMPORARILY) {
-                            ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to global_logon_server_url_1 was successful");
+                            ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to global_logon_server_url_2 was successful");
                             return status;
                         } else {
-                            ap_log_error(PC_LOG_CRIT, NULL, "Redirection to global_logon_server_url_1 failed");
+                            ap_log_error(PC_LOG_CRIT, NULL, "Redirection to global_logon_server_url_2 failed");
                             return HTTP_INTERNAL_SERVER_ERROR;
                         }
                     }
