@@ -117,6 +117,11 @@ echo $'xtTALCofbVIMEmuJzd95Me0prdFNKt%{"sessionUUID":	"xtTALCofbVIMEmuJzd95Me0pr
 
 ### Redis
 
+#### Listen on multiple channels
+```bash
+redis-cli psubscribe WQ*
+```
+
 #### Test Redis connection
 Publish engine result (e.g. `FRAUD`) to channel `zugbwerz23g8gzbhb` :
 ```bash

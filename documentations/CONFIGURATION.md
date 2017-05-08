@@ -29,7 +29,7 @@ MOD_MSHIELD_COOKIE_PATH                     /
 MOD_MSHIELD_COOKIE_SECURE                   Off
 MOD_MSHIELD_COOKIE_HTTPONLY                 Off
 MOD_MSHIELD_SESSION_FREE_URL                '(^/robots\.txt$)|(^/favicon\.ico$)|(^/static/)|(^/img/)|(^/error/)|(^/info)|(^/renew)|(^/en/)|(^/de/)|(^/js/)|(^/fonts/)|(^/css/)|(^/private/css/)'
-MOD_MSHIELD_SESSION_HARD_TIMEOUT            18800
+MOD_MSHIELD_SESSION_HARD_TIMEOUT            3600
 MOD_MSHIELD_SESSION_TIMEOUT_URL             /renew/renew.html
 MOD_MSHIELD_SESSION_RENEW_URL               '^/renew'
 MOD_MSHIELD_URL_AFTER_RENEW                 '/'

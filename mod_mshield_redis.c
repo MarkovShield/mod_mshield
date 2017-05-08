@@ -25,6 +25,7 @@ int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p) {
  *
  * @param reply The Redis reply which was created from redisCommand().
  * @param request The apache request which we possibly need to redirect.
+ * @param session Current session of the request.
  *
  * @return STATUS_ERROR If reply was NULL or Redis didn't provide 3 elements inside the reply.
  * @return HTTP_INTERNAL_SERVER_ERROR If the request redirection failed.
@@ -32,7 +33,7 @@ int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p) {
  *         (in case: MOD_MSHIELD_RESULT_FRAUD and MOD_MSHIELD_RESULT_SUSPICIOUS) or if
  *         MOD_MSHIELD_RESULT_OK was received from Redis.
  */
-apr_status_t handle_mshield_result(void *reply, void *request) {
+apr_status_t handle_mshield_result(void *reply, void *request, session_t *session) {
 
     redisReply *redis_reply = reply;
     request_rec *req = (request_rec *) request;
@@ -65,14 +66,18 @@ apr_status_t handle_mshield_result(void *reply, void *request) {
                 }
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_SUSPICIOUS) == 0) {
                     ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_SUSPICIOUS);
-                    status = mod_mshield_redirect_to_relurl(req, config->global_logon_server_url_1);
-                    if (status != HTTP_MOVED_TEMPORARILY) {
-                        ap_log_error(PC_LOG_CRIT, NULL, "Redirection to global_logon_server_url_1 failed");
-                        return HTTP_INTERNAL_SERVER_ERROR;
-                    } else {
-                        ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to global_logon_server_url_1 was successful");
-                        return STATUS_OK;
+                    ap_log_error(PC_LOG_INFO, NULL, "Current auth_strength of session is [%d]", session->data->auth_strength);
+                    if (session->data->auth_strength < 2) {
+                        status = mod_mshield_redirect_to_relurl(req, config->global_logon_server_url_1);
+                        if (status != HTTP_MOVED_TEMPORARILY) {
+                            ap_log_error(PC_LOG_CRIT, NULL, "Redirection to global_logon_server_url_1 failed");
+                            return HTTP_INTERNAL_SERVER_ERROR;
+                        } else {
+                            ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to global_logon_server_url_1 was successful");
+                            return STATUS_OK;
+                        }
                     }
+                    return STATUS_OK;
                 }
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_OK) == 0) {
                     ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_OK);
