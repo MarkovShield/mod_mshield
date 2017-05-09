@@ -299,9 +299,8 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
  * @param r The apache request itself
  * @param uuid Current session UUID, which uniquely identifies the logical user session.
  * @param session Current session which the request belongs to
- *
  * @return STATUS_OK If the Kafka request information extraction was successful.
-*          Additional, if the URL risk level was > MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD,
+ *         Additional, if the URL risk level was > MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD,
  *         then the Redis result subscription had to be successful too.
  * @return HTTP_INTERNAL_SERVER_ERROR If the connection to Redis was not successful or the request redirection failed.
  * @return STATUS_ERROR If Redis got an REDIS_ERR_IO error.
@@ -309,7 +308,7 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
  * @note Because of the engine, we want milliseconds and not microseconds for the request time. Therefore divide request_time by 1000.
  */
 apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *session) {
-
+    // ToDo Philip: Add return value HTTP Temporarly moved...
     mod_mshield_server_t *config;
     config = ap_get_module_config(r->server->module_config, &mshield_module);
 

@@ -34,7 +34,7 @@ int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p) {
  *         MOD_MSHIELD_RESULT_OK was received from Redis.
  */
 apr_status_t handle_mshield_result(void *reply, void *request, session_t *session) {
-
+    // ToDo Philip: Add return value HTTP temp
     redisReply *redis_reply = reply;
     request_rec *r = (request_rec *) request;
 

@@ -444,16 +444,25 @@ mshield_access_checker(request_rec *r)
                     ERRLOG_CRIT("Redirection to fraud_error_url failed.");
                 }
                 ERRLOG_DEBUG("Redirection to fraud_error_url was successful.");
+                clock_gettime(CLOCK_MONOTONIC, &end);
+                timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
+                ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timeElapsed);
                 apr_global_mutex_unlock(mshield_mutex);
                 return status;
 			case HTTP_MOVED_TEMPORARILY:
-					apr_global_mutex_unlock(mshield_mutex);
-					return HTTP_MOVED_TEMPORARILY;
+                clock_gettime(CLOCK_MONOTONIC, &end);
+                timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
+                ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timeElapsed);
+                apr_global_mutex_unlock(mshield_mutex);
+                return HTTP_MOVED_TEMPORARILY;
             case STATUS_OK:
                 break;
             case HTTP_INTERNAL_SERVER_ERROR:
             default:
                 apr_global_mutex_unlock(mshield_mutex);
+                clock_gettime(CLOCK_MONOTONIC, &end);
+                timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
+                ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timeElapsed);
                 return HTTP_INTERNAL_SERVER_ERROR;
         }
     }
@@ -471,7 +480,7 @@ mshield_access_checker(request_rec *r)
 		apr_global_mutex_unlock(mshield_mutex);
         clock_gettime(CLOCK_MONOTONIC, &end);
         timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-        ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process request [%s]", (long) timeElapsed, apr_table_get(r->subprocess_env, "UNIQUE_ID"));
+        ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timeElapsed);
 		return status;
 
 	case STATUS_NOMATCH:
@@ -547,6 +556,9 @@ mshield_access_checker(request_rec *r)
 				/* login server is configured for this Location */
 				status = mod_mshield_redirect_to_relurl(r, dconfig->logon_server_url);
 				apr_global_mutex_unlock(mshield_mutex);
+                clock_gettime(CLOCK_MONOTONIC, &end);
+                timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
+                ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timeElapsed);
 				return status;
 			} else {
 				/* No login server is configured for this Location */
@@ -640,7 +652,7 @@ mshield_access_checker(request_rec *r)
             ERRLOG_DEBUG("REDIRECT TO ORIG URL IS ENABLED: Redirect to [%s]", session.data->url);
             clock_gettime(CLOCK_MONOTONIC, &end);
             timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-            ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process request [%s]", (long) timeElapsed, apr_table_get(r->subprocess_env, "UNIQUE_ID"));
+            ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timeElapsed);
             /*GET*/
 			if (!apr_strnatcmp(session.data->url, "empty")) {
                 ERRLOG_DEBUG("============ REDIRECT TO [/] because orig_url was empty ");
@@ -669,7 +681,7 @@ mshield_access_checker(request_rec *r)
 
     clock_gettime(CLOCK_MONOTONIC, &end);
     timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-    ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process request [%s]", (long) timeElapsed, apr_table_get(r->subprocess_env, "UNIQUE_ID"));
+    ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timeElapsed);
 
 	/* Add cookies from cookie store to request headers. */
     /*GET*/
