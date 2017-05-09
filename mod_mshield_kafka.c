@@ -342,10 +342,10 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     int risk_level;
     risk_level = get_url_risk_level(r, url);
     if (risk_level != -1) {
-        ap_log_error(PC_LOG_DEBUG, NULL, "URL [%s] found in url_store", url);
+        ap_log_error(PC_LOG_DEBUG, NULL, "FRAUD-ENGINE: URL [%s] found in url_store", url);
     } else {
         /* Default risk level for unknown urls is 0. This means they are not rated in the engine. */
-        ap_log_error(PC_LOG_DEBUG, NULL, "URL [%s] NOT found in url_store", url);
+        ap_log_error(PC_LOG_DEBUG, NULL, "FRAUD-ENGINE: URL [%s] NOT found in url_store", url);
         risk_level = 0;
     }
 
@@ -360,7 +360,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         connection_timeout.tv_usec = 0;
         context = redisConnectWithTimeout(config->redis.server, config->redis.port, connection_timeout);
         if (context != NULL && context->err) {
-            ap_log_error(PC_LOG_CRIT, NULL, "Error connection to redis: %s", context->errstr);
+            ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Error connection to redis: %s", context->errstr);
             redisFree(context);
             return HTTP_INTERNAL_SERVER_ERROR;
         }
@@ -377,13 +377,13 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     cJSON_Delete(click_json);
 
     if (status != STATUS_OK) {
-        ap_log_error(PC_LOG_CRIT, NULL, "Extract clicks to kafka was not successful");
+        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Extract clicks to kafka was not successful");
         return status;
     }
 
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
     if (validationRequired) {
-        ap_log_error(PC_LOG_INFO, NULL, "URL [%s] risk level was [%i]", url, risk_level);
+        ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: URL [%s] risk level was [%i]", url, risk_level);
         while (context->err != REDIS_ERR_IO && redisGetReply(context, (void **) &reply) == REDIS_OK) {
             status = handle_mshield_result(reply, r, session);
             /* Leave the waiting loop if the rating result was received or the redirection failed */
@@ -393,7 +393,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
             freeReplyObject(reply);
         }
         if (context->err) {
-            ap_log_error(PC_LOG_INFO, NULL, "Redis error: context->err is [%d] and context->errstr is [%s]",
+            ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: Redis error: context->err is [%d] and context->errstr is [%s]",
                          context->err, context->errstr);
             if (context->err == REDIS_ERR_IO) {
                 return STATUS_ERROR;
@@ -423,7 +423,7 @@ void extract_url_to_kafka(server_rec *s) {
     const char *value;
     for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
         apr_hash_this(hi, (const void **) &key, NULL, (void **) &value);
-        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-DETECTION: URL config. KEY: %s VALUE: %s", key, value);
+        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: URL config. KEY: %s VALUE: %s", key, value);
         cJSON *temp;
         cJSON_AddItemToObject(root, "url_entry", temp = cJSON_CreateObject());
         cJSON_AddItemToObject(temp, "url", cJSON_CreateString(key));

@@ -125,7 +125,6 @@ mshield_session_create(session_t *session, bool is_new_session) {
     }
     ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: Generated new SID [%s]", sid);
 
-    ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: is_new_session = [%i]", is_new_session);
     if (is_new_session) {
         apr_cpystrn(session->data->uuid, generate_uuid(session), sizeof(session->data->uuid));
         ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: UUID generated: [%s]", session->data->uuid);

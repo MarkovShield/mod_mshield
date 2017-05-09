@@ -48,41 +48,48 @@ apr_status_t handle_mshield_result(void *reply, void *request, session_t *sessio
     }
 
     if (redis_reply->type == REDIS_REPLY_ARRAY && redis_reply->elements == 3) {
-        ap_log_error(PC_LOG_DEBUG, NULL, "Waiting for redis result for request [%s]...",
+        ap_log_error(PC_LOG_DEBUG, NULL, "FRAUD-ENGINE: Waiting for redis result for request [%s]...",
                      apr_table_get(req->subprocess_env, "UNIQUE_ID"));
         for (int j = 0; j < redis_reply->elements; j++) {
-            ap_log_error(PC_LOG_DEBUG, NULL, "REDIS SUB: [%u] %s", j, redis_reply->element[j]->str);
+            ap_log_error(PC_LOG_DEBUG, NULL, "FRAUD-ENGINE: Redis psubscribe [%u] %s", j, redis_reply->element[j]->str);
             if (redis_reply->element[j]->str) {
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_FRAUD) == 0) {
-                    ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_FRAUD);
+                    ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: Engine result for request [%s] is [%s]",
+                                 apr_table_get(req->subprocess_env, "UNIQUE_ID"), MOD_MSHIELD_RESULT_FRAUD);
                     status = mod_mshield_redirect_to_relurl(req, config->fraud_detected_url);
                     /* Drop the fraudly session! */
                     mshield_session_unlink(session);
                     if (status == HTTP_MOVED_TEMPORARILY) {
-                        ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to fraud_detected_url was successful");
+                        ap_log_error(PC_LOG_DEBUG, NULL,
+                                     "FRAUD-ENGINE: Redirection to fraud_detected_url was successful");
                         return status;
                     } else {
-                        ap_log_error(PC_LOG_CRIT, NULL, "Redirection to fraud_detected_url failed");
+                        ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Redirection to fraud_detected_url failed");
                         return HTTP_INTERNAL_SERVER_ERROR;
                     }
                 }
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_SUSPICIOUS) == 0) {
-                    ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_SUSPICIOUS);
-                    ap_log_error(PC_LOG_INFO, NULL, "Current auth_strength of session is [%d]", session->data->auth_strength);
+                    ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: Engine result for request [%s] is [%s]",
+                                 apr_table_get(req->subprocess_env, "UNIQUE_ID"), MOD_MSHIELD_RESULT_SUSPICIOUS);
+                    ap_log_error(PC_LOG_INFO, NULL, "Current auth_strength of session is [%d]",
+                                 session->data->auth_strength);
                     if (session->data->auth_strength < 2) {
                         status = mod_mshield_redirect_to_relurl(req, config->global_logon_server_url_2);
                         if (status == HTTP_MOVED_TEMPORARILY) {
-                            ap_log_error(PC_LOG_DEBUG, NULL, "Redirection to global_logon_server_url_2 was successful");
+                            ap_log_error(PC_LOG_DEBUG, NULL,
+                                         "FRAUD-ENGINE: Redirection to global_logon_server_url_2 was successful");
                             return status;
                         } else {
-                            ap_log_error(PC_LOG_CRIT, NULL, "Redirection to global_logon_server_url_2 failed");
+                            ap_log_error(PC_LOG_CRIT, NULL,
+                                         "FRAUD-ENGINE: Redirection to global_logon_server_url_2 failed");
                             return HTTP_INTERNAL_SERVER_ERROR;
                         }
                     }
                     return STATUS_OK;
                 }
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_OK) == 0) {
-                    ap_log_error(PC_LOG_INFO, NULL, "ENGINE RESULT: %s", MOD_MSHIELD_RESULT_OK);
+                    ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: Engine result for request [%s] is [%s]]",
+                                 apr_table_get(req->subprocess_env, "UNIQUE_ID"), MOD_MSHIELD_RESULT_OK);
                     return STATUS_OK;
                 }
             }
