@@ -148,7 +148,7 @@
 /**
  * Maximum URL criticality level
  */
-#define MOD_MSHIELD_URL_CRITICALITY_LEVEL_MAX    5
+#define MOD_MSHIELD_URL_CRITICALITY_LEVEL_MAX    1000
 
 /**
  * Session "FRAUD" return value from the engine rating

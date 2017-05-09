@@ -38,7 +38,7 @@ Directive | Possible values | Default value | Description
 --|--|--|--
 MOD_MSHIELD_FRAUD_DETECTION_ENABLED | On, Off | Off | Enable or disable the fraud detection & prevention module part.
 MOD_MSHIELD_FRAUD_LEARNING_MODE | On, Off | Off | Enable of disable the learning mode from the fraud detection & prevention module part. If enabled request information will only be extracted to the Kafka middleware but no session rating will be done by the engine. The request itself won't be blocked by the module and will be directly forwarded to the webapplication after the request information extraction succeeded. This mode is meant to be used during the user behaviour learning phase.
-MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD | 0 - 5 | 3 | URL risk level rating threshold. Every URL risk level below this threshold won't be rated from the Engine.
+MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD | MOD_MSHIELD_URL_CRITICALITY_LEVEL_MIN - MOD_MSHIELD_URL_CRITICALITY_LEVEL_MAX | 3 | URL risk level rating threshold. Every URL risk level below this threshold won't be rated from the Engine.
 MOD_MSHIELD_FRAUD_DETECTED_URL | URL to html site | /error/fraud_detected.html | Where to redirect the client if a fraud was detected.
 MOD_MSHIELD_FRAUD_ERROR_URL | URL to html site | /error/fraud_error.html | Where to redirect the client if a error occurred during the rating process which caused that the session couldn't be rated properly.
 MOD_MSHIELD_KAFKA_BROKER | Hostname/IP:Port | 127.0.0.1:9092 | Hostname / IP address and port of the Kafka broker.
