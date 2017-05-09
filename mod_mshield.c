@@ -471,7 +471,7 @@ mshield_access_checker(request_rec *r)
 		apr_global_mutex_unlock(mshield_mutex);
         clock_gettime(CLOCK_MONOTONIC, &end);
         timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-        ap_log_error(PC_LOG_CRIT, NULL, "PROCESSING TIME: mod_mshield needed [%ldms] to process request [%s]", (long) timeElapsed, apr_table_get(r->subprocess_env, "UNIQUE_ID"));
+        ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process request [%s]", (long) timeElapsed, apr_table_get(r->subprocess_env, "UNIQUE_ID"));
 		return status;
 
 	case STATUS_NOMATCH:
@@ -640,7 +640,7 @@ mshield_access_checker(request_rec *r)
             ERRLOG_DEBUG("REDIRECT TO ORIG URL IS ENABLED: Redirect to [%s]", session.data->url);
             clock_gettime(CLOCK_MONOTONIC, &end);
             timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-            ap_log_error(PC_LOG_CRIT, NULL, "PROCESSING TIME: mod_mshield needed [%ldms] to process request [%s]", (long) timeElapsed, apr_table_get(r->subprocess_env, "UNIQUE_ID"));
+            ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process request [%s]", (long) timeElapsed, apr_table_get(r->subprocess_env, "UNIQUE_ID"));
             /*GET*/
 			if (!apr_strnatcmp(session.data->url, "empty")) {
                 ERRLOG_DEBUG("============ REDIRECT TO [/] because orig_url was empty ");
@@ -669,7 +669,7 @@ mshield_access_checker(request_rec *r)
 
     clock_gettime(CLOCK_MONOTONIC, &end);
     timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-    ap_log_error(PC_LOG_CRIT, NULL, "PROCESSING TIME: mod_mshield needed [%ldms] to process request [%s]", (long) timeElapsed, apr_table_get(r->subprocess_env, "UNIQUE_ID"));
+    ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process request [%s]", (long) timeElapsed, apr_table_get(r->subprocess_env, "UNIQUE_ID"));
 
 	/* Add cookies from cookie store to request headers. */
     /*GET*/
