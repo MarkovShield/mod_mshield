@@ -228,7 +228,7 @@ mshield_access_checker(request_rec *r)
 
 	mshield_session_init(&session, r, config);
 
-	ERRLOG_INFO("Request %s", r->uri);
+    ERRLOG_DEBUG("Request %s", r->uri);
 
 
 	/****************************** PART 1 *******************************************************
@@ -283,7 +283,7 @@ mshield_access_checker(request_rec *r)
 	switch (mod_mshield_regexp_match(r, config->session_free_url, r->uri)) {
 	case STATUS_MATCH:
 		apr_global_mutex_unlock(mshield_mutex);
-		ERRLOG_INFO("Session free URL [%s]", r->uri);
+        ERRLOG_DEBUG("Session free URL [%s]", r->uri);
 		return DECLINED;
 
 	case STATUS_NOMATCH:
@@ -336,7 +336,7 @@ mshield_access_checker(request_rec *r)
 	}
 	apr_table_unset(r->headers_in, "Cookie");
 
-	ERRLOG_INFO("Session ID [%s]", cr->sessionid);
+    ERRLOG_DEBUG("Session ID [%s]", cr->sessionid);
 
 	/*
 	 * If the client has sent no session cookie, create a new session
@@ -431,7 +431,7 @@ mshield_access_checker(request_rec *r)
 	/*
 	 * If we are here, the client has sent a valid mod_mshield session
 	 */
-	ERRLOG_INFO("Client has sent a valid mod_mshield session");
+    ERRLOG_DEBUG("Client has sent a valid mod_mshield session");
 
     /*
      * Extract click data to kafka.
@@ -475,7 +475,7 @@ mshield_access_checker(request_rec *r)
 		return status;
 
 	case STATUS_NOMATCH:
-		ERRLOG_INFO("r->uri does not match session destroy URL [%s]", r->uri);
+        ERRLOG_DEBUG("r->uri does not match session destroy URL [%s]", r->uri);
 		break;
 
 	case STATUS_ERROR:
@@ -499,7 +499,7 @@ mshield_access_checker(request_rec *r)
 			ERRLOG_INFO("Out of memory!");
 			return HTTP_INTERNAL_SERVER_ERROR;
 		}
-		ERRLOG_INFO("Setting r->notes[MSHIELDSESS] to [%s]", session_index_str);
+        ERRLOG_DEBUG("Setting r->notes[MSHIELDSESS] to [%s]", session_index_str);
 		apr_table_set(r->notes, "MSHIELDSESS", session_index_str);
 	}
 
@@ -520,7 +520,7 @@ mshield_access_checker(request_rec *r)
 		apr_global_mutex_unlock(mshield_mutex);
 		return status;
 	}
-	ERRLOG_INFO("Client session is valid and no cookie try in URL");
+    ERRLOG_DEBUG("Client session is valid and no cookie try in URL");
 
 	/*
 	 * If we are here, the request will be authorized.
@@ -530,15 +530,18 @@ mshield_access_checker(request_rec *r)
 	 * Now let's do the authorization stuff, if enabled by config.
 	 */
 	if (config->authorization_enabled) {
-		ERRLOG_INFO("Authorization checks are enabled");
-/*GET*/		switch (mshield_access_control(r, &session, config, dconfig)) {
+        ERRLOG_DEBUG("Authorization checks are enabled");
+        /*GET*/
+		switch (mshield_access_control(r, &session, config, dconfig)) {
 		case STATUS_ELOGIN:
-			ERRLOG_INFO("URI requires auth, mshield user not logged in yet [%s]", r->unparsed_uri);
+            ERRLOG_DEBUG("URI requires auth, mshield user not logged in yet [%s]", r->unparsed_uri);
 			/* use r->unparsed_uri instead of r->uri to safeguard against HTTP Response Splitting */
-/*SET*/			apr_cpystrn(session.data->url, r->unparsed_uri, sizeof(session.data->url));
-			ERRLOG_INFO("Storing original URL before logon [%s]", session.data->url);
-/*SET*/			session.data->redirect_on_auth_flag = 1;
-			ERRLOG_INFO("Setting redirect on auth flag to [%d]", session.data->redirect_on_auth_flag);
+            /*SET*/
+			apr_cpystrn(session.data->url, r->unparsed_uri, sizeof(session.data->url));
+            ERRLOG_DEBUG("Storing original URL before logon [%s]", session.data->url);
+            /*SET*/
+			session.data->redirect_on_auth_flag = 1;
+            ERRLOG_DEBUG("Setting redirect on auth flag to [%d]", session.data->redirect_on_auth_flag);
 
 			if (dconfig->logon_server_url) {
 				/* login server is configured for this Location */
@@ -620,9 +623,6 @@ mshield_access_checker(request_rec *r)
 	 * the request.
 	 */
 
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-    ap_log_error(PC_LOG_CRIT, NULL, "PROCESSING TIME: mod_mshield needed [%ldms] to process request [%s]", (long) timeElapsed, apr_table_get(r->subprocess_env, "UNIQUE_ID"));
 
 	/*
 	 * This is the redirection to the original protected URL function after login.
@@ -630,30 +630,33 @@ mshield_access_checker(request_rec *r)
 	 * we need to redirect the user to his original URL or / if none was found.
 	 * That can happen when the user directly enters the site on the login URL.
 	 */
-	ERRLOG_INFO("Redirect on auth flag [%d] logon state [%d]", session.data->redirect_on_auth_flag, session.data->logon_state);
+    ERRLOG_DEBUG("Redirect on auth flag [%d] logon state [%d]", session.data->redirect_on_auth_flag, session.data->logon_state);
     /*GET*/
 	if (session.data->redirect_on_auth_flag == 1 && session.data->logon_state == 1) {
         /*SET*/
 		session.data->redirect_on_auth_flag = 0;
 
         if (config->mshield_config_enabled_return_to_orig_url) {
-            ERRLOG_INFO("REDIRECT TO ORIG URL IS ENABLED: Redirect to [%s]", session.data->url);
+            ERRLOG_DEBUG("REDIRECT TO ORIG URL IS ENABLED: Redirect to [%s]", session.data->url);
+            clock_gettime(CLOCK_MONOTONIC, &end);
+            timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
+            ap_log_error(PC_LOG_CRIT, NULL, "PROCESSING TIME: mod_mshield needed [%ldms] to process request [%s]", (long) timeElapsed, apr_table_get(r->subprocess_env, "UNIQUE_ID"));
             /*GET*/
 			if (!apr_strnatcmp(session.data->url, "empty")) {
-                ERRLOG_INFO("============ REDIRECT TO [/] because orig_url was empty ");
+                ERRLOG_DEBUG("============ REDIRECT TO [/] because orig_url was empty ");
                 status = mod_mshield_redirect_to_relurl(r, "/");
                 /* XXX make URL configurable: default rel URL */
                 apr_global_mutex_unlock(mshield_mutex);
                 return status;
             } else {
-                ERRLOG_INFO("============ REDIRECT TO [%s] to orig_url", session.data->url);
+                ERRLOG_DEBUG("============ REDIRECT TO [%s] to orig_url", session.data->url);
                 /*GET*/
                 status = mod_mshield_redirect_to_relurl(r, session.data->url);
                 apr_global_mutex_unlock(mshield_mutex);
                 return status;
             }
         } else {
-            ERRLOG_INFO("REDIRECT TO ORIG URL IS DISABLED: Redirect to = [%s]", session.data->redirect_url_after_login);
+            ERRLOG_DEBUG("REDIRECT TO ORIG URL IS DISABLED: Redirect to = [%s]", session.data->redirect_url_after_login);
             /*GET*/
             //status = mod_mshield_redirect_to_relurl(r, session.data->redirect_url_after_login);
             //apr_global_mutex_unlock(mshield_mutex);
@@ -664,7 +667,9 @@ mshield_access_checker(request_rec *r)
 		ERRLOG_INFO("Logon state or redirect on auth flag was 0, not redirecting");
 	}
 
-
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
+    ap_log_error(PC_LOG_CRIT, NULL, "PROCESSING TIME: mod_mshield needed [%ldms] to process request [%s]", (long) timeElapsed, apr_table_get(r->subprocess_env, "UNIQUE_ID"));
 
 	/* Add cookies from cookie store to request headers. */
     /*GET*/

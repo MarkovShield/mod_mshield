@@ -142,7 +142,7 @@ int
 mod_mshield_find_cookie_try(request_rec *r) {
     char *p;
     static const char *param_name = MOD_MSHIELD_COOKIE_TRY;
-    ERRLOG_INFO("r->args: [%s]", r->args);
+    ERRLOG_DEBUG("r->args: [%s]", r->args);
 
     if (!r->args) {
         return 0;

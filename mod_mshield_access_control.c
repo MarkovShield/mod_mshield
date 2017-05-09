@@ -17,19 +17,19 @@ mshield_access_control(request_rec *r, session_t *session, mod_mshield_server_t 
         return STATUS_OK;
     }
 
-    ERRLOG_INFO("MOD_MSHIELD_LOGON_REQUIRED enabled, checking authentication and authorization");
-    ERRLOG_INFO("MOD_MSHIELD_LOGON_REQUIRED dconfig [%d]", dconfig->logon_required);
-    ERRLOG_INFO("MYLOGIN [%s]", r->uri);
+    ERRLOG_DEBUG("MOD_MSHIELD_LOGON_REQUIRED enabled, checking authentication and authorization");
+    ERRLOG_DEBUG("MOD_MSHIELD_LOGON_REQUIRED dconfig [%d]", dconfig->logon_required);
+    ERRLOG_DEBUG("MYLOGIN [%s]", r->uri);
 
 
     /* check if login url here (fix for / problem by MSHIELD) */
     /*GET*/
     switch (mod_mshield_regexp_match(r, "(^/mylogin/login.html)|(^/webapp/mblogin/do_login)", r->uri)) {
         case STATUS_MATCH:
-            ERRLOG_INFO("MYLOGIN FOUND");
+            ERRLOG_DEBUG("MYLOGIN FOUND");
             return STATUS_OK;
         case STATUS_NOMATCH:
-            ERRLOG_INFO("MYLOGIN NOMATCH");
+            ERRLOG_DEBUG("MYLOGIN NOMATCH");
             break;
         case STATUS_ERROR:
         default:
@@ -41,14 +41,14 @@ mshield_access_control(request_rec *r, session_t *session, mod_mshield_server_t 
 
     /*GET*/
     if (session->data->logon_state == 0) {
-        ERRLOG_INFO("Client not logged in yet (session->data->logon_state == 0)");
+        ERRLOG_DEBUG("Client not logged in yet (session->data->logon_state == 0)");
         return STATUS_ELOGIN;
     }
     /*GET*/
     if (session->data->logon_state == 1) {
         ERRLOG_INFO("Client is logged in successfully (session->data->logon_state == 1)");
         if (config->service_list_enabled_on) {
-            ERRLOG_INFO("service list check is on, list is [%s]", session->data->service_list);
+            ERRLOG_DEBUG("service list check is on, list is [%s]", session->data->service_list);
             /*GET*/
             if (!apr_strnatcmp(session->data->service_list, "empty")) {
                 ERRLOG_CRIT("Service list check enabled mshield service list not set by login server");
@@ -59,7 +59,7 @@ mshield_access_control(request_rec *r, session_t *session, mod_mshield_server_t 
             /*GET*/
             switch (mod_mshield_regexp_match(r, session->data->service_list, r->uri)) {
                 case STATUS_MATCH:
-                    ERRLOG_INFO("service_list matched: pass through");
+                    ERRLOG_DEBUG("service_list matched: pass through");
                     break;
                 case STATUS_NOMATCH:
                     ERRLOG_CRIT("Access denied - service_list did not match");
@@ -70,7 +70,7 @@ mshield_access_control(request_rec *r, session_t *session, mod_mshield_server_t 
                     return STATUS_ERROR;
             }
         } else {
-            ERRLOG_INFO("service list check is off");
+            ERRLOG_DEBUG("service list check is off");
         }
 
             /*
