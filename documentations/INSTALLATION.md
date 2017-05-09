@@ -21,12 +21,10 @@ cd /your/path/
 git clone git@bitbucket.org:markovshield/mod_mshield.git
 ```
 
-Make sure the volume path is set to `/your/path/mod_mshield:/opt` inside `docker_compile.sh`.
-
-Now compile the module:
+Now compile the module by executing `docker_compile.sh` with the **absolute** path to the `mod_mshield` source files.
 ```bash
 chmod +x docker_compile.sh
-./docker_compile.sh
+./docker_compile.sh "/your/path/mod_mshield"
 ```
 
 Finally place the `mod_mshield.so` module in your apache module directory and continue with the [CONFIGURATION](CONFIGURATION.md).

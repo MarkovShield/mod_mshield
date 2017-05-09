@@ -39,10 +39,13 @@ dev: APXSFLAGS += $(APXSFLAGSEND)
 deploy: APXSCMD = /opt/applic/httpd/bin/apxs
 deploy: APXSFLAGS += -a -i $(APXSFLAGSEND)
 
+docker-compile: APXSCMD = apxs
+docker-compile: APXSFLAGS += -a -i $(APXSFLAGSEND)
+
 all: APXSCMD = apxs
 all: APXSFLAGS += $(APXSFLAGSEND)
 
-all dev deploy: mod_mshield
+all dev deploy docker-compile: mod_mshield
 
 mod_mshield: $(SRC)
 	$(APXSCMD) $(APXSFLAGS) $(SRC) $(LIBS)
@@ -57,4 +60,4 @@ clean-docs:
 clean:
 	rm -rf *.la *.slo *.o *.lo .libs
 
-.PHONY: mod_mshield dev deploy all docs clean-docs clean
+.PHONY: mod_mshield dev deploy docker-compile all docs clean-docs clean
