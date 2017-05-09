@@ -29,12 +29,12 @@ int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p) {
  *
  * @return STATUS_ERROR If reply was NULL or Redis didn't provide 3 elements inside the reply.
  * @return HTTP_INTERNAL_SERVER_ERROR If the request redirection failed.
- * @return STATUS_OK If the request redirection was successful
- *         (in case: MOD_MSHIELD_RESULT_FRAUD and MOD_MSHIELD_RESULT_SUSPICIOUS) or if
- *         MOD_MSHIELD_RESULT_OK was received from Redis.
+ * @return STATUS_OK If MOD_MSHIELD_RESULT_OK was received from Redis and the request redirection was successful.
+ * @return HTTP_MOVED_TEMPORARILY If MOD_MSHIELD_RESULT_FRAUD or MOD_MSHIELD_RESULT_SUSPICIOUS was received from redis
+ *         and the redirection was successful.
  */
 apr_status_t handle_mshield_result(void *reply, void *request, session_t *session) {
-    // ToDo Philip: Add return value HTTP temp
+
     redisReply *redis_reply = reply;
     request_rec *r = (request_rec *) request;
 

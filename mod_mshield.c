@@ -455,7 +455,6 @@ mshield_access_checker(request_rec *r)
                     ERRLOG_CRIT("Redirection to fraud_error_url failed.");
                 }
                 ERRLOG_DEBUG("Redirection to fraud_error_url was successful.");
-                // ToDo: Remove duplicated code here.
                 log_request_handling_duration(r, &start, &end);
                 apr_global_mutex_unlock(mshield_mutex);
                 return status;
