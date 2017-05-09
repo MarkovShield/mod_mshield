@@ -71,8 +71,8 @@
 #define MOD_MSHIELD_SESSION_DESTROY                 "^/logout/"                                     /**< session destroy regexp */
 #define MOD_MSHIELD_SESSION_DESTROY_URL             "/mod_mshield/error/session_destroy.html"       /**< session destroy url */
 #define MOD_MSHIELD_LOGON_SERVER_URL                "/mod_mshield/login.html"                       /**< URL for global logon server (default) */
-#define MOD_MSHIELD_LOGON_SERVER_URL_1              "/mod_mshield/login.html"                       /**< URL for global logon server (username & password) */
-#define MOD_MSHIELD_LOGON_SERVER_URL_2              "/mod_mshield/login.html"                       /**< URL for global logon server (strong authentication) */
+#define MOD_MSHIELD_LOGON_SERVER_URL_1              "/mod_mshield/login1.html"                       /**< URL for global logon server (username & password) */
+#define MOD_MSHIELD_LOGON_SERVER_URL_2              "/mod_mshield/login2.html"                       /**< URL for global logon server (strong authentication) */
 #define MOD_MSHIELD_LOGON_AUTH_COOKIE_NAME          "LOGON"                                         /**< Cookiename for authentication */
 #define MOD_MSHIELD_LOGON_AUTH_COOKIE_VALUE         "ok"                                            /**< Cookievalue for successful authentication */
 #define MOD_MSHIELD_SHM_USED_URL                    "/mod_mshield/error/session_shm_used.html"      /**< URL if a shm problem occours */

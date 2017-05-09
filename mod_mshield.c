@@ -200,6 +200,11 @@ mshield_access_checker(request_rec *r)
 	cookie_res *cr;
 	apr_status_t status;
 
+    /* We want to log how log a request needs to pass the mod_mshield module. */
+    struct timespec start, end;
+    int64_t timeElapsed = 0;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
 	config = ap_get_module_config(r->server->module_config, &mshield_module);
 	if (!config) {
 		ERRLOG_CRIT("Could not get configuration from apache");
@@ -464,6 +469,9 @@ mshield_access_checker(request_rec *r)
     	mshield_session_unlink(&session);
 		status = mod_mshield_redirect_to_relurl(r, config->session_destroy_url);
 		apr_global_mutex_unlock(mshield_mutex);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
+        ap_log_error(PC_LOG_CRIT, NULL, "PROCESSING TIME: mod_mshield needed [%ldms] to process request [%s]", (long) timeElapsed, apr_table_get(r->subprocess_env, "UNIQUE_ID"));
 		return status;
 
 	case STATUS_NOMATCH:
@@ -612,6 +620,9 @@ mshield_access_checker(request_rec *r)
 	 * the request.
 	 */
 
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
+    ap_log_error(PC_LOG_CRIT, NULL, "PROCESSING TIME: mod_mshield needed [%ldms] to process request [%s]", (long) timeElapsed, apr_table_get(r->subprocess_env, "UNIQUE_ID"));
 
 	/*
 	 * This is the redirection to the original protected URL function after login.
@@ -620,29 +631,34 @@ mshield_access_checker(request_rec *r)
 	 * That can happen when the user directly enters the site on the login URL.
 	 */
 	ERRLOG_INFO("Redirect on auth flag [%d] logon state [%d]", session.data->redirect_on_auth_flag, session.data->logon_state);
-/*GET*/	if (session.data->redirect_on_auth_flag == 1 && session.data->logon_state == 1) {
-/*SET*/		session.data->redirect_on_auth_flag = 0;
+    /*GET*/
+	if (session.data->redirect_on_auth_flag == 1 && session.data->logon_state == 1) {
+        /*SET*/
+		session.data->redirect_on_auth_flag = 0;
 
-                if (config->mshield_config_enabled_return_to_orig_url) {
-			ERRLOG_INFO("REDIRECT TO ORIG URL IS ENABLED: Redirect to [%s]", session.data->url);
-/*GET*/			if (!apr_strnatcmp(session.data->url, "empty")) {
-				ERRLOG_INFO("============ REDIRECT TO [/] because orig_url was empty ");
-				status = mod_mshield_redirect_to_relurl(r, "/");
-				/* XXX make URL configurable: default rel URL */
-				apr_global_mutex_unlock(mshield_mutex);
-				return status;
-			} else {
-				ERRLOG_INFO("============ REDIRECT TO [%s] to orig_url", session.data->url);
-/*GET*/				status = mod_mshield_redirect_to_relurl(r, session.data->url);
-				apr_global_mutex_unlock(mshield_mutex);
-				return status;
-			}
-                } else {
-                        ERRLOG_INFO("REDIRECT TO ORIG URL IS DISABLED: Redirect to = [%s]", session.data->redirect_url_after_login);
-/*GET*/                 //status = mod_mshield_redirect_to_relurl(r, session.data->redirect_url_after_login);
-                        //apr_global_mutex_unlock(mshield_mutex);
-                        //return status;
-                }
+        if (config->mshield_config_enabled_return_to_orig_url) {
+            ERRLOG_INFO("REDIRECT TO ORIG URL IS ENABLED: Redirect to [%s]", session.data->url);
+            /*GET*/
+			if (!apr_strnatcmp(session.data->url, "empty")) {
+                ERRLOG_INFO("============ REDIRECT TO [/] because orig_url was empty ");
+                status = mod_mshield_redirect_to_relurl(r, "/");
+                /* XXX make URL configurable: default rel URL */
+                apr_global_mutex_unlock(mshield_mutex);
+                return status;
+            } else {
+                ERRLOG_INFO("============ REDIRECT TO [%s] to orig_url", session.data->url);
+                /*GET*/
+                status = mod_mshield_redirect_to_relurl(r, session.data->url);
+                apr_global_mutex_unlock(mshield_mutex);
+                return status;
+            }
+        } else {
+            ERRLOG_INFO("REDIRECT TO ORIG URL IS DISABLED: Redirect to = [%s]", session.data->redirect_url_after_login);
+            /*GET*/
+            //status = mod_mshield_redirect_to_relurl(r, session.data->redirect_url_after_login);
+            //apr_global_mutex_unlock(mshield_mutex);
+            //return status;
+        }
 
 	} else {
 		ERRLOG_INFO("Logon state or redirect on auth flag was 0, not redirecting");
@@ -651,8 +667,10 @@ mshield_access_checker(request_rec *r)
 
 
 	/* Add cookies from cookie store to request headers. */
-/*GET*/	if (session.data->cookiestore_index != -1) {
-/*GET*/		const char *cookie = mshield_session_get_cookies(&session);
+    /*GET*/
+	if (session.data->cookiestore_index != -1) {
+        /*GET*/
+		const char *cookie = mshield_session_get_cookies(&session);
 		if (cookie) {
 			apr_table_set(r->headers_in, "Cookie", cookie);
 		}

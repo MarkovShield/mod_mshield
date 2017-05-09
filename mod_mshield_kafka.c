@@ -281,7 +281,7 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
             timeElapsed = timespecDiff(&end, &start) / (CLOCKS_PER_SEC * 1000);
             if (timeElapsed > kafka->msg_delivery_timeout) {
                 ap_log_error(PC_LOG_CRIT, NULL,
-                             "Kafka message delivery report not received. Timeout %ds is expired %lds!. Check Kafka connection and the Kafka load.",
+                             "Kafka message delivery report not received. Timeout %ds is expired %lds! Check Kafka connection and the Kafka load.",
                              kafka->msg_delivery_timeout, (long) timeElapsed);
                 return HTTP_INTERNAL_SERVER_ERROR;
             }
