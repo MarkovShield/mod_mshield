@@ -124,7 +124,7 @@ create_new_shm_session(request_rec *r, const char *sid, const char *uuid, int *s
 
         /* slot was free all along or has reached it's timeout */
         if (!session_data->slot_used) {
-            ERRLOG_INFO("Setting-up new SHM session at offset [%d]", i);
+            ERRLOG_DEBUG("Setting-up new SHM session at offset [%d]", i);
             apr_cpystrn(session_data->session_name, config->cookie_name, sizeof(session_data->session_name));
             apr_cpystrn(session_data->session_id, sid, sizeof(session_data->session_id));
             apr_cpystrn(session_data->uuid, uuid, sizeof(session_data->uuid));
@@ -141,7 +141,7 @@ create_new_shm_session(request_rec *r, const char *sid, const char *uuid, int *s
             session_data->logon_state = 0;
             session_data->auth_strength = 0;
             session_data->slot_used = 1;
-            ERRLOG_INFO("Session name [%s] value [%s] ctime [%ds]", session_data->session_name,
+            ERRLOG_DEBUG("Session name [%s] value [%s] ctime [%ds]", session_data->session_name,
                         session_data->session_id, session_data->ctime);
 
             *shmoffset = i;

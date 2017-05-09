@@ -36,7 +36,7 @@ mod_mshield_filter_request_cookies_cb(void *result, const char *key, const char 
         char *sc = strstr(cookiestr, config->cookie_name);
         if (sc) {
             /* session cookie */
-            ERRLOG_INFO("Found a mod_mshield session cookie: [%s]", sc);
+            ERRLOG_DEBUG("Found a mod_mshield session cookie: [%s]", sc);
             sc += strlen(config->cookie_name);
             if (*sc == '=') {
                 cr->sessionid = apr_pstrdup(r->pool, sc + 1);

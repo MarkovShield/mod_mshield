@@ -31,7 +31,7 @@ mod_mshield_redirect_to_relurl(request_rec *r, const char *relurl) {
             ERRLOG_CRIT("This is a bug in mod_mshield - CR/LF chars should be encoded!");
             return HTTP_INTERNAL_SERVER_ERROR;
         case STATUS_NOMATCH:
-            ERRLOG_INFO("Target URL does not contain CR/LF [%s]", relurl);
+            ERRLOG_DEBUG("Target URL does not contain CR/LF [%s]", relurl);
             break;
         case STATUS_ERROR:
         default:
@@ -54,7 +54,7 @@ mod_mshield_redirect_to_relurl(request_rec *r, const char *relurl) {
     apr_table_set(r->err_headers_out, "Location", url);
     r->content_type = NULL;
 
-    ERRLOG_INFO("Redirect: 302 Moved Temporarily; Location: %s", url);
+    ERRLOG_DEBUG("Redirect: 302 Moved Temporarily; Location: %s", url);
 
     return HTTP_MOVED_TEMPORARILY;
 }

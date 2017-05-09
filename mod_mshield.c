@@ -240,7 +240,7 @@ mshield_access_checker(request_rec *r)
 	 */
 	switch (mod_mshield_regexp_match(r, config->session_renew_url, r->uri)) {
 	case STATUS_MATCH:
-		ERRLOG_INFO("Renew URL found [%s]", r->uri);
+        ERRLOG_DEBUG("Renew URL found [%s]", r->uri);
         /*CREATE*/
 		switch (mshield_session_create(&session, true)) {
 		case STATUS_OK:
@@ -562,7 +562,7 @@ mshield_access_checker(request_rec *r)
 			break; /* not reached */
 
 		case STATUS_OK:
-			ERRLOG_INFO("client is sufficiently authorized or no auth required");
+            ERRLOG_DEBUG("client is sufficiently authorized or no auth required");
 			break;
 
 		case STATUS_EDENIED:
@@ -664,7 +664,7 @@ mshield_access_checker(request_rec *r)
         }
 
 	} else {
-		ERRLOG_INFO("Logon state or redirect on auth flag was 0, not redirecting");
+        ERRLOG_DEBUG("Logon state or redirect on auth flag was 0, not redirecting");
 	}
 
     clock_gettime(CLOCK_MONOTONIC, &end);
