@@ -169,11 +169,24 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 	return ap_pass_brigade(f->next, bb_in);
 }
 
-/*
- * Apache access hook.  Return values:
- *	OK		we have handled the request, do not pass it on
- *	DECLINED	we have not handled the request, pass it on to next module
- *	HTTP_*		HTTP status codes for redirection or errors
+/**
+ * @brief Log the request duration to the apache logs.
+ *
+ * @param r The current request.
+ * @param start Start time
+ * @param end End time
+ */
+static void log_request_handling_duration(request_rec *r, struct timespec *start, struct timespec *end) {
+    clock_gettime(CLOCK_MONOTONIC, end);
+    ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timespecDiff(end, start) / CLOCKS_PER_SEC);
+}
+
+/**
+ * @brief Apache access hook.
+ *
+ * @return OK We have handled the request, do not pass it on
+ * @return DECLINED	We have not handled the request, pass it on to next module
+ * @return HTTP_* HTTP status codes for redirection or errors
  *
  * This is the most important function in mod_mshield. It is the core for handling
  * requests from the Internet client. It implements:
@@ -190,7 +203,6 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
  * if a) is false
  *	b1) Check
  */
-
 static int
 mshield_access_checker(request_rec *r)
 {
@@ -202,7 +214,6 @@ mshield_access_checker(request_rec *r)
 
     /* We want to log how log a request needs to pass the mod_mshield module. */
     struct timespec start, end;
-    int64_t timeElapsed = 0;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
 	config = ap_get_module_config(r->server->module_config, &mshield_module);
@@ -444,15 +455,12 @@ mshield_access_checker(request_rec *r)
                     ERRLOG_CRIT("Redirection to fraud_error_url failed.");
                 }
                 ERRLOG_DEBUG("Redirection to fraud_error_url was successful.");
-                clock_gettime(CLOCK_MONOTONIC, &end);
-                timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-                ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timeElapsed);
+                // ToDo: Remove duplicated code here.
+                log_request_handling_duration(r, &start, &end);
                 apr_global_mutex_unlock(mshield_mutex);
                 return status;
 			case HTTP_MOVED_TEMPORARILY:
-                clock_gettime(CLOCK_MONOTONIC, &end);
-                timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-                ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timeElapsed);
+                log_request_handling_duration(r, &start, &end);
                 apr_global_mutex_unlock(mshield_mutex);
                 return HTTP_MOVED_TEMPORARILY;
             case STATUS_OK:
@@ -460,9 +468,7 @@ mshield_access_checker(request_rec *r)
             case HTTP_INTERNAL_SERVER_ERROR:
             default:
                 apr_global_mutex_unlock(mshield_mutex);
-                clock_gettime(CLOCK_MONOTONIC, &end);
-                timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-                ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timeElapsed);
+                log_request_handling_duration(r, &start, &end);
                 return HTTP_INTERNAL_SERVER_ERROR;
         }
     }
@@ -478,9 +484,7 @@ mshield_access_checker(request_rec *r)
     	mshield_session_unlink(&session);
 		status = mod_mshield_redirect_to_relurl(r, config->session_destroy_url);
 		apr_global_mutex_unlock(mshield_mutex);
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-        ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timeElapsed);
+        log_request_handling_duration(r, &start, &end);
 		return status;
 
 	case STATUS_NOMATCH:
@@ -556,9 +560,7 @@ mshield_access_checker(request_rec *r)
 				/* login server is configured for this Location */
 				status = mod_mshield_redirect_to_relurl(r, dconfig->logon_server_url);
 				apr_global_mutex_unlock(mshield_mutex);
-                clock_gettime(CLOCK_MONOTONIC, &end);
-                timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-                ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timeElapsed);
+                log_request_handling_duration(r, &start, &end);
 				return status;
 			} else {
 				/* No login server is configured for this Location */
@@ -650,9 +652,7 @@ mshield_access_checker(request_rec *r)
 
         if (config->mshield_config_enabled_return_to_orig_url) {
             ERRLOG_DEBUG("REDIRECT TO ORIG URL IS ENABLED: Redirect to [%s]", session.data->url);
-            clock_gettime(CLOCK_MONOTONIC, &end);
-            timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-            ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timeElapsed);
+            log_request_handling_duration(r, &start, &end);
             /*GET*/
 			if (!apr_strnatcmp(session.data->url, "empty")) {
                 ERRLOG_DEBUG("============ REDIRECT TO [/] because orig_url was empty ");
@@ -679,9 +679,7 @@ mshield_access_checker(request_rec *r)
         ERRLOG_DEBUG("Logon state or redirect on auth flag was 0, not redirecting");
 	}
 
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    timeElapsed = timespecDiff(&end, &start) / CLOCKS_PER_SEC;
-    ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timeElapsed);
+    log_request_handling_duration(r, &start, &end);
 
 	/* Add cookies from cookie store to request headers. */
     /*GET*/
