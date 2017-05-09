@@ -76,7 +76,7 @@ filter_response_cookie(request_rec *r, cookie_res *cr,
                                          apr_pstrcat(r->pool, cookie_name, "=", cookie_value,
                                                      NULL))) { /* XXX do we really want to match the cookie value as well? */
             case STATUS_MATCH:
-                ERRLOG_INFO("Found free cookie [%s] [%s]", cookie_name, cookie_value);
+                ERRLOG_DEBUG("Found free cookie [%s] [%s]", cookie_name, cookie_value);
                 apr_table_add(cr->headers, "Set-Cookie", cookiestr);
                 return TRUE;
             case STATUS_NOMATCH:
@@ -112,11 +112,12 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
                                       char *cookie_name, char *cookie_value, const char *cookiestr) {
     /* LOGON=ok */
     if (!apr_strnatcmp(cookie_name, config->global_logon_auth_cookie_name)) {
-        ERRLOG_INFO("LOGON cookie was found in HTTP response message");
+        ERRLOG_DEBUG("LOGON cookie was found in HTTP response message");
 
         /* check cookie value */
         if (!apr_strnatcmp(cookie_value, config->global_logon_auth_cookie_value)) {
-            ERRLOG_INFO("LOGON=ok found, setting cr->session->data->logon_state=1 and cr->must_renew=1");
+            ERRLOG_INFO("LOGON OK received");
+            ERRLOG_DEBUG("Setting cr->session->data->logon_state=1 and cr->must_renew=1");
             /*SET*/
             cr->session->data->logon_state = 1;
             cr->must_renew = 1;
@@ -129,11 +130,11 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
 
     /* If we've seen a valid LOGOK=ok in this request, handle special command cookies. */
     if (cr->must_renew) {
-        ERRLOG_INFO("Handle Special Cookie (AUTH_STRENGTH) because LOGON=ok found");
+        ERRLOG_DEBUG("Handle Special Cookie (AUTH_STRENGTH) because LOGON=ok found");
         /* Authentication strength */
         if (!apr_strnatcmp(cookie_name, "MOD_MSHIELD_AUTH_STRENGTH")) { /* XXX make cookie name configurable */
             int auth_strength = atoi(cookie_value);
-            ap_log_error(PC_LOG_INFO, NULL, "Received auth_strength from login server: %d", auth_strength);
+            ERRLOG_INFO("Received auth_strength from login server: %d", auth_strength);
             if ((auth_strength >= 0) && (auth_strength <= 2)) {
                 /*SET*/
                 cr->session->data->auth_strength = auth_strength;
@@ -145,7 +146,7 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
         }
 
         /* Service list cookie */
-        ERRLOG_INFO("Handle Special Cookie (Service List Cookie) because LOGON=ok found");
+        ERRLOG_DEBUG("Handle Special Cookie (Service List Cookie) because LOGON=ok found");
         if (!apr_strnatcmp(cookie_name, config->service_list_cookie_name)) {
             ERRLOG_INFO("Found Service List Cookie [%s]", cookie_value);
             /*SET*/
@@ -154,7 +155,7 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
         }
 
         /* Redirect URL cookie */
-        ERRLOG_INFO("Handle Special Cookie (MOD_MSHIELD_REDIRECT) because LOGON=ok found");
+        ERRLOG_DEBUG("Handle Special Cookie (MOD_MSHIELD_REDIRECT) because LOGON=ok found");
         if (!apr_strnatcmp(cookie_name, "MOD_MSHIELD_REDIRECT")) { /* XXX make cookie name configurable */
             /*SET*/
             apr_cpystrn(cr->session->data->redirect_url_after_login, cookie_value,
@@ -168,7 +169,7 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
         /* DLS support: allow login servers to set cookies for other location IDs.
          * We use cookiestr for parsing because of the semicolon separator used in
          * the login service command cookie protocol specification. */
-        ERRLOG_INFO("Handle Special Cookie (MOD_MSHIELD_BACKEND_SESSION) because LOGON=ok found");
+        ERRLOG_DEBUG("Handle Special Cookie (MOD_MSHIELD_BACKEND_SESSION) because LOGON=ok found");
         if (!apr_strnatcmp(cookie_name, "MOD_MSHIELD_BACKEND_SESSION")) { /* XXX make cookie name configurable */
             char *bname, *bvalue, *bclearance;
             char *last;
@@ -255,7 +256,7 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
         cJSON_AddItemToObject(user_mapping_json, "userName", cJSON_CreateString(cr->session->data->username));
         cJSON_AddItemToObject(user_mapping_json, "sessionUUID", cJSON_CreateString(cr->session->data->uuid));
 
-        ERRLOG_INFO("FRAUD-ENGINE: Sent JSON user mapping object is: [%s]", cJSON_Print(user_mapping_json));
+        ERRLOG_DEBUG("FRAUD-ENGINE: Sent JSON user mapping object is: [%s]", cJSON_Print(user_mapping_json));
 
         if (config->fraud_detection_enabled) {
             kafka_produce(config->pool, &config->kafka, config->kafka.topic_usermapping, &config->kafka.rk_topic_usermapping,
@@ -273,12 +274,12 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
 
     switch (mod_mshield_regexp_match(r, config->authorized_logon_url, r->uri)) {
         case STATUS_MATCH:
-            ERRLOG_INFO("xxx-xxx Trusted Cookie from Authorized LOGON URL");
-            ERRLOG_INFO("xxx-xxx Cookie Name [%s] and Value [%s]", cookie_name, cookie_value);
+            ERRLOG_DEBUG("xxx-xxx Trusted Cookie from Authorized LOGON URL");
+            ERRLOG_DEBUG("xxx-xxx Cookie Name [%s] and Value [%s]", cookie_name, cookie_value);
             /*SET*/
             return filter_response_cookie_from_logon_url(r, cr, config, dconfig, cookie_name, cookie_value, value);
         case STATUS_NOMATCH:
-            ERRLOG_INFO("xxx-xxx Found Cookie mshield not from Authorized LOGON URL");
+            ERRLOG_DEBUG("xxx-xxx Found Cookie mshield not from Authorized LOGON URL");
             /*SET*/
             return filter_response_cookie(r, cr, config, dconfig, cookie_name, cookie_value, value);
         case STATUS_ERROR:

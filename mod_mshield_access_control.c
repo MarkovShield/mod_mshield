@@ -73,14 +73,14 @@ mshield_access_control(request_rec *r, session_t *session, mod_mshield_server_t 
             ERRLOG_DEBUG("service list check is off");
         }
 
-            /*
-            * User is authorized from the uri point of view: Need to check, if the user has the correct auth_level for the requesting uri
-            */
-            ERRLOG_INFO("Authentication strength required [%d] session [%d]", dconfig->mod_mshield_auth_strength,
-                    session->data->auth_strength);
-            /*GET*/
-            if (session->data->auth_strength >= dconfig->mod_mshield_auth_strength) {
-            ERRLOG_INFO("session auth_strength >= required auth_strength");
+        /*
+        * User is authorized from the uri point of view: Need to check, if the user has the correct auth_level for the requesting uri
+        */
+        ERRLOG_INFO("Authentication strength required [%d] session [%d]", dconfig->mod_mshield_auth_strength,
+                session->data->auth_strength);
+        /*GET*/
+        if (session->data->auth_strength >= dconfig->mod_mshield_auth_strength) {
+            ERRLOG_DEBUG("session auth_strength >= required auth_strength");
             return STATUS_OK;
         } else {
             if (dconfig->mod_mshield_auth_strength == 1) {

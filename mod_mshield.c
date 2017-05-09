@@ -123,7 +123,7 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 			const char *session_handle_str;
 			apr_status_t status;
 
-			ERRLOG_INFO("=============================== START RENEW SESSION ====================================");
+            ERRLOG_DEBUG("=============================== START RENEW SESSION ====================================");
 			ERRLOG_INFO("Renewing session after login.");
 			//ERRLOG_CRIT("Add session cookie to headers [%s]", session);
 /*RENEW*/		status = mshield_session_renew(&session);
@@ -156,9 +156,9 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 
 
 			// REDIRECT TO MOD_MSHIELD_REDIRECT IF ORIG_URL HANDLING IS DISABLED
-	                if (!config->mshield_config_enabled_return_to_orig_url) {
-                        	ERRLOG_INFO("REDIRECT TO ORIG URL IS DISABLED: REDIRECT TO MOD_MSHIELD_REDIRECT [%s]", session.data->url);
-				ERRLOG_INFO("Redirect to MOD_MSHIELD_REDIRECT if LOGON=ok");
+            if (!config->mshield_config_enabled_return_to_orig_url) {
+                ERRLOG_DEBUG("REDIRECT TO ORIG URL IS DISABLED: REDIRECT TO MOD_MSHIELD_REDIRECT [%s]", session.data->url);
+                ERRLOG_DEBUG("Redirect to MOD_MSHIELD_REDIRECT if LOGON=ok");
 				r->status = mod_mshield_redirect_to_relurl(r, session.data->redirect_url_after_login);
 			 }
 		} /* must renew */
@@ -343,7 +343,7 @@ mshield_access_checker(request_rec *r)
 	 * and redirect to cookie try.
 	 */
 	if (!cr->sessionid) {
-		ERRLOG_INFO("Client did not send mod_mshield session");
+        ERRLOG_DEBUG("Client did not send mod_mshield session");
         /*CREATE*/
     	switch (mshield_session_create(&session, true)) {
 		case STATUS_OK:

@@ -77,7 +77,7 @@ mod_mshield_redirect_to_cookie_try(request_rec *r, mod_mshield_server_t *config)
      * If cookie_try >= 3, redirect to the cookie refused error page.
      */
     cookie_try = mod_mshield_find_cookie_try(r);
-    ERRLOG_INFO("Parsed cookie_try=[%d]", cookie_try);
+    ERRLOG_DEBUG("Parsed cookie_try=[%d]", cookie_try);
     if (cookie_try < 0) {
         ERRLOG_CRIT("Cookie Test Error [%d]", cookie_try);
         return HTTP_INTERNAL_SERVER_ERROR;
@@ -87,7 +87,7 @@ mod_mshield_redirect_to_cookie_try(request_rec *r, mod_mshield_server_t *config)
     }
 
     cookie_try++;
-    ERRLOG_INFO("Redirecting to cookie test stage %s=%d", MOD_MSHIELD_COOKIE_TRY, cookie_try);
+    ERRLOG_DEBUG("Redirecting to cookie test stage %s=%d", MOD_MSHIELD_COOKIE_TRY, cookie_try);
 
     /*
      * Strip all GET parameters from r->unparsed_uri,
@@ -103,7 +103,7 @@ mod_mshield_redirect_to_cookie_try(request_rec *r, mod_mshield_server_t *config)
             target_uri[i] = '\0';
         }
     }
-    ERRLOG_INFO("r->uri=[%s] r->unparsed_uri=[%s] target_uri=[%s]", r->uri, r->unparsed_uri, target_uri);
+    ERRLOG_DEBUG("r->uri=[%s] r->unparsed_uri=[%s] target_uri=[%s]", r->uri, r->unparsed_uri, target_uri);
     return mod_mshield_redirect_to_relurl(r, apr_psprintf(r->pool, "%s?%s=%d", target_uri, MOD_MSHIELD_COOKIE_TRY,
                                                           cookie_try));
 }
