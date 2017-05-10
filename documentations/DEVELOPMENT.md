@@ -21,13 +21,13 @@
 
 ### Dependent packages
 In order to compile this module, you will need the sources of the following packages:
-*  `apr`
-*  `apr-utils`
-*  `httpd`
-*  `pcre`
-*  `libevent` (see [nmathewson/Libevent](https://github.com/nmathewson/Libevent))
-*  `librdkafka` (see [edenhill/librdkafka](https://github.com/edenhill/librdkafka))
-*  `hiredis` (see [redis/hiredis](https://github.com/redis/hiredis))
+* `apr`
+* `apr-utils`
+* `httpd`
+* `pcre`
+* `libevent` (see [nmathewson/Libevent](https://github.com/nmathewson/Libevent))
+* `librdkafka` (see [edenhill/librdkafka](https://github.com/edenhill/librdkafka))
+* `hiredis` (see [redis/hiredis](https://github.com/redis/hiredis))
 
 Depending on your OS you can also install these packages via package manager.
 
