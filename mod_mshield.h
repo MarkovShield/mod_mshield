@@ -67,37 +67,39 @@
 #define MOD_MSHIELD_SESSION_INACTIVITY_TIMEOUT      900                                             /**< Session inactivity timeout in seconds */
 #define MOD_MSHIELD_SESSION_INACTIVITY_TIMEOUT_URL  "/mod_mshield/error/session_inactivity.html"    /**< Session inactivity timeout URL */
 #define MOD_MSHIELD_SESSION_TIMEOUT_URL             "/mod_mshield/error/session_expired.html"       /**< Session timeout URL */
-#define MOD_MSHIELD_SESSION_RENEW_URL               "^/renew/"                                      /**< regexp when a session shall be renewed */
-#define MOD_MSHIELD_SESSION_DESTROY                 "^/logout/"                                     /**< session destroy regexp */
-#define MOD_MSHIELD_SESSION_DESTROY_URL             "/mod_mshield/error/session_destroy.html"       /**< session destroy url */
-#define MOD_MSHIELD_LOGON_SERVER_URL                "/mod_mshield/login.html"                       /**< URL for global logon server (default) */
-#define MOD_MSHIELD_LOGON_SERVER_URL_1              "/mod_mshield/login1.html"                       /**< URL for global logon server (username & password) */
-#define MOD_MSHIELD_LOGON_SERVER_URL_2              "/mod_mshield/login2.html"                       /**< URL for global logon server (strong authentication) */
-#define MOD_MSHIELD_LOGON_AUTH_COOKIE_NAME          "LOGON"                                         /**< Cookiename for authentication */
-#define MOD_MSHIELD_LOGON_AUTH_COOKIE_VALUE         "ok"                                            /**< Cookievalue for successful authentication */
+#define MOD_MSHIELD_SESSION_RENEW_URL               "^/renew/"                                      /**< Regexp when a session shall be renewed */
+#define MOD_MSHIELD_SESSION_DESTROY                 "^/logout/"                                     /**< Session destroy regexp */
+#define MOD_MSHIELD_SESSION_DESTROY_URL             ""                                              /**< Session destroy url */
+#define MOD_MSHIELD_GLOBAL_LOGON_SERVER_URL         ""                                              /**< URL for global logon server (default) */
+#define MOD_MSHIELD_GLOBAL_LOGON_SERVER_URL_1       ""                                              /**< URL for global logon server (username & password) */
+#define MOD_MSHIELD_GLOBAL_LOGON_SERVER_URL_2       ""                                              /**< URL for global logon server (strong authentication) */
+#define MOD_MSHIELD_GLOBAL_LOGON_AUTH_COOKIE_NAME   "LOGON"                                         /**< Cookiename for authentication */
+#define MOD_MSHIELD_GLOBAL_LOGON_AUTH_COOKIE_VALUE  "ok"                                            /**< Cookievalue for successful authentication */
 #define MOD_MSHIELD_SHM_USED_URL                    "/mod_mshield/error/session_shm_used.html"      /**< URL if a shm problem occours */
-#define MOD_MSHIELD_FREE_COOKIES                    "^language=|^trustme="                          /**< cookies not stored in cookie store */
+#define MOD_MSHIELD_FREE_COOKIES                    "^language=|^trustme="                          /**< Cookies not stored in cookie store */
 #define MOD_MSHIELD_SERVICE_LIST_COOKIE_NAME        "MOD_MSHIELD_SERVICE_LIST"                      /**< The name of the  cookie */
-#define MOD_MSHIELD_SERVICE_LIST_COOKIE_VALUE       "^/.*$"                                         /**< default service list */
-#define MOD_MSHIELD_SERVICE_LIST_ERROR_URL          "/mod_mshield/error/authorization_error.html"   /**< authorization error */
-#define MOD_MSHIELD_AUTHORIZED_LOGON_URL            "^/.*$"                                         /**< from what r->uri LOGON=ok cookies are accepted */
-#define MOD_MSHIELD_URL_AFTER_RENEW                 "/url_after_renew/"                             /**< set url after renew here */
-#define MOD_MSHIELD_ENABLED_RETURN_TO_ORIG_URL      "^/.*$"                                         /**< from what r->uri LOGON=ok cookies are accepted */
-#define MOD_MSHIELD_USERNAME_VALUE                  "MOD_MSHIELD_USERNAME"                          /**< login server LOGON cookie username value name (needs to be the same as in login.php) */
+#define MOD_MSHIELD_SERVICE_LIST_COOKIE_VALUE       "^/.*$"                                         /**< Default service list */
+#define MOD_MSHIELD_SERVICE_LIST_ERROR_URL          ""                                              /**< Authorization error page url */
+#define MOD_MSHIELD_AUTHORIZED_LOGON_URL            "^/.*$"                                              /**< From what r->uri LOGON=ok cookies are accepted */
+#define MOD_MSHIELD_AUTHORIZATION_ENABLED           0                                               /**< Enable session authentication */
+#define MOD_MSHIELD_URL_AFTER_RENEW                 "/"                                             /**< Set url after renew here */
+#define MOD_MSHIELD_ENABLED_RETURN_TO_ORIG_URL      0                                               /**< MOD_MSHIELD_ENABLED_RETURN_TO_ORIG_URL */
+#define MOD_MSHIELD_ALL_SHM_SPACE_USED_URL          ""                                              /**< URL of error page if a shm is full */
+#define MOD_MSHIELD_USERNAME_VALUE                  "MOD_MSHIELD_USERNAME"                          /**< Login server LOGON cookie username value name (needs to be the same as in login.php) */
 
 #define MOD_MSHIELD_FRAUD_DETECTION_ENABLED         0                                               /**< By default the fraud detection functionality is off */
 #define MOD_MSHIELD_FRAUD_LEARNING_MODE             0                                               /**< By default the fraud detection learning mode is off */
 #define MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD      3                                               /**< If a risk level surpass or equals this threshold, a session ration result from the engine is required. */
 #define MOD_MSHIELD_FRAUD_DETECTED_URL              "/error/fraud_detected.html"                    /**< Set the URL to redirect to if a fraud is found */
 #define MOD_MSHIELD_FRAUD_ERROR_URL                 "/error/fraud_error.html"                       /**< Set the URL to redirect to if the analyse fails */
-#define MOD_MSHIELD_KAFKA_BROKER                    "127.0.0.1:9092"                                /**< Set the kafka broker IP and port */
+#define MOD_MSHIELD_KAFKA_BROKER                    ""                                              /**< Set the kafka broker IP and port */
 #define MOD_MSHIELD_KAFKA_TOPIC_ANALYSE             "MarkovClicks"                                  /**< Set Kafka topic on which clicks are sent to the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_USERMAPPING         "MarkovLogins"                                  /**< Set Kafka topic on which the username <-> UUID mapping is sent to the engine */
 #define MOD_MSHIELD_KAFKA_TOPIC_URL_CONFIG          "MarkovUrlConfigs"                              /**< Set Kafka topic on which the url <-> risk_level configuration is sent to the engine */
 #define MOD_MSHIELD_KAFKA_MSG_DELIVERY_TIMEOUT      3                                               /**< Timeout for the Kafka message delivery check (in seconds!) */
 #define MOD_MSHIELD_KAFKA_DELIVERY_CHECK_INTERVAL   100000                                          /**< Time to sleep between kafka produce delivery report polls (in ns!) */
-#define MOD_MSHIELD_REDIS_SERVER                    "127.0.0.1"                                     /**< Set the redis server */
-#define MOD_MSHIELD_REDIS_PORT                      6379                                            /**< Set the redis server's port */
+#define MOD_MSHIELD_REDIS_SERVER                    ""                                              /**< Set the redis server */
+#define MOD_MSHIELD_REDIS_PORT                      0                                               /**< Set the redis server's port */
 #define MOD_MSHIELD_REDIS_RESPONSE_TIMEOUT          3                                               /**< Set how long to wait for request analyse result (in seconds!) */
 #define MOD_MSHIELD_REDIS_CONNECTION_TIMEOUT        3                                               /**< Set Redis connection timeout (in seconds!) */
 
@@ -239,9 +241,9 @@ typedef struct {
 
     const char *session_store_free_cookies;         /**< The cookies configured here are not handled by the session store */
 
-    const char *service_list_cookie_name;           /**< service list cookie name */
-    const char *service_list_cookie_value;          /**< service list */
-    const char *service_list_error_url;             /**< error, if user is not authorized */
+    const char *service_list_cookie_name;           /**< Service list cookie name */
+    const char *service_list_cookie_value;          /**< Service list */
+    const char *service_list_error_url;             /**< Error, if user is not authorized */
     int service_list_enabled_on;                    /**< Boolean to enable/disable the server list */
     const char *authorized_logon_url;               /**< Regexp from what r->uri LOGON=ok are accepted */
     const char *url_after_renew;                    /**< Redirect URL after renew session */
@@ -255,7 +257,7 @@ typedef struct {
     int fraud_detection_validation_threshold;       /**< Threshold which fixes if the session with risk level X should be rated by the engine */
     const char *fraud_detected_url;                 /**< URL to redirect to if a fraud is found */
     const char *fraud_error_url;                    /**< URL to redirect to if the analyse fails */
-    apr_hash_t *url_store;                          /**< url store for web application urls and its criticality */
+    apr_hash_t *url_store;                          /**< Url store for web application urls and its criticality */
     mod_mshield_kafka_t kafka;                      /**< The mod_mshield server Kafka configuration */
     mod_mshield_redis_t redis;                      /**< The mod_mshield server Redis configuration*/
 } mod_mshield_server_t;
@@ -266,8 +268,8 @@ typedef struct {
 typedef struct {
     const char *logon_server_url;                   /**< Logon Server URI */
     const int logon_required;                       /**< Logon required flag */
-    const int mod_mshield_location_id;              /**< to group the backend sessions */
-    const int mod_mshield_auth_strength;            /**< required authentication strength per directory */
+    const int mod_mshield_location_id;              /**< To group the backend sessions */
+    const int mod_mshield_auth_strength;            /**< Required authentication strength per directory */
 } mod_mshield_dir_t;
 
 /**
@@ -282,7 +284,7 @@ typedef struct {
     char url[255];                                  /**< Used to store URLs for client redirection */
     int ctime;                                      /**< Cookie time */
     int atime;                                      /**< Activity time */
-    int cookiestore_index;                          /**< index of first cookie in cookie store; -1 if none */
+    int cookiestore_index;                          /**< Index of first cookie in cookie store; -1 if none */
     int logon_state;                                /**< 0 = not logged in, 1 = logged in */
     int redirect_on_auth_flag;                      /**< Redirect client to orig_url on first authenticated request to protected URL */
     char service_list[100];                         /**< mod_mshield service list */

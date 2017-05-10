@@ -38,7 +38,8 @@ brew install apr apr-util homebrew/apache/httpd24 pcre librdkafka hiredis libeve
 ```
 
 ### httpd, apr, apr-util header files
-This module needs some header file from httpd, apr and apr-utils. By default these header files are linked in the CMakeLists.txt file:
+You first need to create a `CMakeLists.txt` file because its inside `.gitignore`.
+mod_mshield needs some header files from httpd, apr and apr-utils. By default these header files are linked in the `CMakeLists.txt` file:
 ```
 include_directories(
     /usr/local/Cellar/httpd24/2.4.25/include/httpd/
@@ -52,11 +53,11 @@ Change these paths to once from your OS if you are not using macOS and Brew.
 ## How to compile
 Compile the module without installation and without enable it automatically (**make sure `apxs` is in your path**):
 ```bash
-make
+make dev
 ```
 Alternatively, you can compile, install and enable the module in the httpd.conf:
 ```bash
-make -f Makefile.deployment
+make deploy
 ```
 **Hint:** The absolute path for apxs on macOS: `/usr/local/Cellar/httpd24/2.4.25/bin/apxs`
 
@@ -67,13 +68,13 @@ cd /PATH/TO/httpd/bin
 sudo ./httpd -f /PATH/TO/httpd/conf/httpd.conf -e info -DFOREGROUND
 ```
 
-If you are working with the Hacking-Lab VM ([hacking-lab.com](https://media.hacking-lab.com/)), try something like the following to try out the module. Make sure to change the paths based on your environment (also in `Makefile.deployment`).
+If you are working with the Hacking-Lab VM ([hacking-lab.com](https://media.hacking-lab.com/)), try something like the following to try out the module. Make sure to change the paths based on your environment (in `Makefile`).
 ```bash
 mkdir -p /opt/source/
 cd /opt/source/
 git clone git@bitbucket.org:markovshield/mod_mshield.git
 cd mod_mshield
-make -f Makefile.deployment
+make deploy
 /etc/init.d/apache_but restart
 ```
 

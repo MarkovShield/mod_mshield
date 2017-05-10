@@ -260,7 +260,7 @@ mshield_access_checker(request_rec *r)
 				apr_global_mutex_unlock(mshield_mutex);
 				return HTTP_INTERNAL_SERVER_ERROR;
 			}
-			status = mod_mshield_redirect_to_relurl(r, config->url_after_renew); /* XXX make configurable; default URL */
+			status = mod_mshield_redirect_to_relurl(r, config->url_after_renew);
 			apr_global_mutex_unlock(mshield_mutex);
 			return status;
 		case STATUS_ESHMFULL:

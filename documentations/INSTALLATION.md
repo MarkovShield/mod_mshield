@@ -9,7 +9,7 @@
     * [Installation itself](#markdown-header-installation-itself)
 
 ## The smooth way
-Using this way you won't have to install multiple requirements.
+By using this way you don't have to install multiple requirements.
 
 ### Prerequisites
 The only prerequisite is that you need `docker` installed on your system.
@@ -34,7 +34,7 @@ Finally place the `mod_mshield.so` module in your apache module directory and co
 ### Prerequisites
 On Linux (Debian based):
 ```bash
-apt-get install librdkafka1 libhiredis-dev libhiredis0.13 libevent-dev
+apt-get install librdkafka1 libhiredis-dev libhiredis0.13 libevent-dev apache2 apache2-dev libapr1 libapr1-dev libpcre3-dev
 ```
 
 On macOS:
@@ -52,6 +52,6 @@ git clone git@bitbucket.org:markovshield/mod_mshield.git
 Compile the module:
 ```bash
 cd mod_mshield && git checkout develop
-make -f Makefile.deployment
+make deploy
 ```
-**Note:** Depending on your environment you perhaps need to change the `APXS` variable and `pcre` path inside `Makefile.deployment`.
+**Note:** Depending on your environment you perhaps need to change the `APXSCMD` variable and `PCRE` path inside the `Makefile`.

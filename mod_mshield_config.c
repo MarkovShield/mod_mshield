@@ -27,12 +27,14 @@ mshield_config_enabled(cmd_parms *cmd, void *dummy, int arg) {
     conf->session_destroy = MOD_MSHIELD_SESSION_DESTROY;
     conf->session_destroy_url = MOD_MSHIELD_SESSION_DESTROY_URL;
     conf->session_renew_url = MOD_MSHIELD_SESSION_RENEW_URL;
-    conf->authorization_enabled = 0;
-    conf->global_logon_server_url = MOD_MSHIELD_LOGON_SERVER_URL;
-    conf->global_logon_server_url_1 = MOD_MSHIELD_LOGON_SERVER_URL_1;
-    conf->global_logon_server_url_2 = MOD_MSHIELD_LOGON_SERVER_URL_2;
-    conf->global_logon_auth_cookie_name = MOD_MSHIELD_LOGON_AUTH_COOKIE_NAME;
-    conf->global_logon_auth_cookie_value = MOD_MSHIELD_LOGON_AUTH_COOKIE_VALUE;
+    conf->mshield_config_enabled_return_to_orig_url = MOD_MSHIELD_ENABLED_RETURN_TO_ORIG_URL;
+    conf->all_shm_space_used_url = MOD_MSHIELD_ALL_SHM_SPACE_USED_URL;
+    conf->authorization_enabled = MOD_MSHIELD_AUTHORIZATION_ENABLED;
+    conf->global_logon_server_url = MOD_MSHIELD_GLOBAL_LOGON_SERVER_URL;
+    conf->global_logon_server_url_1 = MOD_MSHIELD_GLOBAL_LOGON_SERVER_URL_1;
+    conf->global_logon_server_url_2 = MOD_MSHIELD_GLOBAL_LOGON_SERVER_URL_2;
+    conf->global_logon_auth_cookie_name = MOD_MSHIELD_GLOBAL_LOGON_AUTH_COOKIE_NAME;
+    conf->global_logon_auth_cookie_value = MOD_MSHIELD_GLOBAL_LOGON_AUTH_COOKIE_VALUE;
     conf->all_shm_space_used_url = MOD_MSHIELD_SHM_USED_URL;
     conf->session_store_free_cookies = MOD_MSHIELD_FREE_COOKIES;
     conf->service_list_cookie_name = MOD_MSHIELD_SERVICE_LIST_COOKIE_NAME;
@@ -541,7 +543,7 @@ const command_rec mshield_cmds[] =
     AP_INIT_ITERATE2("MOD_MSHIELD_URL",                         mshield_config_urls,                            NULL, RSRC_CONF, "Web application url with its criticality level"),
 	/* per directory/location configuration */
 	AP_INIT_TAKE1("MOD_MSHIELD_LOGON_SERVER_URL", ap_set_string_slot, (void*)APR_OFFSETOF(mod_mshield_dir_t, logon_server_url),          OR_ALL, "Logon server relative URL for this directory"),
-	AP_INIT_FLAG( "MOD_MSHIELD_LOGON_REQUIRED",   ap_set_flag_slot,   (void*)APR_OFFSETOF(mod_mshield_dir_t, logon_required),            OR_ALL, "Logon requred for this directory?"),
+	AP_INIT_FLAG( "MOD_MSHIELD_LOGON_REQUIRED",   ap_set_flag_slot,   (void*)APR_OFFSETOF(mod_mshield_dir_t, logon_required),            OR_ALL, "Logon requred for this directory"),
 	AP_INIT_TAKE1("MOD_MSHIELD_LOCATION_ID",      ap_set_int_slot,    (void*)APR_OFFSETOF(mod_mshield_dir_t, mod_mshield_location_id),   OR_ALL, "Unique location ID for this directory"),
 	AP_INIT_TAKE1("MOD_MSHIELD_AUTH_STRENGTH",    ap_set_int_slot,    (void*)APR_OFFSETOF(mod_mshield_dir_t, mod_mshield_auth_strength), OR_ALL, "Authentication strength required for this directory"),
 	{ NULL }

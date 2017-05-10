@@ -13,13 +13,13 @@
   * Authentication level step up enforcement based on configurable URLs risk levels
 * Fraud detection & prevention using Machine Learning algorithms (MarkovShield Engine required)
   * Rate the current session based on historical user behaviour data
-  * Enforce authentication in case the Engine reated the current session as suspicious
+  * Enforce authentication in case the Engine rated the current session as suspicious
   * Drop user session if Engine has detected a fraud (e.g. man-in-the-browser trojan like Gozi)
 
 ## Documentation
 In order to generate the documentation, use `make docs`. The documentation is then available at docs/index.html
 
-Use `make clean-docs` if you want to clean them back again.
+Use `make clean-docs` if you want to clean the previously generated docs.
 
 ## Further informations
 * [Installation](documentations/INSTALLATION.md)
