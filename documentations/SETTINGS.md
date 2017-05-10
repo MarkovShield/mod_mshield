@@ -21,7 +21,7 @@ MOD_MSHIELD_SESSION_INACTIVITY_TIMEOUT | | 0 ... n | 900 | Configure inactivity 
 MOD_MSHIELD_SESSION_TIMEOUT_URL | X | Relative URL | None | Where to redirect the client if the session timed out (hard or inactivity timeout).
 MOD_MSHIELD_SESSION_RENEW_URL | | Pattern | '^/renew' | RegEx for which mod_mshield will create a new session, independent of what the client sent previously.
 MOD_MSHIELD_SESSION_DESTROY | | Pattern | '^/logout/' | Logout pattern (session destroy). If a request calls this URL, it's session gets destroyed.
-MOD_MSHIELD_SESSION_DESTROY_URL | X | Pattern | None | Error URL in case the client has logged out.
+MOD_MSHIELD_SESSION_DESTROY_URL | X | Relative URL | None | Error URL in case the client has logged out.
 MOD_MSHIELD_ALL_SHM_SPACE_USED_URL | X | Relative URL | None | Error URL in case mod_mshield is not able to store a session to the shared memory segment.
 MOD_MSHIELD_AUTHORIZATION_ENABLED | X | On, Off | Off | If set to “On”, mod_mshield will test the mod_mshield session for authentication. Only authenticated users are allowed requesting protected URL’s. If set to “Off”, mod_mshield will not enforce authentication to any URL and will also disable the authentication on location/directory level (even when MOD_MSHIELD_LOGON_REQUIRED is set to "On").
 MOD_MSHIELD_GLOBAL_LOGON_SERVER_URL | X | URL to login server 0 | None | URL for global logon server (default).
