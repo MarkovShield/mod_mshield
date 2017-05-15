@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html class="no-js">
+
+  <head>
+	<meta charset="utf-8">
+	<title>Pre-Authentication | LiveCD</title>
+	<meta name="description" content="Hacking-Lab LiveCD Project">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/css/main.css">
+	<!--
+	<link rel="stylesheet" href="/css/bootstrap.css">
+	-->
+	<link rel="stylesheet" href="/css/but.css">
+
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="http://localhost//configuration/pre-auth/">
+
+	<!-- RSS -->
+	<link rel="alternate" type="application/atom+xml" title="LiveCD" href="http://localhost//feed.xml" />
+
+	<!-- Font Awesome -->
+	<link href="/css/font-awesome.min.css" rel="stylesheet">
+
+    <script type="text/javascript" src="/js/jquery-2.1.3.min.js"></script>
+    <script type="text/javascript" src="/js/doubletaptogo.js"></script>
+	<script type="text/javascript" src="/js/scroll-to-top.js"></script>
+</head>
+
+
+  <body>
+    <header class="site-header">
+<nav id="nav" class="navigation navigation-primary navigation-primary--skin" role="navigation">
+    <div class="head-img" style="background-image: url('/img/')">
+        
+        <img src="/img/bb.png" alt="LiveCD">
+
+         
+    </div>
+    <a title="Show navigation" href="#nav"></a>
+    <a title="Hide navigation" href="#"></a>
+    <ul class="navigation-primary">
+        <li>
+            <a href="/">Home</a>
+        </li>
+
+
+
+  
+  
+  
+  
+
+  
+
+  
+  
+	<li><div class="nolink">Configuration</div>
+          <ul>    
+    
+      
+      
+      
+      
+      
+        <li><a href='/configuration/architecture/'>Introduction</a></li>
+      
+    
+      
+      
+      
+      
+      
+        <li><a href='/configuration/pre-auth/'>Pre-Authentication</a></li>
+      
+    
+      
+      
+      
+      
+      
+        <li><a href='/configuration/frontend-apache/'>Frontend Apache</a></li>
+      
+    
+      
+      
+      
+      
+      
+        <li><a href='/configuration/backend-apache/'>Backend Apache</a></li>
+      
+    
+      
+      
+      
+      
+      
+        <li><a href='/configuration/client-certificates/'>Client Certificates</a></li>
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+  
+          </ul>
+        </li>
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+	<li><div class="nolink">Howto</div>
+          <ul>    
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+        <li><a href='/howto/start-stop/'>Start & Stop Apache</a></li>
+      
+    
+      
+      
+      
+      
+      
+        <li><a href='/howto/edit/'>Edit Configuration</a></li>
+      
+    
+      
+      
+      
+      
+      
+        <li><a href='/howto/explorer/'>File Explorer</a></li>
+      
+    
+      
+      
+      
+      
+      
+        <li><a href='/howto/logfile/'>Apache Log Files</a></li>
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+  
+          </ul>
+        </li>
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+	<li><div class="nolink">Pre-Auth Demo</div>
+          <ul>    
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+        <li><a href='/private/request-header/'>Echo Request Header</a></li>
+      
+    
+      
+      
+      
+      
+      
+        <li><a href='/private/chat/'>Chat</a></li>
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+    
+  
+          </ul>
+        </li>
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+
+   	<!-- Social icons from Font Awesome, if enabled -->
+            
+
+
+<li>
+	<a href="mailto:support@hacking-lab.com" title="Email">
+		<i class="fa fa-fw fa-envelope"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    </ul>
+</nav>
+<script>
+  $( function ()
+  {
+     $( '#nav li:has(ul)' ).doubleTapToGo();
+  });
+</script>
+</header>
+
+    
+      <div class="content">
+  <article>
+   <section class="post-content">
+      <h1>Pre-Authentication - How it Works</h1>
+<div class="row">
+	<div class="col-sm-12">
+		<img src="/img/apache2.png" class="img-rounded col-sm-8" alt="" />
+		<br />This setup is based on a reverse-proxy on the <code>Frontend Apache</code> and a backend application on the <code>Backend Apache</code> web server. Pre-Authentication means that only authenticated users will be allowed to reach the <code>Backend Application</code>. Thus, the <code>Frontend Apache</code> must be considered as a <strong>guard</strong> that will redirect unauthenticated users to it's login service and pass through authenticated users to the <code>Backend Application</code>.
+		<br /><br />
+		<h2>How it Works</h2>
+		If a user clicks on a private, or call it protected URL, the user will be redirected to the login application. The login application is part of the <code>Frontend Apache</code>. If the user enters valid credentials at the login app, the pre-auth service running on the <code>Frontend Apache</code> will grant access and deliver the content from the <code>Backend Apache</code>. If the user enters invalid credentials, the <code>Frontend Apache</code> will not let the user in. 
+		<br /><br />
+		The URL <code>/private</code> is a protected URL. Without being authenticated at the <code>Frontend Apache</code>, it is not possible to access the <code>/private</code> URL.
+		<br /><br />
+		<h2>E-Banking Blueprint</h2>
+		The <code>/private</code> URL is proxyfied to the <code>Backend Apache</code> server. This architecture is commonly seen in <strong>e-banking infrastructures</strong>. It has one great advantage; the e-banking app will only being requested by authenticated users. Anonymous users or cyber criminals cannot search common vulnerabilities using sqlmap or similar. Such hacking traces will link back to a legitim (may hijacked) user account.  
+		<br /><br />
+		<h2>Forensic Readiness</h2>
+		With forensic readiness we want to ensure log file correlation between log files in a n-tier architecture. Correlation based on the timestamp (NTP) is not sufficient. What we need is a per request ID that is being logged to every log file we have. Thus, the web server talking to the client, in our case the <code>Frontent Apache</code> must create such a unique-id and pass it over to the <code>Backend Apache</code>. And this is exactly how the two Apache instances of this LiveCD work together. And this is why you have an <strong>Echo Request Application</strong> on the <code>Backend Apache</code>. This is the evidence you need to understand, how the unique-id is properly being used.
+	</div>
+</div>
+
+   </section>
+  </article>
+<!-- Disqus -->
+
+
+
+</div>
+
+
+
+    
+<footer class="site-footer">
+	<p class="text">2016-02-02 &copy; Security Competence GmbH
+</p>
+</footer>
+
+  </body>
+  
+</html>

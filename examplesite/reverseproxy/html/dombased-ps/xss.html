@@ -1,0 +1,16 @@
+<html>
+<body>
+<script language="javascript">
+	document.cookie="session=aaaabbbbbccccddddeeeeffff11112222";
+</script>
+
+	Please select your language:
+	<select>
+		<script language="javascript">
+			document.write("<OPTION value=1>French</OPTION>");
+			document.write("<OPTION value=2>"+decodeURIComponent(document.location.href.substring(document.location.href.indexOf("default=")+8))+"</OPTION>");
+			document.write("<OPTION value=3>English</OPTION>");
+		</script>
+	</select>
+</body>
+</html>

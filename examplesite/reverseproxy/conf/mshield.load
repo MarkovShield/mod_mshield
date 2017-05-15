@@ -1,0 +1,1 @@
+LoadModule mshield_module /usr/lib/apache2/modules/mod_mshield.so

@@ -1,0 +1,37 @@
+FROM centos:7
+
+MAINTAINER Philip Schmid
+
+# Install some useful tools for debugging purposes, httpd and php71
+RUN curl 'https://setup.ius.io/' -o /tmp/setup-ius.sh
+RUN bash /tmp/setup-ius.sh
+RUN yum update \
+	&& yum install -y \
+		vim \
+		httpd \
+		mod_php71u \
+		php71u-cli \
+    less \
+    net-tools \
+		locate \
+		mod_ssl \
+		&& yum clean all
+
+# Remove default httpd stuff
+RUN rm -f /etc/httpd/conf.d/*
+RUN rm -f /etc/httpd/conf/httpd.conf
+
+# Copy the required files, scripts and configurations to image
+COPY apache_mshield_backend.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/apache_mshield_backend.sh
+
+COPY htdocs_backend/* /var/www/html/
+
+COPY conf/httpd.conf /etc/httpd/conf/
+COPY conf/proxy-html.conf /etc/httpd/conf.d/
+
+# Expose the backend port for linked containers
+EXPOSE 8888
+
+# Start the apache service
+CMD ["/usr/local/bin/apache_mshield_backend.sh"]

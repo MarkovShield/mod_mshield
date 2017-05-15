@@ -1,0 +1,75 @@
+FROM debian:jessie
+
+MAINTAINER Philip Schmid
+
+# Install some useful tools for debugging purposes, httpd and php71
+RUN apt-get update && apt-get install -y \
+		vim \
+		apache2 \
+    less \
+    net-tools \
+		locate \
+		wget \
+		librdkafka1 \
+		libhiredis0.10 \
+		libevent-dev \
+		ca-certificates
+
+# Install php 7.0
+RUN wget --no-check-certificate https://www.dotdeb.org/dotdeb.gpg -P /tmp
+RUN apt-key add /tmp/dotdeb.gpg
+RUN echo 'deb http://packages.dotdeb.org jessie all' >> /etc/apt/sources.list
+RUN echo 'deb-src http://packages.dotdeb.org jessie all' >> /etc/apt/sources.list
+RUN apt-get update && apt-get install -y \
+		php7.0 \
+		libapache2-mod-php7.0 \
+		&& rm -rf /var/lib/apt/lists/*
+
+# Remove default httpd stuff
+RUN rm -f /etc/apache2/sites-enabled/000-default.conf
+RUN rm -f /var/www/html/index.html
+RUN rm -f /etc/apache2/ports.conf
+RUN rm -f /etc/apache2/conf-enabled/security.conf
+RUN rm -f /etc/apache2/conf-available/security.conf
+
+# Copy the required files, scripts and configurations to image
+COPY apache_mshield_reverse_proxy.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/apache_mshield_reverse_proxy.sh
+
+COPY html/ /var/www/html/
+
+COPY conf/ports.conf /etc/apache2/
+COPY conf/proxy-html.conf /etc/apache2/conf-available/
+COPY conf/security.conf /etc/apache2/conf-available/
+COPY conf/httpd-ssl.conf /etc/apache2/conf-available/
+COPY conf/mod_mshield_url_rating.conf /etc/apache2/conf-available/
+COPY conf/httpd-preauth.conf /etc/apache2/conf-available/
+COPY conf/httpd-forensic-readiness.conf /etc/apache2/conf-available/
+COPY conf/httpd-hsts.conf /etc/apache2/conf-available/
+
+RUN ln -s /etc/apache2/conf-available/proxy-html.conf /etc/apache2/conf-enabled/proxy-html.conf
+RUN ln -s /etc/apache2/conf-available/security.conf /etc/apache2/conf-enabled/security.conf
+RUN ln -s /etc/apache2/conf-available/httpd-ssl.conf /etc/apache2/conf-enabled/httpd-ssl.conf
+RUN ln -s /etc/apache2/conf-available/mod_mshield_url_rating.conf /etc/apache2/conf-enabled/mod_mshield_url_rating.conf
+RUN ln -s /etc/apache2/conf-available/httpd-preauth.conf /etc/apache2/conf-enabled/httpd-preauth.conf
+RUN ln -s /etc/apache2/conf-available/httpd-forensic-readiness.conf /etc/apache2/conf-enabled/httpd-forensic-readiness.conf
+RUN ln -s /etc/apache2/conf-available/httpd-hsts.conf /etc/apache2/conf-enabled/httpd-hsts.conf
+
+RUN mkdir -p /etc/pki/certs /etc/pki/keys
+COPY samplecerts/localhost.crt /etc/pki/certs/
+COPY samplecerts/localhost.key /etc/pki/keys/
+
+# Enable mod_mshield
+COPY mod_mshield.so /usr/lib/apache2/modules/
+COPY conf/mshield.load /etc/apache2/mods-available/
+RUN ln -s /etc/apache2/mods-available/mshield.load /etc/apache2/mods-enabled/mshield.load
+
+# Enable required apache modules
+RUN a2enmod proxy proxy_connect proxy_ftp proxy_http proxy_html proxy_wstunnel proxy_ajp proxy_balancer ssl log_forensic log_debug xml2enc
+
+# Expose the backend port for linked containers
+EXPOSE 80
+EXPOSE 443
+
+# Start the apache service
+CMD ["/usr/local/bin/apache_mshield_reverse_proxy.sh"]
