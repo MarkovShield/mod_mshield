@@ -12,7 +12,7 @@
 *  Only macOS or Linux is currently supported.
 
 ## First hands on
-In order to start the demo application, hit `make demo` inside the `mod_mshield` repository directory and wait a minute until `Finished!` shows up. Now you should be able to visit [https://localhost](https://localhost) and play with the demo web application. If you visit "Pre-Auth Demo" -> "Echo Request header" you are accessing a `/private` which means your session will be rated against the models.
+In order to start the demo application, hit `make demo` inside the `mod_mshield` repository directory and wait a minute until `Finished!` shows up. Now you should be able to visit [https://localhost](https://localhost) and play with the demo web application. If you visit "Pre-Auth Demo" -> "Echo Request header" you are accessing `/private` which means your session will be rated against the models (because `/private` is configured as critical area inside the web app).
 
 ![Echo_Request_Header](https://bitbucket.org/markovshield/mod_mshield/raw/develop/resources/Echo_Request_Header.png)
 
