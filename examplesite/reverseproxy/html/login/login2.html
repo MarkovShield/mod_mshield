@@ -78,8 +78,8 @@
       <section class="post-content">
         <div class="row" align="center">
           <div class="col-sm-12">
-            <h1>Login into</h1>
-            <h2>Chat App</h2>
+            <h1>Login 2</h1>
+            <h2>Two way authentication</h2>
             <form action="login2.php" method="post">
               <code>Username:</code>
               <input type="text" name="user" value="hacker" />
@@ -87,10 +87,27 @@
               <code>Password:</code>
               <input type="text" name="password" value="compass" />
               <br />
-              <input type="hidden" name="appid" value="2" />
+              <code>Token:</code>
+              <input type="text" name="token" value="123456" />
+              <br />
+              <!--<input type="hidden" name="appid" value="2" />-->
               <br />
               <input type="submit" value="Submit" />
             </form>
+          </div>
+        </div>
+        <h3>Demo Token</h3>
+        <div class="row" align="center">
+          <div class="col-sm-12">
+            In real life this token would be send via SMS..
+            <table class="table table-striped table-bordered table-condensed" style="width:50%">
+              <tr>
+                <td><strong>Token</strong></td>
+              </tr>
+              <tr>
+                <td><code>123456</code></td>
+              </tr>
+            </table>
           </div>
         </div>
       </section>

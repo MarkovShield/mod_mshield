@@ -1,6 +1,6 @@
 <?php
 if($_SERVER['REQUEST_METHOD'] === 'POST') {
-	if($_POST['user'] === 'hacker' && $_POST['password'] === "compass") {
+	if($_POST['user'] === 'hacker' && $_POST['password'] === "compass" && $_POST['token'] === '123456') {
 		setcookie('LOGON', 'ok');
 		setcookie('MOD_MSHIELD_USERNAME', 'hacker');
 		setcookie('MOD_MSHIELD_AUTH_STRENGTH', '2');

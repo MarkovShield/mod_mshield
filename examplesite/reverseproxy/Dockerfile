@@ -69,13 +69,8 @@ COPY conf/mshield.conf /etc/apache2/conf-available/
 
 RUN a2enconf mod_mshield_url_rating mshield
 RUN a2enmod mshield
-#RUN ln -s /etc/apache2/conf-available/mod_mshield_url_rating.conf /etc/apache2/conf-enabled/mod_mshield_url_rating.conf
-#RUN ln -s /etc/apache2/mods-available/mshield.load /etc/apache2/mods-enabled/mshield.load
-#RUN ln -s /etc/apache2/conf-available/mshield.conf /etc/apache2/conf-enabled/mshield.conf
 
 # Enable required apache modules
-# version_module and unixd_module is missing!
-#RUN echo "*\n" | a2enmod
 RUN a2enmod \
 		authn_file \
 		authn_core \
@@ -119,16 +114,6 @@ RUN a2enmod \
 		rewrite \
 		php7.0 \
 		file_cache
-
-# Previous enabled modules:
-#headers unique_id rewrite proxy proxy_connect proxy_ftp proxy_http proxy_html proxy_wstunnel proxy_ajp proxy_balancer ssl log_forensic log_debug xml2enc
-
-# Try 1:
-#a2enmod buffer cache cache_disk cache_socache cgi cgid charset_lite data dump_io
-
-# Try 2:
-# a2enmod echo expires ext_filter file_cache heartbeat heartmonitor ident include info lbmethod_heartbeat ldap
-# a2enmod file_cache heartbeat heartmonitor lbmethod_heartbeat
 
 # Expose the backend port for linked containers
 EXPOSE 80
