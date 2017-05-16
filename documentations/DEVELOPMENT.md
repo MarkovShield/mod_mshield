@@ -61,6 +61,11 @@ make deploy
 ```
 **Hint:** The absolute path for apxs on macOS: `/usr/local/Cellar/httpd24/2.4.25/bin/apxs`
 
+Its also possible to compile the module using a docker compiler image. This has the huge advantage that no depencencies have to be installed on our local system. Use:
+```bash
+make compile
+```
+
 ## Test the module
 On your development system:
 ```bash

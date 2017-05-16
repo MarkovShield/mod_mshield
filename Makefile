@@ -42,6 +42,27 @@ deploy: APXSFLAGS += -a -i $(APXSFLAGSEND)
 docker-compile: APXSCMD = apxs
 docker-compile: APXSFLAGS += -a -i $(APXSFLAGSEND)
 
+compile:
+		docker run --rm 								\
+		-v `pwd`:/opt 									\
+  	pschmid/apache_module_compiler 	\
+  	/bin/bash -c 'make docker-compile && cp /usr/local/apache2/modules/mod_mshield.so /opt && make clean'
+
+compile-librdkafka:
+		docker run --rm 						\
+		-v `pwd`:/opt 							\
+		pschmid/librdkafka_compiler \
+		/bin/bash -c 'cp /tmp/librdkafka/src/librdkafka.so.1 /opt/'
+
+demo: compile compile-librdkafka shutdown-demo
+		cp librdkafka.so.1 examplesite/reverseproxy
+		cp mod_mshield.so examplesite/reverseproxy
+		docker-compose -p mshield-demo -f examplesite/docker-compose.yml up --build -d
+		@echo Finished! Visit https://localhost to try markovshield.
+
+shutdown-demo:
+		docker-compose -p mshield-demo -f examplesite/docker-compose.yml down
+
 all: APXSCMD = apxs
 all: APXSFLAGS += $(APXSFLAGSEND)
 
@@ -60,4 +81,4 @@ clean-docs:
 clean:
 	rm -rf *.la *.slo *.o *.lo .libs
 
-.PHONY: mod_mshield dev deploy docker-compile all docs clean-docs clean
+.PHONY: mod_mshield dev deploy docker-compile compile compile-librdkafka demo shutdown-demo all docs clean-docs clean

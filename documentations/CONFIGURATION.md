@@ -28,13 +28,14 @@ MOD_MSHIELD_CLIENT_REFUSES_COOKIES_URL      /error/refused_cookies.html
 MOD_MSHIELD_SESSION_FREE_URL                '(^/robots\.txt$)|(^/favicon\.ico$)|(^/static/)|(^/img/)|(^/error/)|(^/info)|(^/renew)|(^/en/)|(^/de/)|(^/js/)|(^/fonts/)|(^/css/)|(^/private/css/)'
 MOD_MSHIELD_SESSION_TIMEOUT_URL             /renew/renew.html
 MOD_MSHIELD_SESSION_DESTROY_URL             /logout/index.html
+MOD_MSHIELD_URL_AFTER_RENEW                 /
 MOD_MSHIELD_ALL_SHM_SPACE_USED_URL          /error/session_shm_used.html
 MOD_MSHIELD_GLOBAL_LOGON_SERVER_URL         /login/login.html
 MOD_MSHIELD_GLOBAL_LOGON_SERVER_URL_1       /login/login1.html
 MOD_MSHIELD_GLOBAL_LOGON_SERVER_URL_2       /login/login2.html
 
 # Additional configuration which is needed for example site docker container
-MOD_MSHIELD_SESSION_DESTROY                 '^/private/logout/'
+MOD_MSHIELD_SESSION_DESTROY                 '^/session_logout'
 MOD_MSHIELD_AUTHORIZATION_ENABLED           On
 MOD_MSHIELD_COOKIE_SECURE                   Off
 MOD_MSHIELD_COOKIE_HTTPONLY                 Off
@@ -50,6 +51,7 @@ MOD_MSHIELD_REDIS_PORT                      6379
 # Place your URL ratings in the following config file:
 Include conf/extra/mod_mshield_url_rating.conf
 
+# Make sure this Location directives are in the apache global scope!
 <Location /private>
     MOD_MSHIELD_LOGON_REQUIRED  On
     ProxyPass   http://localhost:8888/
