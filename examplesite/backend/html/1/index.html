@@ -1,80 +1,52 @@
 <!DOCTYPE html>
 <html>
-
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Echo Request Header</title>
-    <meta name="viewport" content="width=device-width">
-    <meta name="description" content="Backend Apache">
-    <link rel="canonical" href="http://localhost/private/1/">
-
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/private/css/main.css">
-    <link rel="stylesheet" href="/private/css/but.css">
-
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Echo Request Header</title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="description" content="Backend Apache">
+  <link rel="canonical" href="http://localhost/private/1/">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/private/css/main.css">
+  <link rel="stylesheet" href="/private/css/but.css">
 </head>
-
-
-    <body>
-
-    <header class="site-header">
-
-  <div class="wrap">
-
-    <a class="site-title" href="/private/">BACKEND APACHE</a>
-    <nav class="site-nav">
-      <div class="trigger">
-        
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="site-title" href="/private/">BACKEND APACHE</a>
+      <nav class="site-nav">
+        <div class="trigger">
           <a class="page-link" href="/private/1/">Echo Request Header</a>
-        
           <a class="page-link" href="/private/2/">Chat</a>
-        
           <a class="page-link" href="/private/logout/">Logout</a>
-        
-          
-        
-      </div>
-    </nav>
-
-  </div>
-
-</header>
-
-
-    <div class="page-content">
-      <div class="wrap">
-      <div class="post">
-
-  <header class="post-header">
-    <h1>Echo Request Header</h1>
+        </div>
+      </nav>
+    </div>
   </header>
-
-  <article class="post-content">
-  <p>This is the Echo Request Header App running on the <code>Backend Apache</code> server. Using this, students can learn what exactly is being forwarded from the reverse proxy (<code>Frontend Apache</code>) to the <code>Backend Apache</code> (this page)!</p>
-
-<h3>Please refresh this page and observe the output below</h3>
-<ul>
-  <li>the UNIQUE_ID should change for every request<br /></li>
-  <li>SSL meta information from the <code>Frontend Apache</code></li>
-  <li>MOD_BUT_USERNAME let’s the backend app know who has authenticated at the WAF</li>
-</ul>
-
-<iframe src="printheader.php" width="900" height="600" seamless=""></iframe>
-
-
-  </article>
-
-</div>
+  <div class="page-content">
+    <div class="wrap">
+      <div class="post">
+        <header class="post-header">
+          <h1>Echo Request Header</h1>
+        </header>
+        <article class="post-content">
+          <p>This is the Echo Request Header App running on the <code>Backend Apache</code> server. Using this, students can learn what exactly is being forwarded from the reverse proxy (<code>Frontend Apache</code>) to the <code>Backend Apache</code> (this page)!</p>
+          <h3>Please refresh this page and observe the output below</h3>
+          <ul>
+            <li>the UNIQUE_ID should change for every request<br /></li>
+            <li>SSL meta information from the <code>Frontend Apache</code></li>
+            <li>MOD_BUT_USERNAME let’s the backend app know who has authenticated at the WAF</li>
+          </ul>
+          <iframe src="printheader.php" width="900" height="600" seamless=""></iframe>
+        </article>
       </div>
     </div>
-
-    <footer class="site-footer">
-  <div class="wrap">
-    <h2 class="footer-heading">2016-01-04 -- <code>Backend Apache Server</code></h2>
   </div>
-</footer>
-
-
-    </body>
+  <footer class="site-footer">
+    <div class="wrap">
+      <h2 class="footer-heading">2016-01-04 -- <code>Backend Apache Server</code></h2>
+    </div>
+  </footer>
+</body>
 </html>

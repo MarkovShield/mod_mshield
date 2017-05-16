@@ -80,7 +80,7 @@
 #define MOD_MSHIELD_SERVICE_LIST_COOKIE_NAME        "MOD_MSHIELD_SERVICE_LIST"                      /**< The name of the  cookie */
 #define MOD_MSHIELD_SERVICE_LIST_COOKIE_VALUE       "^/.*$"                                         /**< Default service list */
 #define MOD_MSHIELD_SERVICE_LIST_ERROR_URL          ""                                              /**< Authorization error page url */
-#define MOD_MSHIELD_AUTHORIZED_LOGON_URL            "^/.*$"                                              /**< From what r->uri LOGON=ok cookies are accepted */
+#define MOD_MSHIELD_AUTHORIZED_LOGON_URL            "^/.*$"                                         /**< From what r->uri LOGON=ok cookies are accepted */
 #define MOD_MSHIELD_AUTHORIZATION_ENABLED           0                                               /**< Enable session authentication */
 #define MOD_MSHIELD_URL_AFTER_RENEW                 "/"                                             /**< Set url after renew here */
 #define MOD_MSHIELD_ENABLED_RETURN_TO_ORIG_URL      0                                               /**< MOD_MSHIELD_ENABLED_RETURN_TO_ORIG_URL */

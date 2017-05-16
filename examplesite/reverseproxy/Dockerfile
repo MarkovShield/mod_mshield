@@ -10,9 +10,11 @@ RUN apt-get update && apt-get install -y \
     net-tools \
 		locate \
 		wget \
-		librdkafka1 \
 		libhiredis0.10 \
 		libevent-dev \
+		libcrypto++9 \
+		liblz4-dev \
+		liblz4-1 \
 		ca-certificates
 
 # Install php 7.0
@@ -39,19 +41,15 @@ RUN chmod +x /usr/local/bin/apache_mshield_reverse_proxy.sh
 COPY html/ /var/www/html/
 
 COPY conf/ports.conf /etc/apache2/
-COPY conf/proxy-html.conf /etc/apache2/conf-available/
 COPY conf/security.conf /etc/apache2/conf-available/
-COPY conf/httpd-ssl.conf /etc/apache2/conf-available/
-COPY conf/mod_mshield_url_rating.conf /etc/apache2/conf-available/
-COPY conf/httpd-preauth.conf /etc/apache2/conf-available/
+COPY conf/httpd-ssl.conf /etc/apache2/sites-available/
+COPY conf/httpd-preauth.conf /etc/apache2/sites-available/
 COPY conf/httpd-forensic-readiness.conf /etc/apache2/conf-available/
 COPY conf/httpd-hsts.conf /etc/apache2/conf-available/
 
-RUN ln -s /etc/apache2/conf-available/proxy-html.conf /etc/apache2/conf-enabled/proxy-html.conf
 RUN ln -s /etc/apache2/conf-available/security.conf /etc/apache2/conf-enabled/security.conf
-RUN ln -s /etc/apache2/conf-available/httpd-ssl.conf /etc/apache2/conf-enabled/httpd-ssl.conf
-RUN ln -s /etc/apache2/conf-available/mod_mshield_url_rating.conf /etc/apache2/conf-enabled/mod_mshield_url_rating.conf
-RUN ln -s /etc/apache2/conf-available/httpd-preauth.conf /etc/apache2/conf-enabled/httpd-preauth.conf
+RUN ln -s /etc/apache2/sites-available/httpd-ssl.conf /etc/apache2/sites-enabled/httpd-ssl.conf
+RUN ln -s /etc/apache2/sites-available/httpd-preauth.conf /etc/apache2/sites-enabled/httpd-preauth.conf
 RUN ln -s /etc/apache2/conf-available/httpd-forensic-readiness.conf /etc/apache2/conf-enabled/httpd-forensic-readiness.conf
 RUN ln -s /etc/apache2/conf-available/httpd-hsts.conf /etc/apache2/conf-enabled/httpd-hsts.conf
 
@@ -59,13 +57,78 @@ RUN mkdir -p /etc/pki/certs /etc/pki/keys
 COPY samplecerts/localhost.crt /etc/pki/certs/
 COPY samplecerts/localhost.key /etc/pki/keys/
 
+# Copy some library dependencies
+COPY librdkafka.so.1 /usr/lib/x86_64-linux-gnu/
+
 # Enable mod_mshield
+COPY conf/mod_mshield_url_rating.conf /etc/apache2/conf-available/
+
 COPY mod_mshield.so /usr/lib/apache2/modules/
 COPY conf/mshield.load /etc/apache2/mods-available/
-RUN ln -s /etc/apache2/mods-available/mshield.load /etc/apache2/mods-enabled/mshield.load
+COPY conf/mshield.conf /etc/apache2/conf-available/
+
+RUN a2enconf mod_mshield_url_rating mshield
+RUN a2enmod mshield
+#RUN ln -s /etc/apache2/conf-available/mod_mshield_url_rating.conf /etc/apache2/conf-enabled/mod_mshield_url_rating.conf
+#RUN ln -s /etc/apache2/mods-available/mshield.load /etc/apache2/mods-enabled/mshield.load
+#RUN ln -s /etc/apache2/conf-available/mshield.conf /etc/apache2/conf-enabled/mshield.conf
 
 # Enable required apache modules
-RUN a2enmod proxy proxy_connect proxy_ftp proxy_http proxy_html proxy_wstunnel proxy_ajp proxy_balancer ssl log_forensic log_debug xml2enc
+# version_module and unixd_module is missing!
+#RUN echo "*\n" | a2enmod
+RUN a2enmod \
+		authn_file \
+		authn_core \
+		authz_host \
+		authz_groupfile \
+		authz_user \
+		authz_core \
+		access_compat \
+		auth_basic \
+		socache_shmcb \
+		reqtimeout \
+		filter \
+		mime \
+		log_forensic \
+		log_debug \
+		\env \
+		headers \
+		unique_id \
+		setenvif \
+		xml2enc \
+		proxy \
+		proxy_connect \
+		proxy_ftp \
+		proxy_http \
+		proxy_fcgi \
+		proxy_scgi \
+		proxy_wstunnel \
+		proxy_ajp \
+		proxy_balancer \
+		proxy_express \
+		proxy_html \
+		slotmem_shm \
+		ssl \
+		lbmethod_byrequests \
+		lbmethod_bytraffic \
+		lbmethod_bybusyness \
+		status \
+		autoindex \
+		dir \
+		alias \
+		rewrite \
+		php7.0 \
+		file_cache
+
+# Previous enabled modules:
+#headers unique_id rewrite proxy proxy_connect proxy_ftp proxy_http proxy_html proxy_wstunnel proxy_ajp proxy_balancer ssl log_forensic log_debug xml2enc
+
+# Try 1:
+#a2enmod buffer cache cache_disk cache_socache cgi cgid charset_lite data dump_io
+
+# Try 2:
+# a2enmod echo expires ext_filter file_cache heartbeat heartmonitor ident include info lbmethod_heartbeat ldap
+# a2enmod file_cache heartbeat heartmonitor lbmethod_heartbeat
 
 # Expose the backend port for linked containers
 EXPOSE 80

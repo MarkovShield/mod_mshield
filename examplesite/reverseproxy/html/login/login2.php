@@ -5,14 +5,14 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
 		setcookie('MOD_MSHIELD_USERNAME', 'hacker');
 		setcookie('MOD_MSHIELD_AUTH_STRENGTH', '2');
 		switch ($_POST['appid']) {
-		    case 1:
-		        setrawcookie('MOD_MSHIELD_REDIRECT', '/private/1/');
-		        break;
-		    case 2:
-		        setrawcookie('MOD_MSHIELD_REDIRECT', '/private/2/');
-		        break;
-		    default:
-		       	setrawcookie('MOD_MSHIELD_REDIRECT', '/private/');
+			case 1:
+			setrawcookie('MOD_MSHIELD_REDIRECT', '/private/1/');
+			break;
+			case 2:
+			setrawcookie('MOD_MSHIELD_REDIRECT', '/private/2/');
+			break;
+			default:
+			setrawcookie('MOD_MSHIELD_REDIRECT', '/private/');
 		}
 		die();
 	} else {
@@ -20,12 +20,12 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
 		die();
 	}
 } else {
-		header('Location: /login/login0.html');
-		die();
-	}
+	header('Location: /login/login0.html');
+	die();
+}
 ?>
 <html>
 <body>
-grrr
+	grrr
 </body>
 </html>

@@ -38,11 +38,25 @@ COPY html/ /var/www/html/
 COPY conf/ports.conf /etc/apache2/
 COPY conf/httpd-backend.conf /etc/apache2/sites-available/
 COPY conf/security.conf /etc/apache2/conf-available/
+COPY conf/proxy-html.conf /etc/apache2/conf-available/
 RUN ln -s /etc/apache2/sites-available/httpd-backend.conf /etc/apache2/sites-enabled/httpd-backend.conf
 RUN ln -s /etc/apache2/conf-available/security.conf /etc/apache2/conf-enabled/security.conf
 
 # Enable required apache modules
-RUN a2enmod proxy proxy_connect proxy_ftp proxy_http proxy_html proxy_wstunnel proxy_ajp proxy_balancer ssl log_forensic log_debug xml2enc
+RUN a2enmod \
+		proxy \
+		proxy_connect \
+		proxy_ftp  \
+		dir \
+		proxy_http \
+		proxy_html \
+		proxy_wstunnel \
+		proxy_ajp \
+		proxy_balancer \
+		ssl \
+		log_forensic \
+		log_debug \
+		xml2enc
 
 # Expose the backend port for linked containers
 EXPOSE 8888

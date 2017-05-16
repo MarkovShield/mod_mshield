@@ -7,10 +7,8 @@
 <body>
 <h1>Received from Frontend Apache</h1>
  <table style="width:100%">
-
 <?php
 $headers = apache_request_headers();
-
 foreach ($headers as $header => $value) {
     echo "<tr>";
     echo "<td>$header</td>";
@@ -19,9 +17,5 @@ foreach ($headers as $header => $value) {
 }
 ?>
 </table>
-
-
-
 </body>
 </html>
-

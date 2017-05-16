@@ -1,31 +1,33 @@
 version: '3'
 services:
-  mshield_reverse_proxy:
-    build: ./reverseproxy
-    image: mshield-reverse-proxy
-    hostname: mshield_reverse_proxy
-    ports:
-      - "80:80"
-      - "443:443"
-    links:
-      - "mshield_jobmanager:mshield_jobmanager"
+  #mshield_reverse_proxy:
+    #build: ./reverseproxy
+    #image: mshield-reverse-proxy
+    #hostname: mshield_reverse_proxy
+    #ports:
+    #  - "80:80"
+    #  - "443:443"
+    #links:
+    #  - "jobmanager:jobmanager"
 
-  mshield_backend:
-    build: ./backend
-    image: mshield-backend
-    hostname: mshield_backend
-    expose:
-      - "8888"
+  #mshield_backend:
+    #build: ./backend
+    #image: mshield-backend
+    #hostname: mshield_backend
+    #ports:
+    #  - "8888:8888"
+    #expose:
+    #  - "8888"
 
-  mshield_redis:
+  redis:
     image: redis:3.2.8-alpine
-    hostname: mshield_redis
+    hostname: redis
     ports:
       - "6379:6379"
 
-  mshield_zookeeper:
+  zookeeper:
     image: confluentinc/cp-zookeeper
-    hostname: mshield_zookeeper
+    hostname: zookeeper
     ports:
       - "2181:2181"
     volumes:
@@ -35,38 +37,38 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
-  mshield_kafka:
+  broker:
     image: confluentinc/cp-kafka
-    hostname: mshield_kafka
+    hostname: broker
     depends_on:
-      - mshield_zookeeper
+      - zookeeper
     ports:
       - '9092:9092'
     volumes:
       - ./kafka-data:/var/lib/kafka/data
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'mshield_zookeeper:2181'
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://mshield_kafka:9092'
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker:9092'
 
-  mshield_schema_registry:
+  schema_registry:
     image: confluentinc/cp-schema-registry
     hostname: schema_registry
     depends_on:
-      - mshield_zookeeper
-      - mshield_kafka
+      - zookeeper
+      - broker
     ports:
       - '8081:8081'
     environment:
-      SCHEMA_REGISTRY_HOST_NAME: mshield_schema_registry
-      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'mshield_zookeeper:2181'
+      SCHEMA_REGISTRY_HOST_NAME: schema_registry
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
 
-  mshield_jobmanager:
+  jobmanager:
     image: pschmid/flink:1.2.0
-    hostname: mshield_jobmanager
+    hostname: jobmanager
     depends_on:
-      - mshield_redis
-    container_name: "mshield_jobmanager"
+      - redis
+    container_name: "jobmanager"
     expose:
       - "6123"
     ports:
@@ -75,17 +77,17 @@ services:
       - "48081:8081"
     command: jobmanager
     environment:
-      - JOB_MANAGER_RPC_ADDRESS=mshield_jobmanager
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
 
-  mshield_taskmanager:
+  taskmanager:
     image: pschmid/flink:1.2.0
     expose:
       - "6121"
       - "6122"
     depends_on:
-      - mshield_jobmanager
+      - jobmanager
     command: taskmanager
     links:
-      - "mshield_jobmanager:mshield_jobmanager"
+      - "jobmanager:jobmanager"
     environment:
-      - JOB_MANAGER_RPC_ADDRESS=mshield_jobmanager
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
