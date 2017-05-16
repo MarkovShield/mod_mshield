@@ -1,23 +1,19 @@
 version: '3'
 services:
-  #mshield_reverse_proxy:
-    #build: ./reverseproxy
-    #image: mshield-reverse-proxy
-    #hostname: mshield_reverse_proxy
-    #ports:
-    #  - "80:80"
-    #  - "443:443"
-    #links:
-    #  - "jobmanager:jobmanager"
+  mshield_reverse_proxy:
+    build: ./reverseproxy
+    image: mshield-reverse-proxy
+    hostname: mshield_reverse_proxy
+    ports:
+      - "80:80"
+      - "443:443"
 
-  #mshield_backend:
-    #build: ./backend
-    #image: mshield-backend
-    #hostname: mshield_backend
-    #ports:
-    #  - "8888:8888"
-    #expose:
-    #  - "8888"
+  mshield_backend:
+    build: ./backend
+    image: mshield-backend
+    hostname: mshield_backend
+    expose:
+      - "8888"
 
   redis:
     image: redis:3.2.8-alpine
@@ -87,7 +83,5 @@ services:
     depends_on:
       - jobmanager
     command: taskmanager
-    links:
-      - "jobmanager:jobmanager"
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
