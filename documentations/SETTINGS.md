@@ -8,14 +8,14 @@ Directive | Required | Possible values | Default value | Description
 --|--|--|--|--
 MOD_MSHIELD_ENABLED | X | On, Off | On | Enable or disable mod_mshield per VirtualHost.
 MOD_MSHIELD_ENABLED_RETURN_TO_ORIG_URL | | On, Off | Off | Enable or disable return to orig url.
-MOD_MSHIELD_CLIENT_REFUSES_COOKIES_URL | X | Relative URL | None | Configure error URL, if browser denies Set-Cookie headers.
+MOD_MSHIELD_CLIENT_REFUSES_COOKIES_URL | X | Relative URL | '/refused_cookies.html' | Configure error URL, if browser denies Set-Cookie headers. **Important:** Be aware that this url has to be part of the free url section. Otherwise Apache will loop with URL redirections.
 MOD_MSHIELD_COOKIE_NAME | | Name | MOD_MSHIELD | Name of the cookie sent to the client
 MOD_MSHIELD_COOKIE_DOMAIN | | Domain | None | The domain which should be set inside the cookie.
 MOD_MSHIELD_COOKIE_PATH | | Path | / | Set the path inside the cookie.
 MOD_MSHIELD_COOKIE_EXPIRATION | | Date | None | Set the cookie expiration date (UTC/GMT format).
 MOD_MSHIELD_COOKIE_SECURE | | On, Off | On | Set the "secure" flag on the cookie which we hand over to the user
 MOD_MSHIELD_COOKIE_HTTPONLY | | On, Off | On | Set the "httponly" flag on the cookie which we hand over to the user
-MOD_MSHIELD_SESSION_FREE_URL | X | Pattern | None | RegEx which matches free URLs. "Free URLs" are URLs on which mod_mshield shouldn't enforce user authentication. Usually this is meant for static content like "/js", "/images" and so on.
+MOD_MSHIELD_SESSION_FREE_URL | X | Pattern | '(^/refused_cookies\.html$)' | RegEx which matches free URLs. "Free URLs" are URLs on which mod_mshield shouldn't enforce user authentication. Usually this is meant for static content like "/js", "/images" and so on.
 MOD_MSHIELD_SESSION_HARD_TIMEOUT | | 0 ... n | 3600 | Configure max session time of mod_mshield (elapsed time).
 MOD_MSHIELD_SESSION_INACTIVITY_TIMEOUT | | 0 ... n | 900 | Configure inactivity timeout. This timeout must be below the session hard timeout.
 MOD_MSHIELD_SESSION_TIMEOUT_URL | X | Relative URL | None | Where to redirect the client if the session timed out (hard or inactivity timeout).

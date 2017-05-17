@@ -25,7 +25,7 @@ The next step is to configure mod_mshield depending on your needs. Therefore cre
 # Minimal required configuration
 MOD_MSHIELD_ENABLED                         On
 MOD_MSHIELD_CLIENT_REFUSES_COOKIES_URL      /error/refused_cookies.html
-MOD_MSHIELD_SESSION_FREE_URL                '(^/robots\.txt$)|(^/favicon\.ico$)|(^/static/)|(^/img/)|(^/error/)|(^/info)|(^/renew)|(^/en/)|(^/de/)|(^/js/)|(^/fonts/)|(^/css/)|(^/private/css/)'
+MOD_MSHIELD_SESSION_FREE_URL                '(^/error/refused_cookies\.html$)|(^/robots\.txt$)|(^/favicon\.ico$)|(^/static/)|(^/img/)|(^/error/)|(^/info)|(^/renew)|(^/en/)|(^/de/)|(^/js/)|(^/fonts/)|(^/css/)|(^/private/css/)'
 MOD_MSHIELD_SESSION_TIMEOUT_URL             /renew/renew.html
 MOD_MSHIELD_SESSION_DESTROY_URL             /logout/index.html
 MOD_MSHIELD_URL_AFTER_RENEW                 /
