@@ -82,7 +82,7 @@ MOD_MSHIELD_URL "^/public*" 0
 MOD_MSHIELD_URL "^/private*" 4
 MOD_MSHIELD_URL "^/transaction*" 5
 ```
-**Hint:** Possible criticality levels are from 0 to 5 where 0 means "not critical at all" and 5 means "super critical".
+**Hint:** Possible criticality levels are from 0 to 1000 where 0 means "not critical at all" and 1000 means "super critical". In productive usage its important to use your own scale here related to the models which are used by the engine. For the demo its sufficient to use 0 to 5.
 
 Finally restart apache httpd in order to apply the new module and its configuration:
 ```bash
