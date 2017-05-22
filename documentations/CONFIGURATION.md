@@ -72,7 +72,13 @@ Include conf/extra/mod_mshield_url_rating.conf
 Check [SETTINGS](SETTINGS.md) to get an explanation of all possible configuration values.
 
 ## URL configurations
-For the URL criticality level definitions, create another file `conf/extra/mod_mshield_url_rating.conf`. Use the following format:
+For the URL criticality level definitions, create another file `conf/extra/mod_mshield_url_rating.conf`.
+
+**Important**
+*  Possible criticality levels are from 0 to 1000 where 0 means "not critical at all" and 1000 means "super critical". In productive usage its important to use your own scale here related to the models which are used by the engine. For the demo its sufficient to use 0 to 5.
+*  Ensure that **no** URL, which is reachable **without login**, has a bigger or equal risk level then MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD. If you do, there will be no real request rating and the engine will always return OK.
+
+Use the following format:
 ```bash
 #################################################################################
 #   MOD_MSHIELD url ratings
@@ -82,7 +88,6 @@ MOD_MSHIELD_URL "^/public*" 0
 MOD_MSHIELD_URL "^/private*" 4
 MOD_MSHIELD_URL "^/transaction*" 5
 ```
-**Hint:** Possible criticality levels are from 0 to 1000 where 0 means "not critical at all" and 1000 means "super critical". In productive usage its important to use your own scale here related to the models which are used by the engine. For the demo its sufficient to use 0 to 5.
 
 Finally restart apache httpd in order to apply the new module and its configuration:
 ```bash
