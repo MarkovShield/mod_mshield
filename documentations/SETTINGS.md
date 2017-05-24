@@ -15,7 +15,7 @@ MOD_MSHIELD_COOKIE_PATH | | Path | / | Set the path inside the cookie.
 MOD_MSHIELD_COOKIE_EXPIRATION | | Date | None | Set the cookie expiration date (UTC/GMT format).
 MOD_MSHIELD_COOKIE_SECURE | | On, Off | On | Set the "secure" flag on the cookie which we hand over to the user
 MOD_MSHIELD_COOKIE_HTTPONLY | | On, Off | On | Set the "httponly" flag on the cookie which we hand over to the user
-MOD_MSHIELD_SESSION_FREE_URL | X | Pattern | '(^/refused_cookies\.html$)' | RegEx which matches free URLs. "Free URLs" are URLs on which mod_mshield shouldn't enforce user authentication. Usually this is meant for static content like "/js", "/images" and so on.
+MOD_MSHIELD_SESSION_FREE_URL | X | Pattern | '^/refused_cookies.html' | RegEx which matches free URLs. "Free URLs" are URLs on which mod_mshield shouldn't enforce user authentication. Usually this is meant for static content like "/js", "/images" and so on.
 MOD_MSHIELD_SESSION_HARD_TIMEOUT | | 0 ... n | 3600 | Configure max session time of mod_mshield (elapsed time).
 MOD_MSHIELD_SESSION_INACTIVITY_TIMEOUT | | 0 ... n | 900 | Configure inactivity timeout. This timeout must be below the session hard timeout.
 MOD_MSHIELD_SESSION_TIMEOUT_URL | X | Relative URL | None | Where to redirect the client if the session timed out (hard or inactivity timeout).

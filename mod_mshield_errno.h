@@ -30,6 +30,9 @@
 #define STATUS_ENOEXIST     NEW_MOD_MSHIELD_STATUS(2)   /**< Does not exist, not found  */
 #define STATUS_ESHMFULL     NEW_MOD_MSHIELD_STATUS(3)   /**< Shared memory full         */
 #define STATUS_ETIMEOUT     NEW_MOD_MSHIELD_STATUS(4)   /**< Session timeout            */
+#define STATUS_CONERROR     NEW_MOD_MSHIELD_STATUS(5)   /**< Connection error           */
+#define STATUS_MISCONFIG    NEW_MOD_MSHIELD_STATUS(6)   /**< Configuration failed       */
+#define STATUS_REDIRERR     NEW_MOD_MSHIELD_STATUS(7)   /**< Redirection failed         */
 
 #define STATUS_ELOGIN       NEW_MOD_MSHIELD_STATUS(5)   /**< Login required             */
 #define STATUS_ESTEPUP1     NEW_MOD_MSHIELD_STATUS(6)   /**< Stepup 1 required          */

@@ -58,7 +58,7 @@
 #define MOD_MSHIELD_COOKIE_DOMAIN                   ""                                              /**< Cookie Domain Specifier */
 #define MOD_MSHIELD_COOKIE_PATH                     "/"                                             /**< The path of the cookie */
 #define MOD_MSHIELD_COOKIE_REFUSE_URL               "/refused_cookies.html"                         /**< URL, if client refuses the set-cookie header and if not configured in httpd.conf */
-#define MOD_MSHIELD_SESSION_FREE_URL                "(^/refused_cookies\.html$)"                    /**< FREE URL's (session not required for theses regexp URL's) */
+#define MOD_MSHIELD_SESSION_FREE_URL                "^/refused_cookies.html"                    /**< FREE URL's (session not required for theses regexp URL's) */
 #define MOD_MSHIELD_COOKIE_EXPIRATION               ""                                              /**< The expiration date of the cookie */
 #define MOD_MSHIELD_COOKIE_SECURE                   1                                               /**< Cookie secure flag (0, 1) */
 #define MOD_MSHIELD_COOKIE_HTTPONLY                 1                                               /**< Cookie HTTPonly flag (0, 1) */

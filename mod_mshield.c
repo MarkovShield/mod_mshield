@@ -449,6 +449,8 @@ mshield_access_checker(request_rec *r)
      */
     if (config->fraud_detection_enabled) {
         switch (extract_click_to_kafka(r, session.data->uuid, &session)) {
+            case STATUS_MISCONFIG:
+            case STATUS_CONERROR:
             case STATUS_ERROR:
                 status = mod_mshield_redirect_to_relurl(r, config->fraud_error_url);
                 if (status != HTTP_MOVED_TEMPORARILY) {

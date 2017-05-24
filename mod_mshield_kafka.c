@@ -247,7 +247,8 @@ kafka_topic_connect_producer(apr_pool_t *p, mod_mshield_kafka_t *kafka, const ch
  * @param key The message key
  *
  * @return STATUS_OK If the message could be produced successfully.
- * @return HTTP_INTERNAL_SERVER_ERROR If the message couldn't be produced to Kafka.
+ * @return STATUS_CONERROR If the message couldn't be produced to Kafka (e.g. timeout has elapsed)
+ * @return STATUS_MISCONFIG If kafka topic couldn't be found
  *
  * A reason for HTTP_INTERNAL_SERVER_ERROR could be:
  *   * the Kafka topic handle wasn't set up properly
@@ -283,12 +284,12 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
                 ap_log_error(PC_LOG_CRIT, NULL,
                              "Kafka message delivery report not received. Timeout %ds is expired %lds! Check Kafka connection and the Kafka load.",
                              kafka->msg_delivery_timeout, (long) timeElapsed);
-                return HTTP_INTERNAL_SERVER_ERROR;
+                return STATUS_CONERROR;
             }
         }
     } else {
         ap_log_error(PC_LOG_CRIT, NULL, "No such kafka topic: %s", topic);
-        return HTTP_INTERNAL_SERVER_ERROR;
+        return STATUS_MISCONFIG;
     }
     return STATUS_OK;
 }
@@ -305,8 +306,9 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
  * @return HTTP_MOVED_TEMPORARILY If the URL risk level was > MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD,
  *         the Redis result was MOD_MSHIELD_RESULT_FRAUD or MOD_MSHIELD_RESULT_SUSPICIOUS and
  *         the redirection of the request was successful.
- * @return HTTP_INTERNAL_SERVER_ERROR If the connection to Redis was not successful or the request redirection failed.
  * @return STATUS_ERROR If Redis got an REDIS_ERR_IO error.
+ * @return STATUS_CONERROR If the connection to Redis or Kafka was not successful or the request redirection failed.
+ * @return STATUS_MISCONFIG If a configuration failed (e.g. kafka topic was not available)
  *
  * @note Because of the engine, we want milliseconds and not microseconds for the request time. Therefore divide request_time by 1000.
  */
@@ -364,7 +366,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         if (context != NULL && context->err) {
             ERRLOG_REQ_CRIT("FRAUD-ENGINE: Error connection to redis: %s", context->errstr);
             redisFree(context);
-            return HTTP_INTERNAL_SERVER_ERROR;
+            return STATUS_CONERROR;
         }
         response_timeout.tv_sec = config->redis.response_timeout;
         response_timeout.tv_usec = 0;
@@ -389,7 +391,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         while (context->err != REDIS_ERR_IO && redisGetReply(context, (void **) &reply) == REDIS_OK) {
             status = handle_mshield_result(reply, r, session);
             /* Leave the waiting loop if the rating result was received or the redirection failed */
-            if (status == STATUS_OK || status == HTTP_INTERNAL_SERVER_ERROR || status == HTTP_MOVED_TEMPORARILY) {
+            if (status == STATUS_OK || status == STATUS_REDIRERR || status == HTTP_MOVED_TEMPORARILY) {
                 break;
             }
             freeReplyObject(reply);
@@ -398,9 +400,9 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
             ERRLOG_REQ_INFO("FRAUD-ENGINE: Redis error: context->err is [%d] and context->errstr is [%s]",
                          context->err, context->errstr);
             if (context->err == REDIS_ERR_IO) {
-                return STATUS_ERROR;
+                return STATUS_CONERROR;
             }
-            return HTTP_INTERNAL_SERVER_ERROR;
+            return STATUS_ERROR;
         }
     } else {
         status = STATUS_OK;
