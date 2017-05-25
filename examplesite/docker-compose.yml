@@ -23,6 +23,8 @@ services:
       - mshield_kafka_clickstreams
     environment:
       JOBMANAGER: 'jobmanager:6123'
+      BOOTSTRAP: 'broker:9092'
+      ZOOKEEPER: 'zookeeper:2181'
 
   mshield_flink_modelupdater:
     image: mshield-flink-modelupdater:latest
@@ -32,7 +34,12 @@ services:
       - mshield_flink_analyser
     environment:
       JOBMANAGER: 'jobmanager:6123'
-
+      BOOTSTRAP: 'broker:9092'
+      ZOOKEEPER: 'zookeeper:2181'
+      LOOKBACKPERIOD : '20'
+      UPDATEINTERVAL : '5'
+      SESSIONTIMEOUT : '5'
+      
   mshield_kafka_clickstreams:
     image: mshield-kafka-clickstreams:latest
     hostname: mshield_kafka_clickstreams
