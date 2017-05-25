@@ -58,7 +58,7 @@ demo: compile compile-librdkafka shutdown-demo
 		cp librdkafka.so.1 examplesite/reverseproxy
 		cp mod_mshield.so examplesite/reverseproxy
 		docker-compose -p mshield-demo -f examplesite/docker-compose.yml up --build -d
-		@echo Finished! Visit https://localhost to try markovshield.
+		@echo Finished! Please give MarkovShield a few seconds to start everything in the background. Visit https://localhost to try markovshield.
 
 shutdown-demo:
 		docker-compose -p mshield-demo -f examplesite/docker-compose.yml down

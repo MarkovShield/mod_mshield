@@ -36,10 +36,10 @@ services:
       JOBMANAGER: 'jobmanager:6123'
       BOOTSTRAP: 'broker:9092'
       ZOOKEEPER: 'zookeeper:2181'
-      LOOKBACKPERIOD : '20'
-      UPDATEINTERVAL : '5'
-      SESSIONTIMEOUT : '5'
-      
+      LOOKBACKPERIOD: '20'
+      UPDATEINTERVAL: '5'
+      SESSIONTIMEOUT: '5'
+
   mshield_kafka_clickstreams:
     image: mshield-kafka-clickstreams:latest
     hostname: mshield_kafka_clickstreams
@@ -101,11 +101,10 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
 
   jobmanager:
-    image: pschmid/flink:1.2.0
+    image: pschmid/flink-manager:1.2.0
     hostname: jobmanager
     depends_on:
       - redis
-    container_name: "jobmanager"
     expose:
       - "6123"
     ports:
@@ -117,7 +116,7 @@ services:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
 
   taskmanager:
-    image: pschmid/flink:1.2.0
+    image: pschmid/flink-manager:1.2.0
     expose:
       - "6121"
       - "6122"
