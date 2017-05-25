@@ -62,6 +62,9 @@ demo: compile compile-librdkafka shutdown-demo
 
 shutdown-demo:
 		docker-compose -p mshield-demo -f examplesite/docker-compose.yml down
+		rm -rf examplesite/zk-txt-logs
+		rm -rf examplesite/kafka-data
+		rm -rf examplesite/zk-data
 
 all: APXSCMD = apxs
 all: APXSFLAGS += $(APXSFLAGSEND)
