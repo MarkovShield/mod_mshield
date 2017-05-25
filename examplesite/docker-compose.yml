@@ -15,29 +15,31 @@ services:
     expose:
       - "8888"
 
-mshield_flink_analyser:
-  image: mshield-flink-analyser:latest
-  hostname: mshield_flink_analyser
-  depends_on:
-    - jobmanager
-    - taskmanager
-  environment:
-    JOBMANAGER: 'jobmanager:6123'
+  mshield_flink_analyser:
+    image: mshield-flink-analyser:latest
+    depends_on:
+      - jobmanager
+      - taskmanager
+      - mshield_kafka_clickstreams
+    environment:
+      JOBMANAGER: 'jobmanager:6123'
 
-mshield_flink_modelupdater:
-  image: mshield-flink-modelupdater:latest
-  hostname: mshield_flink_modelupdater
-  depends_on:
-    - jobmanager
-    - taskmanager
-  environment:
-    JOBMANAGER: 'jobmanager:6123'
+  mshield_flink_modelupdater:
+    image: mshield-flink-modelupdater:latest
+    depends_on:
+      - jobmanager
+      - taskmanager
+      - mshield_flink_analyser
+    environment:
+      JOBMANAGER: 'jobmanager:6123'
 
   mshield_kafka_clickstreams:
     image: mshield-kafka-clickstreams:latest
     hostname: mshield_kafka_clickstreams
     depends_on:
       - broker
+      - zookeeper
+      - schema_registry
     ports:
       - "7777:7777"
     environment:
