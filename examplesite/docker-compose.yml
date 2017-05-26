@@ -25,6 +25,8 @@ services:
       JOBMANAGER: 'jobmanager:6123'
       BOOTSTRAP: 'broker:9092'
       ZOOKEEPER: 'zookeeper:2181'
+      REDISHOST: 'redis'
+      REDISPORT: '6379'
 
   mshield_flink_modelupdater:
     image: mshield-flink-modelupdater:latest
