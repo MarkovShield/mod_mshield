@@ -341,7 +341,7 @@ mshield_config_fraud_detection_enabled(cmd_parms *cmd, void *dummy, int arg) {
         conf->kafka.conf_producer.topic = apr_hash_make(cmd->pool);
 
         /* Add some default settings for Kafka producer */
-        apr_hash_set(conf->kafka.conf_producer.global, "queue.buffering.max.ms", APR_HASH_KEY_STRING, (const void *)"1");
+        apr_hash_set(conf->kafka.conf_producer.global, "queue.buffering.max.ms", APR_HASH_KEY_STRING, (const void *)"10");
         apr_hash_set(conf->kafka.conf_producer.global, "internal.termination.signal", APR_HASH_KEY_STRING, (const void *)"0");
         //apr_hash_set(conf->kafka.conf_producer.global, "debug", APR_HASH_KEY_STRING, (const void *)"cgrp,topic,fetch");
         apr_hash_set(conf->kafka.conf_producer.global, "api.version.request", APR_HASH_KEY_STRING, (const void *)"true");
