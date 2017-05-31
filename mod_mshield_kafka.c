@@ -295,6 +295,18 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
 }
 
 /**
+ * @brief Helper function Log the process duration.
+ *
+ * @param r The current request.
+ * @param start Start time
+ * @param end End time
+ */
+static void process_duration(request_rec *r, struct timespec *start, struct timespec *end) {
+    clock_gettime(CLOCK_MONOTONIC, end);
+    ERRLOG_INFO("PROCESSING TIME: [%ldms]", (long) timespecDiff(end, start) / CLOCKS_PER_SEC);
+}
+
+/**
  * @brief Extract request information and send it to kafka
  *
  * @param r The apache request itself
@@ -360,6 +372,9 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(validationRequired));
 
     if (validationRequired) {
+        struct timespec start, end;
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        ERRLOG_REQ_INFO("FRAUD-ENGINE: Redis SUBSCRIBE setup");
         connection_timeout.tv_sec = config->redis.connection_timeout;
         connection_timeout.tv_usec = 0;
         context = redisConnectWithTimeout(config->redis.server, config->redis.port, connection_timeout);
@@ -373,6 +388,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         redisSetTimeout(context, response_timeout);
         reply = redisCommand(context, "SUBSCRIBE %s", clickUUID);
         freeReplyObject(reply);
+        process_duration(r, &start, &end);
     }
 
     status = kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
@@ -387,6 +403,9 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
 
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
     if (validationRequired) {
+        struct timespec start, end;
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        ERRLOG_REQ_INFO("FRAUD-ENGINE: Redis redisGetReply");
         ERRLOG_REQ_INFO("FRAUD-ENGINE: URL [%s] risk level was [%i]", url, risk_level);
         while (context->err != REDIS_ERR_IO && redisGetReply(context, (void **) &reply) == REDIS_OK) {
             status = handle_mshield_result(reply, r, session);
@@ -404,6 +423,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
             }
             return STATUS_ERROR;
         }
+        process_duration(r, &start, &end);
     } else {
         status = STATUS_OK;
     }
