@@ -8,7 +8,7 @@
 PCRE = /opt/applic/pcre-8.39/include
 
 APXSFLAGS = -I$(PCRE) -v -c
-APXSFLAGSEND = -Wc,-O0 -Wc ,-Wall -Wc, -DMOD_MSHIELD_SESSION_COUNT=1000 -Wc, -DMOD_MSHIELD_COOKIESTORE_COUNT=3000 -Wc
+APXSFLAGSEND = -Wc,-O0 -Wc ,-Wall -Wc, -DMOD_MSHIELD_SESSION_COUNT=100000 -Wc, -DMOD_MSHIELD_COOKIESTORE_COUNT=300000 -Wc
 
 UNAME = $(shell uname)
 
@@ -65,6 +65,7 @@ shutdown-demo:
 		rm -rf examplesite/zk-txt-logs
 		rm -rf examplesite/kafka-data
 		rm -rf examplesite/zk-data
+		rm -rf examplesite/state-store
 
 all: APXSCMD = apxs
 all: APXSFLAGS += $(APXSFLAGSEND)

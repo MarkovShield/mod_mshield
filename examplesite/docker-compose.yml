@@ -51,6 +51,8 @@ services:
       - schema_registry
     ports:
       - "7777:7777"
+    volumes:
+      - ./state-store:/opt/kafka-store
     environment:
       BOOTSTRAP: 'broker:9092'
       RESTHOSTNAME: 'localhost'
