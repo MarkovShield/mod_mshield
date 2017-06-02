@@ -398,7 +398,7 @@ int mshield_session_isnull(session_t *session);
 
 apr_status_t mshield_session_find(session_t *session, const char *session_name, const char *session_id);
 
-apr_status_t mshield_session_open(session_t *session, session_handle_t handle);
+apr_status_t mshield_session_open(session_t *session, request_rec *r, session_handle_t handle);
 
 apr_status_t mshield_session_create(session_t *session, bool is_new_session);
 

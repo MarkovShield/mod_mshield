@@ -1,8 +1,5 @@
 #include "mod_mshield.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmany-braces-around-scalar-init"
-
 const char *
 mshield_config_enabled(cmd_parms *cmd, void *dummy, int arg) {
     /*
@@ -548,6 +545,3 @@ const command_rec mshield_cmds[] =
 	AP_INIT_TAKE1("MOD_MSHIELD_AUTH_STRENGTH",    ap_set_int_slot,    (void*)APR_OFFSETOF(mod_mshield_dir_t, mod_mshield_auth_strength), OR_ALL, "Authentication strength required for this directory"),
 	{ NULL }
 };
-
-
-#pragma clang diagnostic pop

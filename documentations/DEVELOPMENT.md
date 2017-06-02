@@ -90,9 +90,23 @@ make clean
 
 ## Debugging & helpful commands
 
+### Install usefull debugger tools
+```bash
+apt-get install gdb valgrind apache2-dbg libapr1-dbg libaprutil1-dbg
+```
+
 ### Apache logs
 ```bash
 tail -f /opt/applic/httpd/logs/*error_log
+```
+
+### Debug segmentation fault
+```bash
+source /etc/apache2/envvars
+gdb apache2
+b mshield_access_checker
+run -X # <- command inside gdb
+
 ```
 
 ### Kafka

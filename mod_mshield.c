@@ -63,7 +63,7 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 	{
 		const char *indexstr = apr_table_get(r->notes, "MSHIELDSESS");
 		if (indexstr) {
-/*OPEN*/		if (mshield_session_open(&session, atoi(indexstr)) != STATUS_OK) {
+/*OPEN*/		if (mshield_session_open(&session, r, atoi(indexstr)) != STATUS_OK) {
 				apr_global_mutex_unlock(mshield_mutex);
 				ERRLOG_CRIT("Session not found!");
 				return HTTP_INTERNAL_SERVER_ERROR;

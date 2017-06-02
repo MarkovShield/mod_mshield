@@ -54,7 +54,7 @@ generate_click_id(session_t *session) {
  */
 void
 mshield_session_init(session_t *session, request_rec *r, mod_mshield_server_t *config) {
-    session_data_t *data;
+    session_data_t *data = apr_pcalloc(r->pool, sizeof(session_data_t));
     session->handle = INVALID_SESSION_HANDLE;
     session->data = data;
     session->request = r;
@@ -97,10 +97,10 @@ mshield_session_find(session_t *session, const char *session_name, const char *s
  * session is an initialized session_t.
  */
 apr_status_t
-mshield_session_open(session_t *session, session_handle_t handle) {
+mshield_session_open(session_t *session, request_rec *r, session_handle_t handle) {
     session->data = get_session_by_index(handle);
     if (!session->data->slot_used) {
-        session_data_t *data;
+        session_data_t *data = apr_pcalloc(r->pool, sizeof(session_data_t));
         session->data = data;
         session->handle = INVALID_SESSION_HANDLE;
         return STATUS_ERROR;
@@ -150,6 +150,7 @@ mshield_session_unlink(session_t *session) {
         return;
     }
     mshield_shm_free(session->data);
+    // ToDo: Check if this value need to be set to apr_pcalloc(r->pool, sizeof(session_data_t))!
     session->data = NULL;
     session->handle = INVALID_SESSION_HANDLE;
 }
