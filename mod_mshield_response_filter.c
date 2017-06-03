@@ -246,7 +246,7 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
      * Set the username for the session.
      * Source for the username is the MOD_MSHIELD_USERNAME_VALUE value from the LS logon ok cookie.
      */
-    if (!apr_strnatcmp(cookie_name, config->username_value)) {
+    if (!apr_strnatcmp(cookie_name, config->username_value) && cr->session->data->logon_state == 1) {
         apr_cpystrn(cr->session->data->username, cookie_value, sizeof(cr->session->data->username));
         ERRLOG_INFO("FRAUD-ENGINE: Received USERNAME [%s] for UUID [%s]", cr->session->data->username,
                     cr->session->data->uuid);

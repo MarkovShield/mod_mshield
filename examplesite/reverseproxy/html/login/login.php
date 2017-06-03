@@ -1,6 +1,7 @@
 <?php
 if($_SERVER['REQUEST_METHOD'] === 'POST') {
 	if($_POST['user'] === 'hacker' && $_POST['password'] === "compass") {
+	    /* Its important to stick to the order of the setcookie commands! */
 		setcookie('LOGON', 'ok');
 		setcookie('MOD_MSHIELD_USERNAME', $_POST['user']);
 		switch ($_POST['appid']) {
