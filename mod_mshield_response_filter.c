@@ -121,31 +121,6 @@ filter_response_cookie_from_logon_url(request_rec *r, cookie_res *cr,
             /*SET*/
             cr->session->data->logon_state = 1;
             cr->must_renew = 1;
-
-            /*
-            * Set the username for the session.
-            * Source for the username is the MOD_MSHIELD_USERNAME_VALUE value from the LS logon ok cookie.
-            */
-            if (!apr_strnatcmp(cookie_name, config->username_value)) {
-                apr_cpystrn(cr->session->data->username, cookie_value, sizeof(cr->session->data->username));
-                ERRLOG_INFO("FRAUD-ENGINE: Received USERNAME [%s] for UUID [%s]", cr->session->data->username,
-                            cr->session->data->uuid);
-
-                cJSON *user_mapping_json;
-                user_mapping_json = cJSON_CreateObject();
-                cJSON_AddItemToObject(user_mapping_json, "userName", cJSON_CreateString(cr->session->data->username));
-                cJSON_AddItemToObject(user_mapping_json, "sessionUUID", cJSON_CreateString(cr->session->data->uuid));
-
-                ERRLOG_DEBUG("FRAUD-ENGINE: Sent JSON user mapping object is: [%s]", cJSON_Print(user_mapping_json));
-
-                if (config->fraud_detection_enabled) {
-                    kafka_produce(config->pool, &config->kafka, config->kafka.topic_usermapping, &config->kafka.rk_topic_usermapping,
-                                  RD_KAFKA_PARTITION_UA, cJSON_Print(user_mapping_json), cr->session->data->uuid);
-                }
-
-                cJSON_Delete(user_mapping_json);
-            }
-
         } else {
             ERRLOG_CRIT("Ignoring LOGON cookie with value [%s], expected [%s]", cookie_value,
                         config->global_logon_auth_cookie_value);
@@ -266,6 +241,31 @@ mod_mshield_filter_response_cookies_cb(void *result, const char *key, const char
     }
 
     parse_cookie(r, value, &cookie_name, &cookie_value);
+
+    /*
+     * Set the username for the session.
+     * Source for the username is the MOD_MSHIELD_USERNAME_VALUE value from the LS logon ok cookie.
+     */
+    if (!apr_strnatcmp(cookie_name, config->username_value)) {
+        apr_cpystrn(cr->session->data->username, cookie_value, sizeof(cr->session->data->username));
+        ERRLOG_INFO("FRAUD-ENGINE: Received USERNAME [%s] for UUID [%s]", cr->session->data->username,
+                    cr->session->data->uuid);
+
+        cJSON *user_mapping_json;
+        user_mapping_json = cJSON_CreateObject();
+        cJSON_AddItemToObject(user_mapping_json, "userName", cJSON_CreateString(cr->session->data->username));
+        cJSON_AddItemToObject(user_mapping_json, "sessionUUID", cJSON_CreateString(cr->session->data->uuid));
+
+        ERRLOG_DEBUG("FRAUD-ENGINE: Sent JSON user mapping object is: [%s]", cJSON_Print(user_mapping_json));
+
+        if (config->fraud_detection_enabled) {
+            kafka_produce(config->pool, &config->kafka, config->kafka.topic_usermapping, &config->kafka.rk_topic_usermapping,
+                          RD_KAFKA_PARTITION_UA, cJSON_Print(user_mapping_json), cr->session->data->uuid);
+        }
+
+        cJSON_Delete(user_mapping_json);
+    }
+
 
     if (!apr_strnatcmp(cookie_name, "") && !apr_strnatcmp(cookie_value, "")) {
         ERRLOG_INFO("Skipped Set-Cookie with empty name [%s] or empty value [%s]", cookie_name, cookie_value);
