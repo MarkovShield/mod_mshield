@@ -83,7 +83,7 @@ static void dr_msg_cb(rd_kafka_t *rk,
     if (rkmessage->err) {
         ap_log_error(PC_LOG_DEBUG, NULL, "Message delivery failed: %s", rd_kafka_err2str(rkmessage->err));
     } else {
-        ap_log_error(PC_LOG_DEBUG, NULL, "Message delivered (%zd bytes, partition %"
+        ap_log_error(PC_LOG_DEBUG, NULL, "Message delivered (%zu bytes, partition %"
                 PRId32
                 ")\n", rkmessage->len, rkmessage->partition);
     }
@@ -472,8 +472,8 @@ void extract_url_to_kafka(server_rec *s) {
  */
 apr_status_t kafka_cleanup(void *arg) {
     server_rec *s = arg;
-    mod_mshield_server_t *config;
-    config = ap_get_module_config(s->module_config, &mshield_module);
+
+    mod_mshield_server_t *config = (mod_mshield_server_t *)arg;
 
     apr_pool_t *p = config->pool;
     if (!p) {
