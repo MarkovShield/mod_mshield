@@ -16,6 +16,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 		die();
 	} else {
+	    setcookie('LOGON', 'failed');
 		header('Location: /login/login0.html');
 		die();
 	}

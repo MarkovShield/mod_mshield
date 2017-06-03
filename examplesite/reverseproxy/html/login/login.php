@@ -2,7 +2,7 @@
 if($_SERVER['REQUEST_METHOD'] === 'POST') {
 	if($_POST['user'] === 'hacker' && $_POST['password'] === "compass") {
 		setcookie('LOGON', 'ok');
-		setcookie('MOD_MSHIELD_USERNAME', 'hacker');
+		setcookie('MOD_MSHIELD_USERNAME', $_POST['user']);
 		switch ($_POST['appid']) {
 			case 1:
 			setrawcookie('MOD_MSHIELD_REDIRECT', '/private/1/');
@@ -15,6 +15,8 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 		die();
 	} else {
+	    setcookie('LOGON', 'failed');
+	    setcookie('MOD_MSHIELD_USERNAME', $_POST['user']);
 		header('Location: /login/login0.html');
 		die();
 	}
