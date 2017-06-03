@@ -45,7 +45,7 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 
 	config = ap_get_module_config(r->server->module_config, &mshield_module);
 	if (config == NULL) {
-		ERRLOG_CRIT("Could not get configuration from apache");
+		ERRLOG_REQ_CRIT("Could not get configuration from apache");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 	if (!config->enabled) {
@@ -53,7 +53,7 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 	}
 
 	if (apr_global_mutex_lock(mshield_mutex) != APR_SUCCESS) {
-		ERRLOG_CRIT("Could not acquire mutex.");
+		ERRLOG_REQ_CRIT("Could not acquire mutex.");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 
@@ -65,7 +65,7 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 		if (indexstr) {
 /*OPEN*/		if (mshield_session_open(&session, r, atoi(indexstr)) != STATUS_OK) {
 				apr_global_mutex_unlock(mshield_mutex);
-				ERRLOG_CRIT("Session not found!");
+				ERRLOG_REQ_CRIT("Session not found!");
 				return HTTP_INTERNAL_SERVER_ERROR;
 				/* XXX this may happen in some race conditions.  Handle gracefully. */
 			}
@@ -88,7 +88,7 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 		cr = apr_pcalloc(r->pool, sizeof(cookie_res));
 		if (!cr) {
 			apr_global_mutex_unlock(mshield_mutex);
-			ERRLOG_CRIT("Out of memory!");
+			ERRLOG_REQ_CRIT("Out of memory!");
 			return HTTP_INTERNAL_SERVER_ERROR;
 		}
 		cr->r = r;
@@ -97,14 +97,14 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 		cr->headers = apr_table_make(r->pool, 0);
 /*SET*/		apr_table_do(mod_mshield_filter_response_cookies_cb, cr, r->headers_out, "Set-Cookie", NULL);
 
-		//ERRLOG_CRIT("FRAUD TEST [%s]", cr->session->data->username_value);
+		//ERRLOG_REQ_CRIT("FRAUD TEST [%s]", cr->session->data->username_value);
 		if (cr->status != STATUS_OK) {
 			if (cr->status == STATUS_ESHMFULL) {
 				status = mod_mshield_redirect_to_shm_error(r, config);
 				apr_global_mutex_unlock(mshield_mutex);
 				return status;
 			}
-			ERRLOG_CRIT("Error filtering the response cookies!");
+			ERRLOG_REQ_CRIT("Error filtering the response cookies!");
 			apr_global_mutex_unlock(mshield_mutex);
 			return HTTP_INTERNAL_SERVER_ERROR;
 		}
@@ -123,9 +123,9 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 			const char *session_handle_str;
 			apr_status_t status;
 
-            ERRLOG_DEBUG("=============================== START RENEW SESSION ====================================");
-			ERRLOG_INFO("Renewing session after login.");
-			//ERRLOG_CRIT("Add session cookie to headers [%s]", session);
+            ERRLOG_REQ_DEBUG("=============================== START RENEW SESSION ====================================");
+			ERRLOG_REQ_INFO("Renewing session after login.");
+			//ERRLOG_REQ_CRIT("Add session cookie to headers [%s]", session);
 /*RENEW*/		status = mshield_session_renew(&session);
 			if (status != STATUS_OK) {
 				if (status == STATUS_ESHMFULL) {
@@ -134,7 +134,7 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 					return status;
 				}
 				apr_global_mutex_unlock(mshield_mutex);
-				ERRLOG_INFO("Error renewing session");
+				ERRLOG_REQ_INFO("Error renewing session");
 				return HTTP_INTERNAL_SERVER_ERROR;
 			}
 
@@ -149,7 +149,7 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 			session_handle_str = apr_itoa(r->pool, session.handle);
 			if (!session_handle_str) {
 				apr_global_mutex_unlock(mshield_mutex);
-				ERRLOG_CRIT("Out of memory!");
+				ERRLOG_REQ_CRIT("Out of memory!");
 				return HTTP_INTERNAL_SERVER_ERROR;
 			}
 			apr_table_set(r->notes, "MSHIELDSESS", session_handle_str);
@@ -157,8 +157,8 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
 
 			// REDIRECT TO MOD_MSHIELD_REDIRECT IF ORIG_URL HANDLING IS DISABLED
             if (!config->mshield_config_enabled_return_to_orig_url) {
-                ERRLOG_DEBUG("REDIRECT TO ORIG URL IS DISABLED: REDIRECT TO MOD_MSHIELD_REDIRECT [%s]", session.data->url);
-                ERRLOG_DEBUG("Redirect to MOD_MSHIELD_REDIRECT if LOGON=ok");
+                ERRLOG_REQ_DEBUG("REDIRECT TO ORIG URL IS DISABLED: REDIRECT TO MOD_MSHIELD_REDIRECT [%s]", session.data->url);
+                ERRLOG_REQ_DEBUG("Redirect to MOD_MSHIELD_REDIRECT if LOGON=ok");
 				r->status = mod_mshield_redirect_to_relurl(r, session.data->redirect_url_after_login);
 			 }
 		} /* must renew */
@@ -178,7 +178,7 @@ mshield_output_filter(ap_filter_t *f, apr_bucket_brigade *bb_in)
  */
 static void log_request_handling_duration(request_rec *r, struct timespec *start, struct timespec *end) {
     clock_gettime(CLOCK_MONOTONIC, end);
-    ERRLOG_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timespecDiff(end, start) / CLOCKS_PER_SEC);
+    ERRLOG_REQ_INFO("PROCESSING TIME: mod_mshield needed [%ldms] to process the request", (long) timespecDiff(end, start) / CLOCKS_PER_SEC);
 }
 
 /**
@@ -218,28 +218,28 @@ mshield_access_checker(request_rec *r)
 
 	config = ap_get_module_config(r->server->module_config, &mshield_module);
 	if (!config) {
-		ERRLOG_CRIT("Could not get configuration from apache");
+		ERRLOG_REQ_CRIT("Could not get configuration from apache");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 	if (!config->enabled) {
-		ERRLOG_INFO("mod_mshield is not enabled, skip request (DECLINED)");
+		ERRLOG_REQ_INFO("mod_mshield is not enabled, skip request (DECLINED)");
 		return DECLINED;
 	}
 
 	/* get per-directory configuration */
 	dconfig = ap_get_module_config(r->per_dir_config, &mshield_module);
 	if (!dconfig) {
-		ERRLOG_INFO("Illegal Directory Config");
+		ERRLOG_REQ_INFO("Illegal Directory Config");
 	}
 
 	if (apr_global_mutex_lock(mshield_mutex) != APR_SUCCESS) {
-		ERRLOG_CRIT("Could not acquire mutex.");
+		ERRLOG_REQ_CRIT("Could not acquire mutex.");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 
 	mshield_session_init(&session, r, config);
 
-    ERRLOG_DEBUG("Request %s", r->uri);
+    ERRLOG_REQ_DEBUG("Request %s", r->uri);
 
 
 	/****************************** PART 1 *******************************************************
@@ -251,7 +251,7 @@ mshield_access_checker(request_rec *r)
 	 */
 	switch (mod_mshield_regexp_match(r, config->session_renew_url, r->uri)) {
 	case STATUS_MATCH:
-        ERRLOG_DEBUG("Renew URL found [%s]", r->uri);
+        ERRLOG_REQ_DEBUG("Renew URL found [%s]", r->uri);
         /*CREATE*/
 		switch (mshield_session_create(&session, true)) {
 		case STATUS_OK:
@@ -270,7 +270,7 @@ mshield_access_checker(request_rec *r)
 		case STATUS_ERROR:
 		default:
 			apr_global_mutex_unlock(mshield_mutex);
-			ERRLOG_CRIT("Error creating new session");
+			ERRLOG_REQ_CRIT("Error creating new session");
 			return HTTP_INTERNAL_SERVER_ERROR;
 		}
 		break; /* not reached */
@@ -282,7 +282,7 @@ mshield_access_checker(request_rec *r)
 	case STATUS_ERROR:
 	default:
 		apr_global_mutex_unlock(mshield_mutex);
-		ERRLOG_CRIT("Error while matching MOD_MSHIELD_SESSION_RENEW_URL");
+		ERRLOG_REQ_CRIT("Error while matching MOD_MSHIELD_SESSION_RENEW_URL");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 
@@ -294,7 +294,7 @@ mshield_access_checker(request_rec *r)
 	switch (mod_mshield_regexp_match(r, config->session_free_url, r->uri)) {
 	case STATUS_MATCH:
 		apr_global_mutex_unlock(mshield_mutex);
-        ERRLOG_DEBUG("Session free URL [%s]", r->uri);
+        ERRLOG_REQ_DEBUG("Session free URL [%s]", r->uri);
 		return DECLINED;
 
 	case STATUS_NOMATCH:
@@ -304,7 +304,7 @@ mshield_access_checker(request_rec *r)
 	case STATUS_ERROR:
 	default:
 		apr_global_mutex_unlock(mshield_mutex);
-		ERRLOG_CRIT("Error while matching MOD_MSHIELD_SESSION_FREE_URL");
+		ERRLOG_REQ_CRIT("Error while matching MOD_MSHIELD_SESSION_FREE_URL");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 
@@ -333,7 +333,7 @@ mshield_access_checker(request_rec *r)
 	cr = apr_pcalloc(r->pool, sizeof(cookie_res));
 	if (!cr) {
 		apr_global_mutex_unlock(mshield_mutex);
-		ERRLOG_CRIT("Out of memory!");
+		ERRLOG_REQ_CRIT("Out of memory!");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 	cr->r = r;
@@ -342,19 +342,19 @@ mshield_access_checker(request_rec *r)
 	apr_table_do(mod_mshield_filter_request_cookies_cb, cr, r->headers_in, "Cookie", NULL);
 	if (cr->status != STATUS_OK) {
 		apr_global_mutex_unlock(mshield_mutex);
-		ERRLOG_CRIT("Error while iterating Cookie headers.");
+		ERRLOG_REQ_CRIT("Error while iterating Cookie headers.");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 	apr_table_unset(r->headers_in, "Cookie");
 
-    ERRLOG_DEBUG("Session ID [%s]", cr->sessionid);
+    ERRLOG_REQ_DEBUG("Session ID [%s]", cr->sessionid);
 
 	/*
 	 * If the client has sent no session cookie, create a new session
 	 * and redirect to cookie try.
 	 */
 	if (!cr->sessionid) {
-        ERRLOG_DEBUG("Client did not send mod_mshield session");
+        ERRLOG_REQ_DEBUG("Client did not send mod_mshield session");
         /*CREATE*/
     	switch (mshield_session_create(&session, true)) {
 		case STATUS_OK:
@@ -373,7 +373,7 @@ mshield_access_checker(request_rec *r)
 		case STATUS_ERROR:
 		default:
 			apr_global_mutex_unlock(mshield_mutex);
-			ERRLOG_CRIT("Error creating new session");
+			ERRLOG_REQ_CRIT("Error creating new session");
 			return HTTP_INTERNAL_SERVER_ERROR;
 		}
 		/* not reached */
@@ -394,10 +394,10 @@ mshield_access_checker(request_rec *r)
 
 	case STATUS_ENOEXIST:
 		/* session not found */
-		ERRLOG_INFO("Session timed out or invalid");
+		ERRLOG_REQ_INFO("Session timed out or invalid");
 		if (!config->session_expired_url) {
 			apr_global_mutex_unlock(mshield_mutex);
-			ERRLOG_INFO("MOD_MSHIELD_SESSION_TIMEOUT_URL not configured");
+			ERRLOG_REQ_INFO("MOD_MSHIELD_SESSION_TIMEOUT_URL not configured");
 			return HTTP_INTERNAL_SERVER_ERROR;
 		}
 		status = mod_mshield_redirect_to_relurl(r, config->session_expired_url);
@@ -407,7 +407,7 @@ mshield_access_checker(request_rec *r)
 	case STATUS_ERROR:
 	default:
 		apr_global_mutex_unlock(mshield_mutex);
-		ERRLOG_CRIT("Error finding session!");
+		ERRLOG_REQ_CRIT("Error finding session!");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 
@@ -422,10 +422,10 @@ mshield_access_checker(request_rec *r)
 
 	case STATUS_ENOEXIST:
 		/* the sent session has reached its hard or soft timeout */
-		ERRLOG_INFO("Session timed out.");
+		ERRLOG_REQ_INFO("Session timed out.");
 		if (!config->session_expired_url) {
 			apr_global_mutex_unlock(mshield_mutex);
-			ERRLOG_INFO("MOD_MSHIELD_SESSION_TIMEOUT_URL not configured");
+			ERRLOG_REQ_INFO("MOD_MSHIELD_SESSION_TIMEOUT_URL not configured");
 			return HTTP_INTERNAL_SERVER_ERROR;
 		}
 		status = mod_mshield_redirect_to_relurl(r, config->session_expired_url);
@@ -435,14 +435,14 @@ mshield_access_checker(request_rec *r)
 	case STATUS_ERROR:
 	default:
 		apr_global_mutex_unlock(mshield_mutex);
-		ERRLOG_CRIT("Error validating session!");
+		ERRLOG_REQ_CRIT("Error validating session!");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 
 	/*
 	 * If we are here, the client has sent a valid mod_mshield session
 	 */
-    ERRLOG_DEBUG("Client has sent a valid mod_mshield session");
+    ERRLOG_REQ_DEBUG("Client has sent a valid mod_mshield session");
 
     /*
      * Extract click data to kafka.
@@ -454,9 +454,9 @@ mshield_access_checker(request_rec *r)
             case STATUS_ERROR:
                 status = mod_mshield_redirect_to_relurl(r, config->fraud_error_url);
                 if (status != HTTP_MOVED_TEMPORARILY) {
-                    ERRLOG_CRIT("Redirection to fraud_error_url failed.");
+                    ERRLOG_REQ_CRIT("Redirection to fraud_error_url failed.");
                 }
-                ERRLOG_DEBUG("Redirection to fraud_error_url was successful.");
+                ERRLOG_REQ_DEBUG("Redirection to fraud_error_url was successful.");
                 log_request_handling_duration(r, &start, &end);
                 apr_global_mutex_unlock(mshield_mutex);
                 return status;
@@ -480,7 +480,7 @@ mshield_access_checker(request_rec *r)
 	 */
 	switch (mod_mshield_regexp_match(r, config->session_destroy, r->uri)) {
 	case STATUS_MATCH:
-		ERRLOG_INFO("Session destroy URL matched, destroying session");
+		ERRLOG_REQ_INFO("Session destroy URL matched, destroying session");
         /*UNLINK*/
     	mshield_session_unlink(&session);
 		status = mod_mshield_redirect_to_relurl(r, config->session_destroy_url);
@@ -489,13 +489,13 @@ mshield_access_checker(request_rec *r)
 		return status;
 
 	case STATUS_NOMATCH:
-        ERRLOG_DEBUG("r->uri does not match session destroy URL [%s]", r->uri);
+        ERRLOG_REQ_DEBUG("r->uri does not match session destroy URL [%s]", r->uri);
 		break;
 
 	case STATUS_ERROR:
 	default:
 		apr_global_mutex_unlock(mshield_mutex);
-		ERRLOG_CRIT("Error matching session destroy URL");
+		ERRLOG_REQ_CRIT("Error matching session destroy URL");
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 
@@ -510,10 +510,10 @@ mshield_access_checker(request_rec *r)
 		const char *session_index_str = apr_itoa(r->pool, session.handle);
 		if (!session_index_str) {
 			apr_global_mutex_unlock(mshield_mutex);
-			ERRLOG_INFO("Out of memory!");
+			ERRLOG_REQ_INFO("Out of memory!");
 			return HTTP_INTERNAL_SERVER_ERROR;
 		}
-        ERRLOG_DEBUG("Setting r->notes[MSHIELDSESS] to [%s]", session_index_str);
+        ERRLOG_REQ_DEBUG("Setting r->notes[MSHIELDSESS] to [%s]", session_index_str);
 		apr_table_set(r->notes, "MSHIELDSESS", session_index_str);
 	}
 
@@ -525,16 +525,16 @@ mshield_access_checker(request_rec *r)
 	if (mod_mshield_find_cookie_try(r) > 0) {
 /*GET*/		if (!apr_strnatcmp(session.data->url, "empty")) {
 			apr_global_mutex_unlock(mshield_mutex);
-			ERRLOG_CRIT("Session contains no URL!");
+			ERRLOG_REQ_CRIT("Session contains no URL!");
 			return HTTP_INTERNAL_SERVER_ERROR;
 		}
 
-		ERRLOG_INFO("Client session is valid and cookie test succeeded");
+		ERRLOG_REQ_INFO("Client session is valid and cookie test succeeded");
 /*GET*/		status = mod_mshield_redirect_to_relurl(r, session.data->url);
 		apr_global_mutex_unlock(mshield_mutex);
 		return status;
 	}
-    ERRLOG_DEBUG("Client session is valid and no cookie try in URL");
+    ERRLOG_REQ_DEBUG("Client session is valid and no cookie try in URL");
 
 	/*
 	 * If we are here, the request will be authorized.
@@ -544,18 +544,18 @@ mshield_access_checker(request_rec *r)
 	 * Now let's do the authorization stuff, if enabled by config.
 	 */
 	if (config->authorization_enabled) {
-        ERRLOG_DEBUG("Authorization checks are enabled");
+        ERRLOG_REQ_DEBUG("Authorization checks are enabled");
         /*GET*/
 		switch (mshield_access_control(r, &session, config, dconfig)) {
 		case STATUS_ELOGIN:
-            ERRLOG_DEBUG("URI requires auth, mshield user not logged in yet [%s]", r->unparsed_uri);
+            ERRLOG_REQ_DEBUG("URI requires auth, mshield user not logged in yet [%s]", r->unparsed_uri);
 			/* use r->unparsed_uri instead of r->uri to safeguard against HTTP Response Splitting */
             /*SET*/
 			apr_cpystrn(session.data->url, r->unparsed_uri, sizeof(session.data->url));
-            ERRLOG_DEBUG("Storing original URL before logon [%s]", session.data->url);
+            ERRLOG_REQ_DEBUG("Storing original URL before logon [%s]", session.data->url);
             /*SET*/
 			session.data->redirect_on_auth_flag = 1;
-            ERRLOG_DEBUG("Setting redirect on auth flag to [%d]", session.data->redirect_on_auth_flag);
+            ERRLOG_REQ_DEBUG("Setting redirect on auth flag to [%d]", session.data->redirect_on_auth_flag);
 
 			if (dconfig->logon_server_url) {
 				/* login server is configured for this Location */
@@ -567,7 +567,7 @@ mshield_access_checker(request_rec *r)
 				/* No login server is configured for this Location */
 				if (!config->global_logon_server_url) {
 					apr_global_mutex_unlock(mshield_mutex);
-					ERRLOG_CRIT("Global logon server URL is not set");
+					ERRLOG_REQ_CRIT("Global logon server URL is not set");
 					return HTTP_INTERNAL_SERVER_ERROR;
 				}
 				status = mod_mshield_redirect_to_relurl(r, config->global_logon_server_url);
@@ -577,14 +577,14 @@ mshield_access_checker(request_rec *r)
 			break; /* not reached */
 
 		case STATUS_OK:
-            ERRLOG_DEBUG("client is sufficiently authorized or no auth required");
+            ERRLOG_REQ_DEBUG("client is sufficiently authorized or no auth required");
 			break;
 
 		case STATUS_EDENIED:
-			ERRLOG_CRIT("Client authenticated mshield not authorized for this URL");
+			ERRLOG_REQ_CRIT("Client authenticated mshield not authorized for this URL");
 			if (!config->service_list_error_url) {
 				apr_global_mutex_unlock(mshield_mutex);
-				ERRLOG_CRIT("Service list error URL not set");
+				ERRLOG_REQ_CRIT("Service list error URL not set");
 				return HTTP_INTERNAL_SERVER_ERROR;
 			}
 			status = mod_mshield_redirect_to_relurl(r, config->service_list_error_url);
@@ -592,33 +592,33 @@ mshield_access_checker(request_rec *r)
 			return status;
 
 		case STATUS_ESTEPUP1:
-			ERRLOG_INFO("Client authenticated mshield auth_strength too low for this URL");
+			ERRLOG_REQ_INFO("Client authenticated mshield auth_strength too low for this URL");
 			if (!config->global_logon_server_url_1) {
 				apr_global_mutex_unlock(mshield_mutex);
-				ERRLOG_CRIT("Gobal logon server URL 1 not set");
+				ERRLOG_REQ_CRIT("Gobal logon server URL 1 not set");
 				return HTTP_INTERNAL_SERVER_ERROR;
 			}
 			/* use r->unparsed_uri instead of r->uri to safeguard against HTTP Response Splitting */
 /*SET*/			apr_cpystrn(session.data->url, r->unparsed_uri, sizeof(session.data->url));
-			ERRLOG_INFO("Storing original URL before logon [%s]", session.data->url);
+			ERRLOG_REQ_INFO("Storing original URL before logon [%s]", session.data->url);
 /*SET*/			session.data->redirect_on_auth_flag = 1;
-			ERRLOG_INFO("Setting redirect on auth flag to [%d]", session.data->redirect_on_auth_flag);
+			ERRLOG_REQ_INFO("Setting redirect on auth flag to [%d]", session.data->redirect_on_auth_flag);
 			status = mod_mshield_redirect_to_relurl(r, config->global_logon_server_url_1);
 			apr_global_mutex_unlock(mshield_mutex);
 			return status;
 
 		case STATUS_ESTEPUP2:
-			ERRLOG_INFO("Client authenticated mshield auth_strength too low for this URL");
+			ERRLOG_REQ_INFO("Client authenticated mshield auth_strength too low for this URL");
 			if (!config->global_logon_server_url_2) {
 				apr_global_mutex_unlock(mshield_mutex);
-				ERRLOG_CRIT("Global logon server URL 2 not set");
+				ERRLOG_REQ_CRIT("Global logon server URL 2 not set");
 				return HTTP_INTERNAL_SERVER_ERROR;
 			}
 			/* use r->unparsed_uri instead of r->uri to safeguard against HTTP Response Splitting */
 /*SET*/			apr_cpystrn(session.data->url, r->unparsed_uri, sizeof(session.data->url));
-			ERRLOG_INFO("Storing original URL before logon [%s]", session.data->url);
+			ERRLOG_REQ_INFO("Storing original URL before logon [%s]", session.data->url);
 /*SET*/			session.data->redirect_on_auth_flag = 1;
-			ERRLOG_INFO("Setting redirect on auth flag to [%d]", session.data->redirect_on_auth_flag);
+			ERRLOG_REQ_INFO("Setting redirect on auth flag to [%d]", session.data->redirect_on_auth_flag);
 			status = mod_mshield_redirect_to_relurl(r, config->global_logon_server_url_2);
 			apr_global_mutex_unlock(mshield_mutex);
 			return status;
@@ -626,11 +626,11 @@ mshield_access_checker(request_rec *r)
 		case STATUS_ERROR:
 		default:
 			apr_global_mutex_unlock(mshield_mutex);
-			ERRLOG_CRIT("Error while checking authorization");
+			ERRLOG_REQ_CRIT("Error while checking authorization");
 			return HTTP_INTERNAL_SERVER_ERROR;
 		}
 	} else {
-		ERRLOG_INFO("Authorization checks are disabled");
+		ERRLOG_REQ_INFO("Authorization checks are disabled");
 	}
 
 	/*
@@ -645,31 +645,31 @@ mshield_access_checker(request_rec *r)
 	 * we need to redirect the user to his original URL or / if none was found.
 	 * That can happen when the user directly enters the site on the login URL.
 	 */
-    ERRLOG_DEBUG("Redirect on auth flag [%d] logon state [%d]", session.data->redirect_on_auth_flag, session.data->logon_state);
+    ERRLOG_REQ_DEBUG("Redirect on auth flag [%d] logon state [%d]", session.data->redirect_on_auth_flag, session.data->logon_state);
     /*GET*/
 	if (session.data->redirect_on_auth_flag == 1 && session.data->logon_state == 1) {
         /*SET*/
 		session.data->redirect_on_auth_flag = 0;
 
         if (config->mshield_config_enabled_return_to_orig_url) {
-            ERRLOG_DEBUG("REDIRECT TO ORIG URL IS ENABLED: Redirect to [%s]", session.data->url);
+            ERRLOG_REQ_DEBUG("REDIRECT TO ORIG URL IS ENABLED: Redirect to [%s]", session.data->url);
             log_request_handling_duration(r, &start, &end);
             /*GET*/
 			if (!apr_strnatcmp(session.data->url, "empty")) {
-                ERRLOG_DEBUG("============ REDIRECT TO [/] because orig_url was empty ");
+                ERRLOG_REQ_DEBUG("============ REDIRECT TO [/] because orig_url was empty ");
                 status = mod_mshield_redirect_to_relurl(r, "/");
                 /* XXX make URL configurable: default rel URL */
                 apr_global_mutex_unlock(mshield_mutex);
                 return status;
             } else {
-                ERRLOG_DEBUG("============ REDIRECT TO [%s] to orig_url", session.data->url);
+                ERRLOG_REQ_DEBUG("============ REDIRECT TO [%s] to orig_url", session.data->url);
                 /*GET*/
                 status = mod_mshield_redirect_to_relurl(r, session.data->url);
                 apr_global_mutex_unlock(mshield_mutex);
                 return status;
             }
         } else {
-            ERRLOG_DEBUG("REDIRECT TO ORIG URL IS DISABLED: Redirect to = [%s]", session.data->redirect_url_after_login);
+            ERRLOG_REQ_DEBUG("REDIRECT TO ORIG URL IS DISABLED: Redirect to = [%s]", session.data->redirect_url_after_login);
             /*GET*/
             //status = mod_mshield_redirect_to_relurl(r, session.data->redirect_url_after_login);
             //apr_global_mutex_unlock(mshield_mutex);
@@ -677,7 +677,7 @@ mshield_access_checker(request_rec *r)
         }
 
 	} else {
-        ERRLOG_DEBUG("Logon state or redirect on auth flag was 0, not redirecting");
+        ERRLOG_REQ_DEBUG("Logon state or redirect on auth flag was 0, not redirecting");
 	}
 
     log_request_handling_duration(r, &start, &end);

@@ -36,18 +36,18 @@
 /**
  * <!-- Logging helpers -->
  */
-#define ERRLOG_REQ(level, format, ...)      ap_log_rerror(level, r, "[%s] %s:%d: " format, apr_table_get(r->subprocess_env, "UNIQUE_ID"), __FILE__, __LINE__, ##__VA_ARGS__)    /**< Log helper for request related stuff */
-#define ERRLOG_REQ_DEBUG(format, ...)       ERRLOG_REQ(PC_LOG_DEBUG, format, ##__VA_ARGS__)     /**< Log request stuff at debug level */
+#define ERRLOG_REQ(level, format, ...)      ap_log_rerror(level, r, "[MSHIELD] [%s] [%s:%d]: " format, apr_table_get(r->subprocess_env, "UNIQUE_ID"), __FILE__, __LINE__, ##__VA_ARGS__)    /**< Log helper for request related stuff */
+#define ERRLOG_REQ_DEBUG(format, ...)       ERRLOG_REQ(PC_LOG_DEBUG, format, ##__VA_ARGS__)    /**< Log request stuff at debug level */
 #define ERRLOG_REQ_INFO(format, ...)        ERRLOG_REQ(PC_LOG_INFO, format, ##__VA_ARGS__)     /**< Log request stuff at info level */
 #define ERRLOG_REQ_CRIT(format, ...)        ERRLOG_REQ(PC_LOG_CRIT, format, ##__VA_ARGS__)     /**< Log request stuff at crit level */
 
-#define ERRLOG_SRV(level, format, ...)      ap_log_error(level, s, "%s:%d: " format, __FILE__, __LINE__, ##__VA_ARGS__)     /**< Log helper for server related stuff */
-#define ERRLOG_SRV_DEBUG(format, ...)       ERRLOG_SRV(PC_LOG_DEBUG, format, ##__VA_ARGS__)     /**< Log server stuff at debug level */
+#define ERRLOG_SRV(level, format, ...)      ap_log_error(level, s, "[MSHIELD] [%s:%d]: " format, __FILE__, __LINE__, ##__VA_ARGS__)     /**< Log helper for server related stuff */
+#define ERRLOG_SRV_DEBUG(format, ...)       ERRLOG_SRV(PC_LOG_DEBUG, format, ##__VA_ARGS__)    /**< Log server stuff at debug level */
 #define ERRLOG_SRV_INFO(format, ...)        ERRLOG_SRV(PC_LOG_INFO, format, ##__VA_ARGS__)     /**< Log server stuff at info level */
 #define ERRLOG_SRV_CRIT(format, ...)        ERRLOG_SRV(PC_LOG_CRIT, format, ##__VA_ARGS__)     /**< Log server stuff at crit level */
 
-#define ERRLOG_DEBUG(format, ...)           ERRLOG_REQ_DEBUG(format, ##__VA_ARGS__)             /**< Log something at debug level */
-#define ERRLOG_INFO(format, ...)            ERRLOG_REQ_INFO(format, ##__VA_ARGS__)             /**< Log something at info level */
-#define ERRLOG_CRIT(format, ...)            ERRLOG_REQ_CRIT(format, ##__VA_ARGS__)             /**< Log something at crit level */
+#define MSHIELD_LOG_DEBUG(p, format, args...)   ap_log_perror(PC_LOG_DEBUG, p, "[MSHIELD] [%s:%d]: " format, __FILE__, __LINE__, ##args)     /**< Log general server stuff at debug level */
+#define MSHIELD_LOG_INFO(p, format, args...)    ap_log_perror(PC_LOG_INFO, p, "[MSHIELD] [%s:%d]: " format, __FILE__, __LINE__, ##args)      /**< Log general server stuff at info level */
+#define ERROR(p, format, args...)               ap_log_perror(PC_LOG_CRIT, p, "[MSHIELD] [%s:%d]: " format, __FILE__, __LINE__, ##args)      /**< Log general server stuff at crit level */
 
 #endif /* MOD_MSHIELD_DEBUG_H */

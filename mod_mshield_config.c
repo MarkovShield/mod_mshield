@@ -361,7 +361,7 @@ mshield_config_fraud_validation_threshold(cmd_parms *cmd, void *dummy, const cha
     if (arg && conf->fraud_detection_enabled) {
         int threshold = atoi(arg);
         if (threshold < MOD_MSHIELD_URL_CRITICALITY_LEVEL_MIN || threshold > MOD_MSHIELD_URL_CRITICALITY_LEVEL_MAX) {
-            return "ERROR: MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD needs to be between MOD_MSHIELD_URL_CRITICALITY_LEVEL_MIN and MOD_MSHIELD_URL_CRITICALITY_LEVEL_MAX";
+            ERROR(conf->pool, "MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD needs to be between MOD_MSHIELD_URL_CRITICALITY_LEVEL_MIN and MOD_MSHIELD_URL_CRITICALITY_LEVEL_MAX");
         }
         conf->fraud_detection_validation_threshold = atoi(arg);
     }

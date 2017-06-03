@@ -16,17 +16,17 @@ generate_session_id(request_rec *r) {
     char *sid = apr_pcalloc(r->pool, apr_base64_encode_len(MOD_MSHIELD_SIDBYTES) + 1);
 
     if (!sid) {
-        ERRLOG_CRIT("FATAL: Out of memory");
+        ERRLOG_REQ_CRIT("FATAL: Out of memory");
         return NULL;
     }
 
     if (APR_SUCCESS != (rc = apr_generate_random_bytes(rnd, MOD_MSHIELD_SIDBYTES))) {
-        ERRLOG_CRIT("FATAL: apr_generate_random_bytes returned %d", rc);
+        ERRLOG_REQ_CRIT("FATAL: apr_generate_random_bytes returned %d", rc);
         return NULL;
     }
 
     if (0 >= apr_base64_encode_binary(sid, rnd, MOD_MSHIELD_SIDBYTES)) {
-        ERRLOG_CRIT("FATAL: apr_base64_encode failed");
+        ERRLOG_REQ_CRIT("FATAL: apr_base64_encode failed");
         return NULL;
     }
 

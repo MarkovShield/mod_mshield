@@ -19,14 +19,14 @@ mod_mshield_filter_request_cookies_cb(void *result, const char *key, const char 
     mod_mshield_server_t *config = ap_get_module_config(r->server->module_config, &mshield_module);
 
     if (!config) {
-        ERRLOG_CRIT("Cannot load configuration!");
+        ERRLOG_REQ_CRIT("Cannot load configuration!");
         cr->status = STATUS_ERROR;
         return FALSE; /* abort iteration */
     }
 
     qa = apr_pstrdup(r->pool, value);
     if (!qa) {
-        ERRLOG_CRIT("Out of memory");
+        ERRLOG_REQ_CRIT("Out of memory");
         cr->status = STATUS_ERROR;
         return FALSE; /* abort iteration */
     }
@@ -36,7 +36,7 @@ mod_mshield_filter_request_cookies_cb(void *result, const char *key, const char 
         char *sc = strstr(cookiestr, config->cookie_name);
         if (sc) {
             /* session cookie */
-            ERRLOG_DEBUG("Found a mod_mshield session cookie: [%s]", sc);
+            ERRLOG_REQ_DEBUG("Found a mod_mshield session cookie: [%s]", sc);
             sc += strlen(config->cookie_name);
             if (*sc == '=') {
                 cr->sessionid = apr_pstrdup(r->pool, sc + 1);
@@ -48,20 +48,20 @@ mod_mshield_filter_request_cookies_cb(void *result, const char *key, const char 
         if (config->session_store_free_cookies) {
             switch (mod_mshield_regexp_match(r, config->session_store_free_cookies, cookiestr)) {
                 case STATUS_MATCH:
-                    ERRLOG_INFO("Found a free cookie: [%s]", cookiestr);
+                    ERRLOG_REQ_INFO("Found a free cookie: [%s]", cookiestr);
                     apr_table_add(cr->headers, "Cookie", cookiestr);
                     break;
                 case STATUS_NOMATCH:
-                    ERRLOG_CRIT("Ignored unexpected cookie from client [%s]", cookiestr);
+                    ERRLOG_REQ_CRIT("Ignored unexpected cookie from client [%s]", cookiestr);
                     break;
                 case STATUS_ERROR:
                 default:
-                    ERRLOG_CRIT("Error matching free cookie regexp (value=[%s])", value);
+                    ERRLOG_REQ_CRIT("Error matching free cookie regexp (value=[%s])", value);
                     cr->status = STATUS_ERROR;
                     return FALSE; /* abort iteration */
             }
         } else {
-            ERRLOG_INFO("No free cookie URL configured");
+            ERRLOG_REQ_INFO("No free cookie URL configured");
         }
     }
 

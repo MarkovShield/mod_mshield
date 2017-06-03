@@ -53,7 +53,7 @@ mshield_add_session_cookie_to_headers(request_rec *r, mod_mshield_server_t *conf
         return STATUS_ERROR;
     }
 
-    //ERRLOG_CRIT("FRAUD RESPONSE FILTER === SESSION [%s] ++ UUID [%s] USERNAME [%s]", cookiestr, session->data->uuid, session->data->username_value);
+    //ERRLOG_REQ_CRIT("FRAUD RESPONSE FILTER === SESSION [%s] ++ UUID [%s] USERNAME [%s]", cookiestr, session->data->uuid, session->data->username_value);
 
     apr_table_setn(headers, "Set-Cookie", cookiestr);
     return STATUS_OK;

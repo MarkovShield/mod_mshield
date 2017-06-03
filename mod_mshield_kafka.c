@@ -46,7 +46,7 @@ static int get_url_risk_level(request_rec *r, const char *url) {
     apr_hash_index_t *hi;
     const char *key;
     const char *value;
-#ifdef DEBUG
+#ifdef MSHIELD_LOG_DEBUG
     print_url_store(config);
 #endif
     for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
@@ -303,7 +303,7 @@ apr_status_t kafka_produce(apr_pool_t *p, mod_mshield_kafka_t *kafka,
  */
 static void process_duration(request_rec *r, struct timespec *start, struct timespec *end) {
     clock_gettime(CLOCK_MONOTONIC, end);
-    ERRLOG_INFO("PROCESSING TIME: [%ldms]", (long) timespecDiff(end, start) / CLOCKS_PER_SEC);
+    ERRLOG_REQ_INFO("PROCESSING TIME: [%ldms]", (long) timespecDiff(end, start) / CLOCKS_PER_SEC);
 }
 
 /**
@@ -471,16 +471,18 @@ void extract_url_to_kafka(server_rec *s) {
  * This callback function is registered via apr_pool_cleanup_register and is executed when an apache pool is cleared or destroyed.
  */
 apr_status_t kafka_cleanup(void *arg) {
-    server_rec *s = arg;
 
     mod_mshield_server_t *config = (mod_mshield_server_t *)arg;
+    if (!config) {
+        return APR_SUCCESS;
+    }
 
     apr_pool_t *p = config->pool;
     if (!p) {
         return APR_SUCCESS;
     }
 
-    ERRLOG_SRV_INFO("kafka_cleanup");
+    MSHIELD_LOG_DEBUG(p, "kafka_cleanup");
 
     apr_status_t rv;
     if ((rv = apr_global_mutex_lock(mshield_mutex)) != APR_SUCCESS) {
@@ -488,28 +490,28 @@ apr_status_t kafka_cleanup(void *arg) {
     }
 
     if (config->kafka.rk_producer) {
-        ERRLOG_SRV_INFO("Poll to handle delivery reports");
+        MSHIELD_LOG_INFO(p, "Poll to handle delivery reports");
         rd_kafka_poll(config->kafka.rk_producer, 0);
 
-        ERRLOG_SRV_INFO("Wait for messages to be delivered");
+        MSHIELD_LOG_INFO(p, "Wait for messages to be delivered");
         while (rd_kafka_outq_len(config->kafka.rk_producer) > 0) {
             rd_kafka_poll(config->kafka.rk_producer, 10);
         }
 
         if (config->kafka.rk_topic_analyse) {
-            ERRLOG_SRV_INFO("Destroy topic [%s]", config->kafka.rk_topic_analyse);
+            MSHIELD_LOG_INFO(p, "Destroy topic [%s]", config->kafka.rk_topic_analyse);
             rd_kafka_topic_destroy((rd_kafka_topic_t *) config->kafka.rk_topic_analyse);
         }
         if (config->kafka.rk_topic_usermapping) {
-            ERRLOG_SRV_INFO("Destroy topic [%s]", config->kafka.rk_topic_usermapping);
+            MSHIELD_LOG_INFO(p, "Destroy topic [%s]", config->kafka.rk_topic_usermapping);
             rd_kafka_topic_destroy((rd_kafka_topic_t *) config->kafka.rk_topic_usermapping);
         }
 
-        ERRLOG_SRV_INFO("Destroy producer handle");
+        MSHIELD_LOG_INFO(p, "Destroy producer handle");
         rd_kafka_destroy(config->kafka.rk_producer);
         config->kafka.rk_producer = NULL;
 
-        ERRLOG_SRV_INFO("Let background threads clean up");
+        MSHIELD_LOG_INFO(p, "Let background threads clean up");
         int32_t i = 5;
         while (i-- > 0 && rd_kafka_wait_destroyed(500) == -1) { ;
         }
@@ -517,7 +519,7 @@ apr_status_t kafka_cleanup(void *arg) {
 
     apr_global_mutex_unlock(mshield_mutex);
 
-    ERRLOG_SRV_INFO("terminated cleanly");
+    MSHIELD_LOG_INFO(p, "terminated cleanly");
 
     return APR_SUCCESS;
 }

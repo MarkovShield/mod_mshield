@@ -124,7 +124,7 @@ create_new_shm_session(request_rec *r, const char *sid, const char *uuid, int *s
 
         /* slot was free all along or has reached it's timeout */
         if (!session_data->slot_used) {
-            ERRLOG_DEBUG("Setting-up new SHM session at offset [%d]", i);
+            ERRLOG_REQ_DEBUG("Setting-up new SHM session at offset [%d]", i);
             apr_cpystrn(session_data->session_name, config->cookie_name, sizeof(session_data->session_name));
             apr_cpystrn(session_data->session_id, sid, sizeof(session_data->session_id));
             apr_cpystrn(session_data->uuid, uuid, sizeof(session_data->uuid));
@@ -141,7 +141,7 @@ create_new_shm_session(request_rec *r, const char *sid, const char *uuid, int *s
             session_data->logon_state = 0;
             session_data->auth_strength = 0;
             session_data->slot_used = 1;
-            ERRLOG_DEBUG("Session name [%s] value [%s] ctime [%ds]", session_data->session_name,
+            ERRLOG_REQ_DEBUG("Session name [%s] value [%s] ctime [%ds]", session_data->session_name,
                         session_data->session_id, session_data->ctime);
 
             *shmoffset = i;
@@ -313,7 +313,7 @@ store_cookie_into_session(request_rec *r, session_data_t *session_data, const ch
     /* add new cookie */
     index = find_empty_cookiestore_slot();
     if (index == -1) {
-        ERRLOG_CRIT("Unable to find an empty cookie store slot!");
+        ERRLOG_REQ_CRIT("Unable to find an empty cookie store slot!");
         return STATUS_ESHMFULL;
     }
 
@@ -360,7 +360,7 @@ collect_cookies_from_cookiestore(request_rec *r, int anchor) {
 
     dconfig = ap_get_module_config(r->per_dir_config, &mshield_module);
     if (!dconfig) {
-        ERRLOG_CRIT("Illegal directory config, no cookies added");
+        ERRLOG_REQ_CRIT("Illegal directory config, no cookies added");
         return NULL;
     }
 
@@ -374,7 +374,7 @@ collect_cookies_from_cookiestore(request_rec *r, int anchor) {
             }
 
             if (!cookiestr) {
-                ERRLOG_CRIT("Out of memory!");
+                ERRLOG_REQ_CRIT("Out of memory!");
                 return NULL;
             }
         }

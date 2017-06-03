@@ -92,7 +92,8 @@ make clean
 
 ### Install usefull debugger tools
 ```bash
-apt-get install gdb valgrind apache2-dbg libapr1-dbg libaprutil1-dbg
+apt-get update
+apt-get install -y gdb valgrind apache2-dbg libapr1-dbg libaprutil1-dbg
 ```
 
 ### Apache logs
