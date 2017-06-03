@@ -150,7 +150,6 @@ mshield_session_unlink(session_t *session) {
         return;
     }
     mshield_shm_free(session->data);
-    // ToDo: Check if this value need to be set to apr_pcalloc(r->pool, sizeof(session_data_t))!
     session->data = NULL;
     session->handle = INVALID_SESSION_HANDLE;
 }

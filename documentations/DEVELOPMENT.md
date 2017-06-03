@@ -93,7 +93,7 @@ make clean
 ### Install usefull debugger tools
 ```bash
 apt-get update
-apt-get install -y gdb valgrind apache2-dbg libapr1-dbg libaprutil1-dbg
+apt-get install -y gdb valgrind apache2-dbg libapr1-dbg libaprutil1-dbg binutils linux-tools
 ```
 
 ### Apache logs
@@ -108,6 +108,13 @@ gdb apache2
 b mshield_access_checker
 run -X # <- command inside gdb
 
+```
+
+### Profile performance
+Run apache with `-X` and then:
+```bash
+echo 0 > /proc/sys/kernel/kptr_restrict
+perf_3.16 record -F 100 -p <PID>
 ```
 
 ### Kafka
