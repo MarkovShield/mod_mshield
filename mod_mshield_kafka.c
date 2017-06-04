@@ -423,6 +423,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
             }
             return STATUS_ERROR;
         }
+        redisFree(context);
         process_duration(r, &start, &end);
     } else {
         status = STATUS_OK;
