@@ -26,6 +26,7 @@ Use `make clean-docs` if you want to clean the previously generated docs.
 * [Configuration](documentations/CONFIGURATION.md)
 * [Settings](documentations/SETTINGS.md)
 * [Development](documentations/DEVELOPMENT.md)
+* [Debug](documentations/DEBUG.md)
 * [Getting started](documentations/GETTING_STARTED.md)
 
 ## Licence

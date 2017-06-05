@@ -4,17 +4,17 @@ MAINTAINER Philip Schmid
 
 # Install some useful tools for debugging purposes, httpd and php71
 RUN apt-get update && apt-get install -y \
-		vim \
-		apache2 \
-    less \
-    net-tools \
-		locate \
-		wget \
-		libhiredis0.10 \
-		libevent-dev \
-		libcrypto++9 \
-		liblz4-dev \
-		liblz4-1 \
+		vim 						\
+		apache2 				\
+    less 						\
+    net-tools 			\
+		locate 					\
+		wget 						\
+		libhiredis0.10 	\
+		libevent-dev 		\
+		libcrypto++9 		\
+		liblz4-dev 			\
+		liblz4-1 				\
 		ca-certificates
 
 # Install php 7.0
@@ -71,48 +71,48 @@ RUN a2enconf mod_mshield_url_rating mshield
 RUN a2enmod mshield
 
 # Enable required apache modules
-RUN a2enmod \
-		authn_file \
-		authn_core \
-		authz_host \
-		authz_groupfile \
-		authz_user \
-		authz_core \
-		access_compat \
-		auth_basic \
-		socache_shmcb \
-		reqtimeout \
-		filter \
-		mime \
-		log_forensic \
-		log_debug \
-		\env \
-		headers \
-		unique_id \
-		setenvif \
-		xml2enc \
-		proxy \
-		proxy_connect \
-		proxy_ftp \
-		proxy_http \
-		proxy_fcgi \
-		proxy_scgi \
-		proxy_wstunnel \
-		proxy_ajp \
-		proxy_balancer \
-		proxy_express \
-		proxy_html \
-		slotmem_shm \
-		ssl \
+RUN a2enmod 						\
+		authn_file 					\
+		authn_core 					\
+		authz_host 					\
+		authz_groupfile 		\
+		authz_user 					\
+		authz_core 					\
+		access_compat 			\
+		auth_basic 					\
+		socache_shmcb 			\
+		reqtimeout 					\
+		filter 							\
+		mime 								\
+		log_forensic 				\
+		log_debug 					\
+		\env 								\
+		headers 						\
+		unique_id 					\
+		setenvif 						\
+		xml2enc 						\
+		proxy 							\
+		proxy_connect 			\
+		proxy_ftp 					\
+		proxy_http 					\
+		proxy_fcgi 					\
+		proxy_scgi 					\
+		proxy_wstunnel 			\
+		proxy_ajp 					\
+		proxy_balancer 			\
+		proxy_express 			\
+		proxy_html 					\
+		slotmem_shm 				\
+		ssl 								\
 		lbmethod_byrequests \
-		lbmethod_bytraffic \
+		lbmethod_bytraffic 	\
 		lbmethod_bybusyness \
-		status \
-		autoindex \
-		dir \
-		alias \
-		rewrite \
-		php7.0 \
+		status 							\
+		autoindex 					\
+		dir 								\
+		alias 							\
+		rewrite 						\
+		php7.0 							\
 		file_cache
 
 # Redirect logs to stdout and stderr in order to see it with docker logs

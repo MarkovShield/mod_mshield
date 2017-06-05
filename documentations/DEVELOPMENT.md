@@ -8,14 +8,7 @@
 * [How to compile](#markdown-header-how-to-compile)
 * [Test the module](#markdown-header-test-the-module)
 * [Cleanup compilation stuff](#markdown-header-cleanup-compilation-stuff)
-* [Debugging & helpful commands](#markdown-header-debugging-helpful-commands)
-    * [Apache logs](#markdown-header-apache-logs)
-    * [Kafka](#markdown-header-kafka)
-        * [Test kafka connection](#markdown-header-test-kafka-connection)
-        * [Show consumer groups](#markdown-header-show-consumer-groups)
-        * [Send test message to Kafka](#markdown-header-send-test-message-to-kafka)
-    * [Redis](#markdown-header-redis)
-        * [Test Redis connection](#markdown-header-test-redis-connection)
+* [Debugging](#markdown-header-debugging)
 
 ## Prerequisites
 
@@ -25,7 +18,6 @@ In order to compile this module, you will need the sources of the following pack
 * `apr-utils`
 * `httpd`
 * `pcre`
-* `libevent` (see [nmathewson/Libevent](https://github.com/nmathewson/Libevent))
 * `librdkafka` (see [edenhill/librdkafka](https://github.com/edenhill/librdkafka))
 * `hiredis` (see [redis/hiredis](https://github.com/redis/hiredis))
 
@@ -34,10 +26,12 @@ Depending on your OS you can also install these packages via package manager.
 #### macOS
 If you are using macOS, you can just install these packages via Brew:
 ```bash
-brew install apr apr-util homebrew/apache/httpd24 pcre librdkafka hiredis libevent
+brew install apr apr-util homebrew/apache/httpd24 pcre librdkafka hiredis
 ```
 
-### httpd, apr, apr-util header files
+### httpd, apr, apr-util header files (optional)
+**Note**: Only needed if you use cmake for example if your development IDE is CLion.
+
 You first need to create a `CMakeLists.txt` file because its inside `.gitignore`.
 mod_mshield needs some header files from httpd, apr and apr-utils. By default these header files are linked in the `CMakeLists.txt` file:
 ```
@@ -48,23 +42,29 @@ include_directories(
     /usr/local/Cellar/hiredis/0.13.3/include/hiredis/
 )
 ```
-Change these paths to once from your OS if you are not using macOS and Brew.
+Change these paths to the ones from your OS if you are not using macOS and Brew.
 
 ## How to compile
+There are basically two ways to compile mod_mshield. If you just want to compile it, choose the second way - the "no dependencies" way. If you want to develop mod_mshield, use the first one.
+
+### Dependencies installed on your system
 Compile the module without installation and without enable it automatically (**make sure `apxs` is in your path**):
 ```bash
 make dev
 ```
+**Hint:** The absolute path for apxs on macOS: `/usr/local/Cellar/httpd24/2.4.25/bin/apxs`
+
 Alternatively, you can compile, install and enable the module in the httpd.conf:
 ```bash
 make deploy
 ```
-**Hint:** The absolute path for apxs on macOS: `/usr/local/Cellar/httpd24/2.4.25/bin/apxs`
 
-Its also possible to compile the module using a docker compiler image. This has the huge advantage that no depencencies have to be installed on our local system. Use:
+### No dependencies installed on your system
+Its also possible to compile the module using a docker compiler image. This has the huge advantage that no depencencies have to be installed on our local compiling system (e.g. your notebook). Use:
 ```bash
 make compile
 ```
+**Important**: To run the module inside apache the dependencies are still required! So make sure to install the dependent packages before you enable and run mod_mshield inside your apache.
 
 ## Test the module
 On your development system:
@@ -88,71 +88,5 @@ make deploy
 make clean
 ```
 
-## Debugging & helpful commands
-
-### Install usefull debugger tools
-```bash
-apt-get update
-apt-get install -y gdb valgrind apache2-dbg libapr1-dbg libaprutil1-dbg binutils linux-tools
-```
-
-### Apache logs
-```bash
-tail -f /opt/applic/httpd/logs/*error_log
-```
-
-### Debug segmentation fault
-```bash
-source /etc/apache2/envvars
-gdb apache2
-b mshield_access_checker
-run -X # <- command inside gdb
-
-```
-
-### Profile performance
-Run apache with `-X` and then:
-```bash
-echo 0 > /proc/sys/kernel/kptr_restrict
-perf_3.16 record -F 100 -p <PID>
-```
-
-### Kafka
-
-#### Test kafka connection
-Listen on topic (e.g. `MarkovClicks`):
-```bash
-kafkacat -C -b 192.168.56.50 -t MarkovClicks
-```
-Post something to the topic (e.g. `MarkovClicks`):
-```bash
-echo "Hallo" | kafkacat -P -b 192.168.56.50 -t MarkovClicks
-```
-
-#### Show consumer groups
-```bash
-kafka-consumer-groups.sh --list --bootstrap-server localhost:9092
-```
-
-#### Send test message to Kafka
-```bash
-echo $'xtTALCofbVIMEmuJzd95Me0prdFNKt%{"sessionUUID":	"xtTALCofbVIMEmuJzd95Me0prdFNKt","clickUUID":	"zugbwerz23g8gzbhb","timeStamp":	1493639064719,"url":	"/private/request-header/","urlRiskLevel":	4,"validationRequired":	true}' | kafka-console-producer.sh \
-    --broker-list localhost:9092 \
-    --topic MarkovClicks \
-    --property parse.key=true \
-    --property key.separator=%
-```
-
-### Redis
-
-#### Listen on multiple channels
-```bash
-redis-cli psubscribe WQ*
-```
-
-#### Test Redis connection
-Publish engine result (e.g. `FRAUD`) to channel `zugbwerz23g8gzbhb` :
-```bash
-redis-cli publish zugbwerz23g8gzbhb FRAUD
-```
-**Hint:** The `clickUUID` is used as channel ID.
+## Debugging
+For debugging instructions/hints please have a look at [DEBUG](DEBUG.md).

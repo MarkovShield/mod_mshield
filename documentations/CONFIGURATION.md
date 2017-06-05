@@ -1,4 +1,5 @@
 # Configuration
+The follwing steps will give you an example of how to set up mod_mshield. Be aware that depending on your apache installation paths and configuration file includes maybe have to be done in other ways.
 
 ## Content
 * [Basic module configuration](#markdown-header-basic-module-configuration)
@@ -76,7 +77,8 @@ For the URL criticality level definitions, create another file `conf/extra/mod_m
 
 **Important**
 *  Possible criticality levels are from 0 to 1000 where 0 means "not critical at all" and 1000 means "super critical". In productive usage its important to use your own scale here related to the models which are used by the engine. For the demo its sufficient to use 0 to 5.
-*  Ensure that **no** URL, which is reachable **without login**, has a bigger or equal risk level then MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD. If you do, there will be no real request rating and the engine will always return OK.
+*  Ensure that **no** URL, which is reachable **without login**, has a bigger or equal risk level then `MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD`. If you do, there will be no real request rating and the engine will always return OK.
+*  Be aware that setting a risk level of whole url ranges to a higher value then `MOD_MSHIELD_FRAUD_VALIDATION_THRESHOLD` can massively increase the load on you apache server. Ensure to only set single URLs to a critical risk level to reduce the apache work load.
 
 Use the following format:
 ```bash

@@ -11,8 +11,13 @@ RUN apt-get update && apt-get install -y \
 		wget \
 		strace \
 		pstack \
+		kcachegrind \
 		gdb \
 		valgrind \
+    libapr1-dbg \
+    libaprutil1-dbg \
+    binutils \
+    linux-tools \
 		libhiredis0.10 \
 		libevent-dev \
 		libcrypto++9 \
@@ -107,11 +112,11 @@ RUN set -x \
 	&& cd src \
 	\
 	&& gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)" \
-	&& ./configure \
+	&& CFLAGS="-g -pg" ./configure \
 		--build="$gnuArch" \
 		--prefix="$HTTPD_PREFIX" \
 		--enable-mods-shared=reallyall \
-	&& CFLAGS="-g" make -j "$(nproc)" \
+	&& CFLAGS="-g -pg" make -j "$(nproc)" \
 	&& make install \
 	\
 	&& cd .. \
@@ -135,8 +140,8 @@ RUN rm -f /etc/apache2/conf-enabled/security.conf
 RUN rm -f /etc/apache2/conf-available/security.conf
 
 # Copy the required files, scripts and configurations to image
-COPY apache_mshield_reverse_proxy.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/apache_mshield_reverse_proxy.sh
+COPY apache_mshield_reverse_proxy_debug.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/apache_mshield_reverse_proxy_debug.sh
 
 COPY html/ /var/www/html/
 
@@ -230,4 +235,4 @@ RUN apt-get purge -y --auto-remove $buildDeps
 
 
 # Start the apache service
-CMD ["/usr/local/bin/apache_mshield_reverse_proxy.sh"]
+CMD ["/usr/local/bin/apache_mshield_reverse_proxy_debug.sh"]

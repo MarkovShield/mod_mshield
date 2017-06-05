@@ -4,12 +4,12 @@ MAINTAINER Philip Schmid
 
 # Install some useful tools for debugging purposes, httpd and php71
 RUN apt-get update && apt-get install -y \
-		vim \
-		apache2 \
-    less \
-    net-tools \
-		locate \
-		wget \
+		vim 				\
+		apache2 		\
+    less 				\
+    net-tools 	\
+		locate 			\
+		wget 				\
 		ca-certificates
 
 # Install php 7.0
@@ -43,19 +43,19 @@ RUN ln -s /etc/apache2/sites-available/httpd-backend.conf /etc/apache2/sites-ena
 RUN ln -s /etc/apache2/conf-available/security.conf /etc/apache2/conf-enabled/security.conf
 
 # Enable required apache modules
-RUN a2enmod \
-		proxy \
-		proxy_connect \
-		proxy_ftp  \
-		dir \
-		proxy_http \
-		proxy_html \
-		proxy_wstunnel \
-		proxy_ajp \
-		proxy_balancer \
-		ssl \
-		log_forensic \
-		log_debug \
+RUN a2enmod 				\
+		proxy 					\
+		proxy_connect 	\
+		proxy_ftp  			\
+		dir 						\
+		proxy_http 			\
+		proxy_html 			\
+		proxy_wstunnel 	\
+		proxy_ajp 			\
+		proxy_balancer 	\
+		ssl 						\
+		log_forensic 		\
+		log_debug 			\
 		xml2enc
 
 # Redirect logs to stdout and stderr in order to see it with docker logs

@@ -1,4 +1,5 @@
 # Getting started
+This guide will show you how to set up a MarkovShield demo setup if you want to change some reverse proxy contents. If you just want to run MarkovShield as fast as you can and without editing the demo site, have a look at the [https://github.com/MarkovShield/install](https://github.com/MarkovShield/install) repository.
 
 ## Content
 * [Prerequisites](#markdown-header-prerequisites)
@@ -16,7 +17,7 @@ In order to start the demo application, hit `make demo` inside the `mod_mshield`
 
 ![Echo_Request_Header](https://bitbucket.org/markovshield/mod_mshield/raw/develop/resources/Echo_Request_Header.png)
 
-**Note**: In the demo web application there are now real trained models because this needs historical session data which is not available in the demo web application.
+**Note**: In the demo web application there are now real trained user models because this would need historical session data which is not available in the demo web application.
 
 ## Debug
 If you run into problems, check the following steps:
@@ -25,19 +26,16 @@ If you run into problems, check the following steps:
       - `mshielddemo_schema_registry_1`
       - `mshielddemo_taskmanager_1`
       - `mshielddemo_broker_1`
-      - `jobmanager`
+      - `mshielddemo_jobmanager_1`
       - `mshielddemo_zookeeper_1`
       - `mshielddemo_mshield_backend_1`
       - `mshielddemo_mshield_reverse_proxy_1`
       - `mshielddemo_redis_1`
+      - `mshielddemo_mshield_flink_modelupdater_1`
+      - `mshielddemo_mshield_flink_analyser_1`
+      - `mshielddemo_mshield_kafka_clickstreams_1`
 
     If one of them is missing, run `make shutdown-demo` and try again to start the environment using `make demo`.
-
-2.  Make sure the following 2 processes are running:
-      - `flink run -c ch.hsr.markovshield.flink.MarkovShieldAnalyser --jobmanager jobmanager:6123 flink/target/flink-1.0-SNAPSHOT-jar-with-dependencies.jar`
-      - `java -cp kafka-stream/target/kafka-stream-1.0-SNAPSHOT-jar-with-dependencies.jar ch.hsr.markovshield.kafkastream.MarkovShieldClickstreams`
-
-TODO: Pack these 2 processes each into a container and start them with the docker-compose file.
 
 ## Clean up
 To clean up the whole markovshield demo environment, run `make shutdown-demo`.

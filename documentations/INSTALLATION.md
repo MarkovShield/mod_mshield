@@ -10,12 +10,12 @@
 ### Prerequisites
 On Linux (Debian based):
 ```bash
-apt-get install librdkafka1 libhiredis-dev libhiredis0.13 libevent-dev apache2 apache2-dev libapr1 libapr1-dev libpcre3-dev
+apt-get install librdkafka1 libhiredis-dev libhiredis0.13 apache2 apache2-dev libapr1 libapr1-dev libpcre3-dev
 ```
 
 On macOS:
 ```bash
-brew install apr apr-util homebrew/apache/httpd24 pcre librdkafka hiredis libevent
+brew install apr apr-util homebrew/apache/httpd24 pcre librdkafka hiredis
 ```
 
 ### Installation
@@ -27,7 +27,7 @@ git clone git@bitbucket.org:markovshield/mod_mshield.git
 
 Compile the module:
 ```bash
-cd mod_mshield && git checkout develop
+cd mod_mshield
 make deploy
 ```
 **Note:** Depending on your environment you perhaps need to change the `APXSCMD` variable and `PCRE` path inside the `Makefile`.
