@@ -1,25 +1,21 @@
 # Debug mod_mshield
 
 ## Content
-<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:0 orderedList:0 -->
-
-- [Debug mod_mshield](#markdown-header-debug-modmshield)
-	- [Content](#markdown-header-content)
-	- [Debugging & helpful commands](#markdown-header-debugging-helpful-commands)
-		- [Install usefull debugging tools](#markdown-header-install-usefull-debugging-tools)
-		- [Apache logs](#markdown-header-apache-logs)
-		- [Trace performance](#markdown-header-trace-performance)
-		- [Debug segmentation fault](#markdown-header-debug-segmentation-fault)
-		- [Kafka](#markdown-header-kafka)
-			- [Test kafka connection](#markdown-header-test-kafka-connection)
-			- [Send test message to Kafka](#markdown-header-send-test-message-to-kafka)
-			- [Show consumer groups](#markdown-header-show-consumer-groups)
-		- [Redis](#markdown-header-redis)
-			- [Listen on multiple channels](#markdown-header-listen-on-multiple-channels)
-			- [Test Redis connection](#markdown-header-test-redis-connection)
-	- [mod_mshield debugging container](#markdown-header-mod_mshield-debugging-container)
-
-<!-- /TOC -->
+* [Debug mod_mshield](#markdown-header-debug-modmshield)
+	* [Content](#markdown-header-content)
+	* [Debugging & helpful commands](#markdown-header-debugging-helpful-commands)
+		* [Install usefull debugging tools](#markdown-header-install-usefull-debugging-tools)
+		* [Apache logs](#markdown-header-apache-logs)
+		* [Trace performance](#markdown-header-trace-performance)
+		* [Debug segmentation fault](#markdown-header-debug-segmentation-fault)
+		* [Kafka](#markdown-header-kafka)
+			* [Test kafka connection](#markdown-header-test-kafka-connection)
+			* [Send test message to Kafka](#markdown-header-send-test-message-to-kafka)
+			* [Show consumer groups](#markdown-header-show-consumer-groups)
+		* [Redis](#markdown-header-redis)
+			* [Listen on multiple channels](#markdown-header-listen-on-multiple-channels)
+			* [Test Redis connection](#markdown-header-test-redis-connection)
+	* [mod_mshield debugging container](#markdown-header-mod_mshield-debugging-container)
 
 ## Debugging & helpful commands
 
