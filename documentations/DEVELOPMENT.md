@@ -9,6 +9,7 @@
 * [Test the module](#markdown-header-test-the-module)
 * [Cleanup compilation stuff](#markdown-header-cleanup-compilation-stuff)
 * [Debugging](#markdown-header-debugging)
+* [Publish images](#markdown-header-publish-images)
 
 ## Prerequisites
 
@@ -90,3 +91,6 @@ make clean
 
 ## Debugging
 For debugging instructions/hints please have a look at [DEBUG](DEBUG.md).
+
+## Publish images
+To build the MarkovShield Docker images and publish them to a registry (e.g. Docker Hub), change the `HUBPREFIX` inside the `Makefile` to your Docker Hub username/organisation name and hit `make publish`.

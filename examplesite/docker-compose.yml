@@ -2,7 +2,7 @@ version: '3'
 services:
   mshield_reverse_proxy:
     build: ./reverseproxy
-    image: mshield-reverse-proxy
+    image: mshield-demp-reverse-proxy
     hostname: mshield_reverse_proxy
     ports:
       - "80:80"
@@ -10,7 +10,7 @@ services:
 
   mshield_backend:
     build: ./backend
-    image: mshield-backend
+    image: mshield-demo-backend
     hostname: mshield_backend
     expose:
       - "8888"

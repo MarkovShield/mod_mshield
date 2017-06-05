@@ -11,6 +11,10 @@ PCRE = /opt/applic/pcre-8.39/include
 SESSIONCOUNT = 100000
 COOKIECOUNT = 300000
 
+# Docker hub publishing parameters
+BUILDTAG = latest
+HUBPREFIX = markovshield
+
 #############################################
 #
 # IMPORTANT: Do not change anything below
@@ -66,11 +70,17 @@ compile-librdkafka:
 	pschmid/librdkafka_compiler 		\
 	/bin/bash -c 'cp /tmp/librdkafka/src/librdkafka.so.1 /opt/'
 
-demo: compile compile-librdkafka shutdown-demo
-	cp librdkafka.so.1 examplesite/reverseproxy
-	cp mod_mshield.so examplesite/reverseproxy
-	docker-compose -p mshield-demo -f examplesite/docker-compose.yml up --build -d
-	@echo Finished! Please give MarkovShield a few seconds to start everything in the background. Visit https://localhost to try markovshield.
+prepare-images: compile compile-librdkafka
+	mv librdkafka.so.1 examplesite/reverseproxy
+	mv mod_mshield.so examplesite/reverseproxy
+
+prepare-publish: prepare-images
+	docker build -f examplesite/reverseproxy/Dockerfile -t $(HUBPREFIX)/mshield-demo-reverse-proxy .
+	docker build -f examplesite/backend/Dockerfile -t $(HUBPREFIX)/mshield-demo-backend .
+	docker tag markovshield/mshield-demo-reverse-proxy markovshield/mshield-demo-reverse-proxy:$(BUILDTAG)
+	docker tag markovshield/mshield-demo-backend markovshield/mshield-demo-backend:$(BUILDTAG)
+	docker push markovshield/mshield-demo-reverse-proxy:$(BUILDTAG)
+	docker push markovshield/mshield-demo-backend:$(BUILDTAG)
 
 shutdown-demo:
 	docker-compose -p mshield-demo -f examplesite/docker-compose.yml down
@@ -78,6 +88,12 @@ shutdown-demo:
 	rm -rf examplesite/kafka-data
 	rm -rf examplesite/zk-data
 	rm -rf examplesite/state-store
+
+demo: prepare-images
+	docker-compose -p mshield-demo -f examplesite/docker-compose.yml up --build -d
+	@echo Finished! Please give MarkovShield a few seconds to start everything in the background. Visit https://localhost to try markovshield.
+
+publish: prepare-publish clean compile-cleanup
 
 all: APXSCMD = apxs
 all: APXSFLAGS += $(APXSFLAGSEND)
@@ -94,7 +110,11 @@ docs:
 clean-docs:
 	rm -rf docs
 
+compile-cleanup:
+	rm -f examplesite/reverseproxy/librdkafka.so.1
+	rm -f examplesite/reverseproxy/mod_mshield.so
+
 clean:
 	rm -rf *.la *.slo *.o *.lo .libs
 
-.PHONY: mod_mshield dev deploy docker-compile compile compile-librdkafka demo shutdown-demo all docs clean-docs clean
+.PHONY: mod_mshield dev deploy docker-compile compile compile-librdkafka prepare-images prepare-publish shutdown-demo demo publish all docs clean-docs compile-cleanup clean
