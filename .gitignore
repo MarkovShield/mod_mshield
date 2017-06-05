@@ -58,6 +58,7 @@ dkms.conf
 CMakeLists.txt
 cmake-build-debug/
 docs/
-examplesite/kafka-data
-examplesite/zk-txt-logs
-examplesite/state-store
+kafka-data/
+state-store/
+zk-data/
+zk-txt-logs/

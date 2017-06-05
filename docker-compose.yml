@@ -1,7 +1,9 @@
 version: '3'
 services:
   mshield_reverse_proxy:
-    build: ./reverseproxy
+    build:
+      context: ./
+      dockerfile: ./examplesite/reverseproxy/Dockerfile
     image: mshield-demp-reverse-proxy
     hostname: mshield_reverse_proxy
     ports:
@@ -9,7 +11,9 @@ services:
       - "443:443"
 
   mshield_backend:
-    build: ./backend
+    build:
+      context: ./
+      dockerfile: ./examplesite/backend/Dockerfile
     image: mshield-demo-backend
     hostname: mshield_backend
     expose:

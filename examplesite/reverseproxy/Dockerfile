@@ -35,17 +35,17 @@ RUN rm -f /etc/apache2/conf-enabled/security.conf
 RUN rm -f /etc/apache2/conf-available/security.conf
 
 # Copy the required files, scripts and configurations to image
-COPY apache_mshield_reverse_proxy.sh /usr/local/bin/
+COPY examplesite/reverseproxy/apache_mshield_reverse_proxy.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/apache_mshield_reverse_proxy.sh
 
-COPY html/ /var/www/html/
+COPY examplesite/reverseproxy/html/ /var/www/html/
 
-COPY conf/ports.conf /etc/apache2/
-COPY conf/security.conf /etc/apache2/conf-available/
-COPY conf/httpd-ssl.conf /etc/apache2/sites-available/
-COPY conf/httpd-preauth.conf /etc/apache2/sites-available/
-COPY conf/httpd-forensic-readiness.conf /etc/apache2/conf-available/
-COPY conf/httpd-hsts.conf /etc/apache2/conf-available/
+COPY examplesite/reverseproxy/conf/ports.conf /etc/apache2/
+COPY examplesite/reverseproxy/conf/security.conf /etc/apache2/conf-available/
+COPY examplesite/reverseproxy/conf/httpd-ssl.conf /etc/apache2/sites-available/
+COPY examplesite/reverseproxy/conf/httpd-preauth.conf /etc/apache2/sites-available/
+COPY examplesite/reverseproxy/conf/httpd-forensic-readiness.conf /etc/apache2/conf-available/
+COPY examplesite/reverseproxy/conf/httpd-hsts.conf /etc/apache2/conf-available/
 
 RUN ln -s /etc/apache2/conf-available/security.conf /etc/apache2/conf-enabled/security.conf
 RUN ln -s /etc/apache2/sites-available/httpd-ssl.conf /etc/apache2/sites-enabled/httpd-ssl.conf
@@ -54,18 +54,18 @@ RUN ln -s /etc/apache2/conf-available/httpd-forensic-readiness.conf /etc/apache2
 RUN ln -s /etc/apache2/conf-available/httpd-hsts.conf /etc/apache2/conf-enabled/httpd-hsts.conf
 
 RUN mkdir -p /etc/pki/certs /etc/pki/keys
-COPY samplecerts/localhost.crt /etc/pki/certs/
-COPY samplecerts/localhost.key /etc/pki/keys/
+COPY examplesite/reverseproxy/samplecerts/localhost.crt /etc/pki/certs/
+COPY examplesite/reverseproxy/samplecerts/localhost.key /etc/pki/keys/
 
 # Copy some library dependencies
 COPY librdkafka.so.1 /usr/lib/x86_64-linux-gnu/
 
 # Enable mod_mshield
-COPY conf/mod_mshield_url_rating.conf /etc/apache2/conf-available/
+COPY examplesite/reverseproxy/conf/mod_mshield_url_rating.conf /etc/apache2/conf-available/
 
 COPY mod_mshield.so /usr/lib/apache2/modules/
-COPY conf/mshield.load /etc/apache2/mods-available/
-COPY conf/mshield.conf /etc/apache2/conf-available/
+COPY examplesite/reverseproxy/conf/mshield.load /etc/apache2/mods-available/
+COPY examplesite/reverseproxy/conf/mshield.conf /etc/apache2/conf-available/
 
 RUN a2enconf mod_mshield_url_rating mshield
 RUN a2enmod mshield

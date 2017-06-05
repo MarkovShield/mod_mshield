@@ -30,15 +30,15 @@ RUN rm -f /etc/apache2/conf-enabled/security.conf
 RUN rm -f /etc/apache2/conf-available/security.conf
 
 # Copy the required files, scripts and configurations to image
-COPY apache_mshield_backend.sh /usr/local/bin/
+COPY examplesite/backend/apache_mshield_backend.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/apache_mshield_backend.sh
 
-COPY html/ /var/www/html/
+COPY examplesite/backend/html/ /var/www/html/
 
-COPY conf/ports.conf /etc/apache2/
-COPY conf/httpd-backend.conf /etc/apache2/sites-available/
-COPY conf/security.conf /etc/apache2/conf-available/
-COPY conf/proxy-html.conf /etc/apache2/conf-available/
+COPY examplesite/backend/conf/ports.conf /etc/apache2/
+COPY examplesite/backend/conf/httpd-backend.conf /etc/apache2/sites-available/
+COPY examplesite/backend/conf/security.conf /etc/apache2/conf-available/
+COPY examplesite/backend/conf/proxy-html.conf /etc/apache2/conf-available/
 RUN ln -s /etc/apache2/sites-available/httpd-backend.conf /etc/apache2/sites-enabled/httpd-backend.conf
 RUN ln -s /etc/apache2/conf-available/security.conf /etc/apache2/conf-enabled/security.conf
 
