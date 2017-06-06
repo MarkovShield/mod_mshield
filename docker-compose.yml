@@ -4,7 +4,7 @@ services:
     build:
       context: ./
       dockerfile: ./examplesite/reverseproxy/Dockerfile
-    image: mshield-demp-reverse-proxy
+    image: mshield-demo-reverse-proxy
     hostname: mshield_reverse_proxy
     ports:
       - "80:80"

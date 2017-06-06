@@ -761,7 +761,11 @@ static int mshield_post_config(apr_pool_t *pconf, apr_pool_t *plog,
 #endif /* MOD_MSHIELD_SET_MUTEX_PERMS */
 
     // Currently not needed anymore..
-	//extract_url_to_kafka(s);
+    /*mod_mshield_server_t *config;
+	config = ap_get_module_config(s->module_config, &mshield_module);
+    if (config->fraud_detection_enabled) {
+		extract_url_to_kafka(s);
+	}*/
 
 	return OK;
 }
