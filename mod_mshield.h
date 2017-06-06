@@ -36,7 +36,6 @@
 #include "apr_anylock.h"
 #include "ap_mpm.h"
 #include "stdbool.h"
-#include "event.h"
 
 #include "mod_mshield_debug.h"
 #include "mod_mshield_errno.h"
