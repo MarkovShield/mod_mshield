@@ -80,10 +80,10 @@ prepare-publish: compile compile-librdkafka
 
 shutdown-demo:
 	docker-compose -p mshield-demo -f docker-compose.yml down
-	rm -rf examplesite/zk-txt-logs
-	rm -rf examplesite/kafka-data
-	rm -rf examplesite/zk-data
-	rm -rf examplesite/state-store
+	rm -rf zk-txt-logs
+	rm -rf kafka-data
+	rm -rf zk-data
+	rm -rf state-store
 
 demo: compile compile-librdkafka
 	docker-compose -p mshield-demo -f docker-compose.yml up --build -d
