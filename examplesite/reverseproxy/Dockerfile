@@ -11,7 +11,6 @@ RUN apt-get update && apt-get install -y \
 		locate 					\
 		wget 						\
 		libhiredis0.10 	\
-		libevent-dev 		\
 		libcrypto++9 		\
 		liblz4-dev 			\
 		liblz4-1 				\
@@ -67,7 +66,7 @@ COPY mod_mshield.so /usr/lib/apache2/modules/
 COPY examplesite/reverseproxy/conf/mshield.load /etc/apache2/mods-available/
 COPY examplesite/reverseproxy/conf/mshield.conf /etc/apache2/conf-available/
 
-RUN a2enconf mod_mshield_url_rating mshield
+RUN a2enconf mshield
 RUN a2enmod mshield
 
 # Enable required apache modules
