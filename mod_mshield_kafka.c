@@ -372,9 +372,9 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(validationRequired));
 
     if (validationRequired) {
-        struct timespec start, end;
-        clock_gettime(CLOCK_MONOTONIC, &start);
-        ERRLOG_REQ_INFO("FRAUD-ENGINE: Redis SUBSCRIBE setup");
+        //struct timespec start, end;
+        //clock_gettime(CLOCK_MONOTONIC, &start);
+        ERRLOG_REQ_CRIT("TIME_LOG: pre_con_setup request: %s time: %ld", clickUUID, apr_time_msec(apr_time_now()));
         connection_timeout.tv_sec = config->redis.connection_timeout;
         connection_timeout.tv_usec = 0;
         context = redisConnectWithTimeout(config->redis.server, config->redis.port, connection_timeout);
@@ -388,7 +388,8 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         redisSetTimeout(context, response_timeout);
         reply = redisCommand(context, "SUBSCRIBE %s", clickUUID);
         freeReplyObject(reply);
-        process_duration(r, &start, &end);
+        ERRLOG_REQ_CRIT("TIME_LOG: post_con_setup request: %s time: %ld", clickUUID, apr_time_msec(apr_time_now()));
+        //process_duration(r, &start, &end);
     }
 
     status = kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
@@ -403,8 +404,9 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
 
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
     if (validationRequired) {
-        struct timespec start, end;
-        clock_gettime(CLOCK_MONOTONIC, &start);
+        //struct timespec start, end;
+        //clock_gettime(CLOCK_MONOTONIC, &start);
+        ERRLOG_REQ_CRIT("TIME_LOG: pre_wait_setup request: %s time: %ld", clickUUID, apr_time_msec(apr_time_now()));
         ERRLOG_REQ_INFO("FRAUD-ENGINE: Redis redisGetReply");
         ERRLOG_REQ_INFO("FRAUD-ENGINE: URL [%s] risk level was [%i]", url, risk_level);
         while (context->err != REDIS_ERR_IO && redisGetReply(context, (void **) &reply) == REDIS_OK) {
@@ -424,7 +426,8 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
             return STATUS_ERROR;
         }
         redisFree(context);
-        process_duration(r, &start, &end);
+        ERRLOG_REQ_CRIT("TIME_LOG: post_wait_setup request: %s time: %ld", clickUUID, apr_time_msec(apr_time_now()));
+        //process_duration(r, &start, &end);
     } else {
         status = STATUS_OK;
     }

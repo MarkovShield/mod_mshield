@@ -62,3 +62,4 @@ kafka-data/
 state-store/
 zk-data/
 zk-txt-logs/
+.libs
