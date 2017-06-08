@@ -372,8 +372,6 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(validationRequired));
 
     if (validationRequired) {
-        //struct timespec start, end;
-        //clock_gettime(CLOCK_MONOTONIC, &start);
         ERRLOG_REQ_CRIT("TIME_LOG: pre_con_setup request: %s time: %ld", clickUUID, apr_time_as_msec(apr_time_now()));
         connection_timeout.tv_sec = config->redis.connection_timeout;
         connection_timeout.tv_usec = 0;
@@ -389,7 +387,6 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         reply = redisCommand(context, "SUBSCRIBE %s", clickUUID);
         freeReplyObject(reply);
         ERRLOG_REQ_CRIT("TIME_LOG: post_con_setup request: %s time: %ld", clickUUID, apr_time_as_msec(apr_time_now()));
-        //process_duration(r, &start, &end);
     }
 
     status = kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
@@ -404,13 +401,10 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
 
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
     if (validationRequired) {
-        // ToDo: Unlock mutex here
+        /* Unlock mutex because we don't want to block other workers while we are waiting for the Redis result. */
         apr_global_mutex_unlock(mshield_mutex);
 
-        //struct timespec start, end;
-        //clock_gettime(CLOCK_MONOTONIC, &start);
         ERRLOG_REQ_CRIT("TIME_LOG: pre_wait_setup request: %s time: %ld", clickUUID, apr_time_as_msec(apr_time_now()));
-        //ERRLOG_REQ_INFO("FRAUD-ENGINE: Redis redisGetReply");
         ERRLOG_REQ_INFO("FRAUD-ENGINE: URL [%s] risk level was [%i]", url, risk_level);
         while (context->err != REDIS_ERR_IO && redisGetReply(context, (void **) &reply) == REDIS_OK) {
             status = handle_mshield_result(reply, r, session);
@@ -420,7 +414,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
             }
             freeReplyObject(reply);
         }
-        // ToDo: Lock mutex back again
+        /* Got Redis result, reacquire mutex to continue. */
         if (apr_global_mutex_lock(mshield_mutex) != APR_SUCCESS) {
             ERRLOG_REQ_CRIT("Could not acquire mutex.");
             return HTTP_INTERNAL_SERVER_ERROR;
@@ -436,7 +430,6 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         }
         redisFree(context);
         ERRLOG_REQ_CRIT("TIME_LOG: post_wait_setup request: %s time: %ld", clickUUID, apr_time_as_msec(apr_time_now()));
-        //process_duration(r, &start, &end);
     } else {
         status = STATUS_OK;
     }

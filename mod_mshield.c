@@ -457,19 +457,16 @@ mshield_access_checker(request_rec *r)
                     ERRLOG_REQ_CRIT("Redirection to fraud_error_url failed.");
                 }
                 ERRLOG_REQ_DEBUG("Redirection to fraud_error_url was successful.");
-                //log_request_handling_duration(r, &start, &end);
                 apr_global_mutex_unlock(mshield_mutex);
                 return status;
 			case HTTP_MOVED_TEMPORARILY:
-                //log_request_handling_duration(r, &start, &end);
                 apr_global_mutex_unlock(mshield_mutex);
                 return HTTP_MOVED_TEMPORARILY;
             case STATUS_OK:
                 break;
             case HTTP_INTERNAL_SERVER_ERROR:
             default:
-                //apr_global_mutex_unlock(mshield_mutex);
-                log_request_handling_duration(r, &start, &end);
+                apr_global_mutex_unlock(mshield_mutex);
                 return HTTP_INTERNAL_SERVER_ERROR;
         }
     }
