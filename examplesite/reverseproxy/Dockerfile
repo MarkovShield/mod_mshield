@@ -23,7 +23,6 @@ RUN echo 'deb http://packages.dotdeb.org jessie all' >> /etc/apt/sources.list
 RUN echo 'deb-src http://packages.dotdeb.org jessie all' >> /etc/apt/sources.list
 RUN apt-get update && apt-get install -y \
 		php7.0 \
-		libapache2-mod-php7.0 \
 		&& rm -rf /var/lib/apt/lists/*
 
 # Remove default httpd stuff
@@ -38,6 +37,7 @@ COPY examplesite/reverseproxy/apache_mshield_reverse_proxy.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/apache_mshield_reverse_proxy.sh
 
 COPY examplesite/reverseproxy/html/ /var/www/html/
+RUN chown www-data:www-data -R /var/www/html/
 
 COPY examplesite/reverseproxy/conf/ports.conf /etc/apache2/
 COPY examplesite/reverseproxy/conf/security.conf /etc/apache2/conf-available/
@@ -59,13 +59,26 @@ COPY examplesite/reverseproxy/samplecerts/localhost.key /etc/pki/keys/
 # Copy some library dependencies
 COPY librdkafka.so.1 /usr/lib/x86_64-linux-gnu/
 
-# Enable mod_mshield
+# Copy mod_mshield configurations
 COPY examplesite/reverseproxy/conf/mod_mshield_url_rating.conf /etc/apache2/conf-available/
 
 COPY mod_mshield.so /usr/lib/apache2/modules/
 COPY examplesite/reverseproxy/conf/mshield.load /etc/apache2/mods-available/
 COPY examplesite/reverseproxy/conf/mshield.conf /etc/apache2/conf-available/
 
+# Copy & enable threadsafe php 7
+COPY examplesite/reverseproxy/conf/php7.load /etc/apache2/mods-available/
+COPY examplesite/reverseproxy/conf/php7.conf /etc/apache2/conf-available/
+COPY examplesite/reverseproxy/modules/libphp7.so /usr/lib/apache2/modules/
+RUN a2dismod php7.0
+RUN a2enmod php7
+RUN a2enconf php7
+
+# Switch from prefork to event-based MPM to improve mshield performance
+RUN a2dismod mpm_prefork
+RUN a2enmod mpm_event
+
+# Enable mod_mshield
 RUN a2enconf mshield
 RUN a2enmod mshield
 
@@ -111,7 +124,6 @@ RUN a2enmod 						\
 		dir 								\
 		alias 							\
 		rewrite 						\
-		php7.0 							\
 		file_cache
 
 # Redirect logs to stdout and stderr in order to see it with docker logs

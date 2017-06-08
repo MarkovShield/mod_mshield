@@ -6,6 +6,7 @@ The follwing steps will give you an example of how to set up mod_mshield. Be awa
 * [Basic mod_mshield configuration](#markdown-header-basic-mod_mshield-configuration)
 * [Configuration value explanations](#markdown-header-configuration-value-explanations)
 * [URL configurations](#markdown-header-url-configurations)
+* [Performance tuning](#markdown-header-performance-tuning)
 
 ## Basic module configuration
 In `httpd.conf` load the module:
@@ -95,3 +96,6 @@ Finally restart apache httpd in order to apply the new module and its configurat
 ```bash
 /etc/init.d/apache_but restart
 ```
+
+## Performance tuning
+Mod_mshield would work with 200 concurrent users without a doubt. If you have even more concurrent users on your web application, consider to ajust some event-based mpm settings. Please have a look at [https://httpd.apache.org/docs/current/mod/event.html](https://httpd.apache.org/docs/current/mod/event.html) to see which directives can be changed to improve the event-based mpm's performance.

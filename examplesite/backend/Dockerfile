@@ -34,6 +34,7 @@ COPY examplesite/backend/apache_mshield_backend.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/apache_mshield_backend.sh
 
 COPY examplesite/backend/html/ /var/www/html/
+RUN chown www-data:www-data -R /var/www/html/
 
 COPY examplesite/backend/conf/ports.conf /etc/apache2/
 COPY examplesite/backend/conf/httpd-backend.conf /etc/apache2/sites-available/

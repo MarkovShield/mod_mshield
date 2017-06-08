@@ -372,7 +372,6 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
     cJSON_AddItemToObject(click_json, "validationRequired", cJSON_CreateBool(validationRequired));
 
     if (validationRequired) {
-        ERRLOG_REQ_CRIT("TIME_LOG: pre_con_setup request: %s time: %ld", clickUUID, apr_time_as_msec(apr_time_now()));
         connection_timeout.tv_sec = config->redis.connection_timeout;
         connection_timeout.tv_usec = 0;
         context = redisConnectWithTimeout(config->redis.server, config->redis.port, connection_timeout);
@@ -386,7 +385,6 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         redisSetTimeout(context, response_timeout);
         reply = redisCommand(context, "SUBSCRIBE %s", clickUUID);
         freeReplyObject(reply);
-        ERRLOG_REQ_CRIT("TIME_LOG: post_con_setup request: %s time: %ld", clickUUID, apr_time_as_msec(apr_time_now()));
     }
 
     status = kafka_produce(config->pool, &config->kafka, config->kafka.topic_analyse, &config->kafka.rk_topic_analyse,
@@ -404,8 +402,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
         /* Unlock mutex because we don't want to block other workers while we are waiting for the Redis result. */
         apr_global_mutex_unlock(mshield_mutex);
 
-        ERRLOG_REQ_CRIT("TIME_LOG: pre_wait_setup request: %s time: %ld", clickUUID, apr_time_as_msec(apr_time_now()));
-        ERRLOG_REQ_INFO("FRAUD-ENGINE: URL [%s] risk level was [%i]", url, risk_level);
+        ERRLOG_REQ_DEBUG("FRAUD-ENGINE: URL [%s] risk level was [%i]", url, risk_level);
         while (context->err != REDIS_ERR_IO && redisGetReply(context, (void **) &reply) == REDIS_OK) {
             status = handle_mshield_result(reply, r, session);
             /* Leave the waiting loop if the rating result was received or the redirection failed */
@@ -420,7 +417,7 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
             return HTTP_INTERNAL_SERVER_ERROR;
         }
         if (context->err) {
-            ERRLOG_REQ_INFO("FRAUD-ENGINE: Redis error: context->err is [%d] and context->errstr is [%s]",
+            ERRLOG_REQ_CRIT("FRAUD-ENGINE: Redis error: context->err is [%d] and context->errstr is [%s]",
                          context->err, context->errstr);
             if (context->err == REDIS_ERR_IO) {
                 return STATUS_CONERROR;
@@ -429,7 +426,6 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
             return STATUS_ERROR;
         }
         redisFree(context);
-        ERRLOG_REQ_CRIT("TIME_LOG: post_wait_setup request: %s time: %ld", clickUUID, apr_time_as_msec(apr_time_now()));
     } else {
         status = STATUS_OK;
     }
