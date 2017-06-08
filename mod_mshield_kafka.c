@@ -47,7 +47,7 @@ static int get_url_risk_level(request_rec *r, const char *url) {
     const char *key;
     const char *value;
 #ifdef MSHIELD_LOG_DEBUG
-    print_url_store(config);
+    //print_url_store(config);
 #endif
     for (hi = apr_hash_first(NULL, config->url_store); hi; hi = apr_hash_next(hi)) {
         apr_hash_this(hi, (const void **) &key, NULL, (void **) &value);
@@ -404,10 +404,13 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
 
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
     if (validationRequired) {
+        // ToDo: Unlock mutex here
+        apr_global_mutex_unlock(mshield_mutex);
+
         //struct timespec start, end;
         //clock_gettime(CLOCK_MONOTONIC, &start);
         ERRLOG_REQ_CRIT("TIME_LOG: pre_wait_setup request: %s time: %ld", clickUUID, apr_time_as_msec(apr_time_now()));
-        ERRLOG_REQ_INFO("FRAUD-ENGINE: Redis redisGetReply");
+        //ERRLOG_REQ_INFO("FRAUD-ENGINE: Redis redisGetReply");
         ERRLOG_REQ_INFO("FRAUD-ENGINE: URL [%s] risk level was [%i]", url, risk_level);
         while (context->err != REDIS_ERR_IO && redisGetReply(context, (void **) &reply) == REDIS_OK) {
             status = handle_mshield_result(reply, r, session);
@@ -417,12 +420,18 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
             }
             freeReplyObject(reply);
         }
+        // ToDo: Lock mutex back again
+        if (apr_global_mutex_lock(mshield_mutex) != APR_SUCCESS) {
+            ERRLOG_REQ_CRIT("Could not acquire mutex.");
+            return HTTP_INTERNAL_SERVER_ERROR;
+        }
         if (context->err) {
             ERRLOG_REQ_INFO("FRAUD-ENGINE: Redis error: context->err is [%d] and context->errstr is [%s]",
                          context->err, context->errstr);
             if (context->err == REDIS_ERR_IO) {
                 return STATUS_CONERROR;
             }
+            redisFree(context);
             return STATUS_ERROR;
         }
         redisFree(context);
