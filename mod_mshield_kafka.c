@@ -404,9 +404,6 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
 
     /* If URL was critical, wait for a response message from the engine and parse it - but only if learning mode it not enabled. */
     if (validationRequired) {
-        // ToDo: Unlock mutex here
-        apr_global_mutex_unlock(mshield_mutex);
-
         //struct timespec start, end;
         //clock_gettime(CLOCK_MONOTONIC, &start);
         ERRLOG_REQ_CRIT("TIME_LOG: pre_wait_setup request: %s time: %ld", clickUUID, apr_time_as_msec(apr_time_now()));
@@ -419,11 +416,6 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
                 break;
             }
             freeReplyObject(reply);
-        }
-        // ToDo: Lock mutex back again
-        if (apr_global_mutex_lock(mshield_mutex) != APR_SUCCESS) {
-            ERRLOG_REQ_CRIT("Could not acquire mutex.");
-            return HTTP_INTERNAL_SERVER_ERROR;
         }
         if (context->err) {
             ERRLOG_REQ_INFO("FRAUD-ENGINE: Redis error: context->err is [%d] and context->errstr is [%s]",
