@@ -60,6 +60,11 @@ apr_status_t handle_mshield_result(void *reply, void *request, session_t *sessio
                     return STATUS_OK;
                 }
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_SUSPICIOUS) == 0) {
+                    // ToDo: Lock mutex here
+                    if (apr_global_mutex_lock(mshield_mutex) != APR_SUCCESS) {
+                        ERRLOG_REQ_CRIT("Could not acquire mutex.");
+                        return HTTP_INTERNAL_SERVER_ERROR;
+                    }
                     ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: Engine result for request [%s] is [%s]",
                                  apr_table_get(r->subprocess_env, "UNIQUE_ID"), MOD_MSHIELD_RESULT_SUSPICIOUS);
                     ap_log_error(PC_LOG_INFO, NULL, "Current auth_strength of session is [%d]",
@@ -69,16 +74,27 @@ apr_status_t handle_mshield_result(void *reply, void *request, session_t *sessio
                         if (status == HTTP_MOVED_TEMPORARILY) {
                             ap_log_error(PC_LOG_DEBUG, NULL,
                                          "FRAUD-ENGINE: Redirection to global_logon_server_url_2 was successful");
+                            // ToDo: Unlock mutex here
+                            apr_global_mutex_unlock(mshield_mutex);
                             return status;
                         } else {
                             ap_log_error(PC_LOG_CRIT, NULL,
                                          "FRAUD-ENGINE: Redirection to global_logon_server_url_2 failed");
+                            // ToDo: Unlock mutex here
+                            apr_global_mutex_unlock(mshield_mutex);
                             return STATUS_REDIRERR;
                         }
                     }
+                    // ToDo: Unlock mutex here
+                    apr_global_mutex_unlock(mshield_mutex);
                     return STATUS_OK;
                 }
                 if (strcmp(redis_reply->element[j]->str, MOD_MSHIELD_RESULT_FRAUD) == 0) {
+                    // ToDo: Lock mutex here
+                    if (apr_global_mutex_lock(mshield_mutex) != APR_SUCCESS) {
+                        ERRLOG_REQ_CRIT("Could not acquire mutex.");
+                        return HTTP_INTERNAL_SERVER_ERROR;
+                    }
                     ap_log_error(PC_LOG_INFO, NULL, "FRAUD-ENGINE: Engine result for request [%s] is [%s]",
                                  apr_table_get(r->subprocess_env, "UNIQUE_ID"), MOD_MSHIELD_RESULT_FRAUD);
                     status = mod_mshield_redirect_to_relurl(r, config->fraud_detected_url);
@@ -87,9 +103,13 @@ apr_status_t handle_mshield_result(void *reply, void *request, session_t *sessio
                     if (status == HTTP_MOVED_TEMPORARILY) {
                         ap_log_error(PC_LOG_DEBUG, NULL,
                                      "FRAUD-ENGINE: Redirection to fraud_detected_url was successful");
+                        // ToDo: Unlock mutex here
+                        apr_global_mutex_unlock(mshield_mutex);
                         return status;
                     } else {
                         ap_log_error(PC_LOG_CRIT, NULL, "FRAUD-ENGINE: Redirection to fraud_detected_url failed");
+                        // ToDo: Unlock mutex here
+                        apr_global_mutex_unlock(mshield_mutex);
                         return STATUS_REDIRERR;
                     }
                 }
