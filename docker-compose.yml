@@ -28,7 +28,6 @@ services:
     environment:
       JOBMANAGER: 'jobmanager:6123'
       BOOTSTRAP: 'broker:9092'
-      ZOOKEEPER: 'zookeeper:2181'
       REDISHOST: 'redis'
       REDISPORT: '6379'
 
@@ -41,7 +40,6 @@ services:
     environment:
       JOBMANAGER: 'jobmanager:6123'
       BOOTSTRAP: 'broker:9092'
-      ZOOKEEPER: 'zookeeper:2181'
       LOOKBACKPERIOD: '20'
       UPDATEINTERVAL: '5'
       SESSIONTIMEOUT: '5'
@@ -52,7 +50,6 @@ services:
     depends_on:
       - broker
       - zookeeper
-      - schema_registry
     ports:
       - "7777:7777"
     volumes:
@@ -61,8 +58,7 @@ services:
       BOOTSTRAP: 'broker:9092'
       RESTHOSTNAME: 'localhost'
       RESTPORT: '7777'
-      SCHEMAREGISTRY: 'http://schema_registry:8081'
-      ZOOKEEPER: 'zookeeper'
+      ZOOKEEPER: 'zookeeper:2181'
 
   redis:
     image: redis:3.2.8-alpine
@@ -95,18 +91,6 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker:9092'
-
-  schema_registry:
-    image: confluentinc/cp-schema-registry
-    hostname: schema_registry
-    depends_on:
-      - zookeeper
-      - broker
-    ports:
-      - '8081:8081'
-    environment:
-      SCHEMA_REGISTRY_HOST_NAME: schema_registry
-      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
 
   jobmanager:
     image: pschmid/flink-manager:1.2.0
