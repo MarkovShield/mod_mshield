@@ -23,7 +23,6 @@ In order to start the demo application, hit `make demo` inside the `mod_mshield`
 If you run into problems, check the following steps:
 
 1.  Make sure all containers are started:
-      - `mshielddemo_schema_registry_1`
       - `mshielddemo_taskmanager_1`
       - `mshielddemo_broker_1`
       - `mshielddemo_jobmanager_1`
