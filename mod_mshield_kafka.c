@@ -394,6 +394,9 @@ apr_status_t extract_click_to_kafka(request_rec *r, char *uuid, session_t *sessi
 
     if (status != STATUS_OK) {
         ERRLOG_REQ_CRIT("FRAUD-ENGINE: Extract clicks to kafka was not successful");
+        if (validationRequired && context) {
+            redisFree(context);
+        }
         return status;
     }
 
