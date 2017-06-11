@@ -8,6 +8,9 @@
 * [Licence](#markdown-header-licence)
 * [Credit](#markdown-header-credit)
 
+## Overview
+![MarkovShield](https://bitbucket.org/markovshield/mod_mshield/raw/develop/resources/Abstract_Architecture_Design_v6.png)
+
 ## Features
 * Preauthentication of users at reverse proxy level
   * Authentication level step up enforcement based on configurable URLs risk levels
