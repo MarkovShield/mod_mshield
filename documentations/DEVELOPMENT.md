@@ -1,15 +1,15 @@
 # Development
 
 ## Content
-* [Prerequisites](#markdown-header-prerequisites)
-    * [Dependent packages](#markdown-header-dependent-packages)
-        * [macOS](#markdown-header-macos)
-    * [httpd, apr, apr-util header files](#markdown-header-httpd-apr-apr-util-header-files)
-* [How to compile](#markdown-header-how-to-compile)
-* [Test the module](#markdown-header-test-the-module)
-* [Cleanup compilation stuff](#markdown-header-cleanup-compilation-stuff)
-* [Debugging](#markdown-header-debugging)
-* [Publish images](#markdown-header-publish-images)
+* [Prerequisites](#prerequisites)
+    * [Dependent packages](#dependent-packages)
+        * [macOS](#macos)
+    * [httpd, apr, apr-util header files](#httpd-apr-apr-util-header-files)
+* [How to compile](#how-to-compile)
+* [Test the module](#test-the-module)
+* [Cleanup compilation stuff](#cleanup-compilation-stuff)
+* [Debugging](#debugging)
+* [Publish images](#publish-images)
 
 ## Prerequisites
 

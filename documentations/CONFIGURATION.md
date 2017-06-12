@@ -2,11 +2,11 @@
 The follwing steps will give you an example of how to set up mod_mshield. Be aware that depending on your apache installation paths and configuration file includes maybe have to be done in other ways.
 
 ## Content
-* [Basic module configuration](#markdown-header-basic-module-configuration)
-* [Basic mod_mshield configuration](#markdown-header-basic-mod_mshield-configuration)
-* [Configuration value explanations](#markdown-header-configuration-value-explanations)
-* [URL configurations](#markdown-header-url-configurations)
-* [Performance tuning](#markdown-header-performance-tuning)
+* [Basic module configuration](#basic-module-configuration)
+* [Basic mod_mshield configuration](#basic-mod_mshield-configuration)
+* [Configuration value explanations](#configuration-value-explanations)
+* [URL configurations](#url-configurations)
+* [Performance tuning](#performance-tuning)
 
 ## Basic module configuration
 In `httpd.conf` load the module:

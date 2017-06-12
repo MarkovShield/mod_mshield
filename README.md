@@ -1,15 +1,13 @@
-![MarkovShield](https://bitbucket.org/markovshield/mod_mshield/raw/develop/resources/markovshield_logo.png)
-
 # mod_mshield - Apache HTTPD reverse proxy module
 
 ## Content
-* [Documentation](#markdown-header-documentation)
-* [Further informations](#markdown-header-further-informations)
-* [Licence](#markdown-header-licence)
-* [Credit](#markdown-header-credit)
+* [Documentation](#documentation)
+* [Further informations](#further-informations)
+* [Licence](#licence)
+* [Credit](#credit)
 
 ## Overview
-![MarkovShield](https://bitbucket.org/markovshield/mod_mshield/raw/develop/resources/Abstract_Architecture_Design_v6.png)
+![MarkovShield](/resources/Abstract_Architecture_Design_v6.png)
 
 ## Features
 * Preauthentication of users at reverse proxy level

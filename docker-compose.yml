@@ -20,7 +20,7 @@ services:
       - "8888"
 
   mshield_flink_analyser:
-    image: mshield-flink-analyser:latest
+    image: markovshield/mshield-flink-analyser:1.0
     depends_on:
       - jobmanager
       - taskmanager
@@ -32,7 +32,7 @@ services:
       REDISPORT: '6379'
 
   mshield_flink_modelupdater:
-    image: mshield-flink-modelupdater:latest
+    image: markovshield/mshield-flink-modelupdater:1.0
     depends_on:
       - jobmanager
       - taskmanager
@@ -45,7 +45,7 @@ services:
       SESSIONTIMEOUT: '5'
 
   mshield_kafka_clickstreams:
-    image: mshield-kafka-clickstreams:latest
+    image: markovshield/mshield-kafka-clickstreams:1.0
     hostname: mshield_kafka_clickstreams
     depends_on:
       - broker
@@ -93,7 +93,7 @@ services:
       KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://broker:9092'
 
   jobmanager:
-    image: pschmid/flink-manager:1.2.0
+    image: markovshield/flink-manager:1.2.0
     hostname: jobmanager
     depends_on:
       - redis
@@ -108,7 +108,7 @@ services:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
 
   taskmanager:
-    image: pschmid/flink-manager:1.2.0
+    image: markovshield/flink-manager:1.2.0
     expose:
       - "6121"
       - "6122"

@@ -1,10 +1,10 @@
 # Installation
 
 ## Content
-* [The manual way](#markdown-header-the-manual-way)
-    * [Prerequisites](#markdown-header-prerequisites)
-    * [Important note](#markdown-header-important-note)
-    * [Installation itself](#markdown-header-installation-itself)
+* [The manual way](#the-manual-way)
+    * [Prerequisites](#prerequisites)
+    * [Important note](#important-note)
+    * [Installation itself](#installation-itself)
 
 ## The manual way
 

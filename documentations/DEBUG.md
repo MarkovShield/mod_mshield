@@ -1,21 +1,21 @@
 # Debug mod_mshield
 
 ## Content
-* [Debug mod_mshield](#markdown-header-debug-modmshield)
-	* [Content](#markdown-header-content)
-	* [Debugging & helpful commands](#markdown-header-debugging-helpful-commands)
-		* [Install usefull debugging tools](#markdown-header-install-usefull-debugging-tools)
-		* [Apache logs](#markdown-header-apache-logs)
-		* [Trace performance](#markdown-header-trace-performance)
-		* [Debug segmentation fault](#markdown-header-debug-segmentation-fault)
-		* [Kafka](#markdown-header-kafka)
-			* [Test kafka connection](#markdown-header-test-kafka-connection)
-			* [Send test message to Kafka](#markdown-header-send-test-message-to-kafka)
-			* [Show consumer groups](#markdown-header-show-consumer-groups)
-		* [Redis](#markdown-header-redis)
-			* [Listen on multiple channels](#markdown-header-listen-on-multiple-channels)
-			* [Test Redis connection](#markdown-header-test-redis-connection)
-	* [mod_mshield debugging container](#markdown-header-mod_mshield-debugging-container)
+* [Debug mod_mshield](#debug-modmshield)
+	* [Content](#content)
+	* [Debugging & helpful commands](#debugging-helpful-commands)
+		* [Install usefull debugging tools](#install-usefull-debugging-tools)
+		* [Apache logs](#apache-logs)
+		* [Trace performance](#trace-performance)
+		* [Debug segmentation fault](#debug-segmentation-fault)
+		* [Kafka](#kafka)
+			* [Test kafka connection](#test-kafka-connection)
+			* [Send test message to Kafka](#send-test-message-to-kafka)
+			* [Show consumer groups](#show-consumer-groups)
+		* [Redis](#redis)
+			* [Listen on multiple channels](#listen-on-multiple-channels)
+			* [Test Redis connection](#test-redis-connection)
+	* [mod_mshield debugging container](#mod_mshield-debugging-container)
 
 ## Debugging & helpful commands
 

@@ -12,7 +12,7 @@ SESSIONCOUNT = 100000
 COOKIECOUNT = 300000
 
 # Docker hub publishing parameters
-BUILDTAG = latest
+BUILDTAG = 1.0
 HUBPREFIX = markovshield
 
 #############################################
