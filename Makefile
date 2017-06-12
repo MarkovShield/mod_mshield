@@ -12,7 +12,7 @@ SESSIONCOUNT = 100000
 COOKIECOUNT = 300000
 
 # Docker hub publishing parameters
-BUILDTAG = 1.0
+BUILDTAG = 2.0
 HUBPREFIX = markovshield
 
 #############################################
@@ -61,13 +61,13 @@ docker-compile: APXSFLAGS += -a -i $(APXSFLAGSEND)
 compile:
 	docker run --rm 								\
 	-v `pwd`:/opt 									\
-	pschmid/apache_module_compiler 	\
+	markovshield/apache_module_compiler 	\
 	/bin/bash -c 'make docker-compile && cp /usr/local/apache2/modules/mod_mshield.so /opt'
 
 compile-librdkafka:
 	docker run --rm 								\
 	-v `pwd`:/opt 									\
-	pschmid/librdkafka_compiler 		\
+	markovshield/librdkafka_compiler 		\
 	/bin/bash -c 'cp /tmp/librdkafka/src/librdkafka.so.1 /opt/'
 
 prepare-publish: compile compile-librdkafka
