@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>LiveCD</title>
+    <atom:link href="http://localhost//feed.xml" rel="self" type="application/rss+xml"/>
+    <link>http://localhost//</link>
+    <description>Hacking-Lab LiveCD Project</description>
+    <pubDate>Tue, 02 Feb 2016 11:58:02 +0100</pubDate>
+    
+      <item>
+        <title>Happy New Year 2016</title>
+        <link>http://localhost//2015/12/28/happy-new-year.html</link>
+        <guid isPermaLink="true">http://localhost//2015/12/28/happy-new-year.html</guid>
+        <description>&lt;div class=&quot;row&quot;&gt;
+	&lt;div class=&quot;col-sm-4&quot;&gt;
+		&lt;img src=&quot;/img/cat.jpg&quot; alt=&quot;&quot; /&gt;
+	&lt;/div&gt;
+	&lt;div class=&quot;col-md-8&quot;&gt;
+		When an 18 years old youth asked the famous writer Herman Hesse (Siddharta) what he would recommend as the most important life advice, Hesse responded with a quote from Confucius:
+		&lt;strong&gt;&lt;i&gt;loyalty to one&#39;s self and charity to one&#39;s neighbours&lt;/i&gt;&lt;/strong&gt;
+		&lt;br /&gt;&lt;br /&gt;
+		I will not wish you good luck for this or any upcoming New Year&#39;s Eve. I don’t believe luck to be a necessary ingredient for success. Instead, I wish you the wisdom to make good decisions. &lt;strong&gt;&lt;i&gt;Have the courage to live a life true to yourself&lt;/i&gt;&lt;/strong&gt;, not the life others expect of you. 
+		&lt;br /&gt;&lt;br /&gt;
+	&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;&lt;br /&gt;&lt;br /&gt;&lt;/p&gt;
+</description>
+        <pubDate>Mon, 28 Dec 2015 00:00:00 +0100</pubDate>
+      </item>
+    
+      <item>
+        <title>Minimally Invasive Hip Replacement</title>
+        <link>http://localhost//2015/12/15/hip.html</link>
+        <guid isPermaLink="true">http://localhost//2015/12/15/hip.html</guid>
+        <description>&lt;div class=&quot;row&quot;&gt;
+	&lt;div class=&quot;col-sm-4&quot;&gt;
+		&lt;img src=&quot;/img/hufte.jpg&quot; alt=&quot;My Hip&quot; /&gt;
+	&lt;/div&gt;
+	&lt;div class=&quot;col-md-8&quot;&gt;
+		I am a great fan of the blockbuster &quot;Terminator&quot; with Arnold Schwarzenegger. I am fascinated by the idea of artificial intelligence taking over the control of the world. But I would not have been expected to replace some parts of my skeleton with artificial components. But it&#39;s true. I am recovering from a minimal invasive total hip replacement on both sides. The picture on the left is taken shortly after the surgery. 
+		&lt;br /&gt;&lt;br /&gt;
+		Hip replacement surgery is a procedure in which a doctor surgically removes a painful hip joint with arthritis and replaces it with an artificial joint often made from metal and plastic components. During any hip replacement surgery, the damaged bone is cut and removed, along with some soft tissues. In minimally invasive surgery, a smaller surgical incision is used and fewer muscles around the hip are cut or detached. The procedure should relieve a painful hip joint, making walking easier. 
+	&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;&lt;br /&gt;&lt;br /&gt;&lt;/p&gt;
+</description>
+        <pubDate>Tue, 15 Dec 2015 00:00:00 +0100</pubDate>
+      </item>
+    
+      <item>
+        <title>Philipp Sieber replaces former CEO Ivan Buetler</title>
+        <link>http://localhost//2015/11/03/New-CEO-PS.html</link>
+        <guid isPermaLink="true">http://localhost//2015/11/03/New-CEO-PS.html</guid>
+        <description>&lt;div class=&quot;row&quot;&gt;
+	&lt;div class=&quot;col-sm-4&quot;&gt;
+		&lt;img src=&quot;/img/ps.jpg&quot; alt=&quot;Philipp Sieber&quot; /&gt;
+		&lt;img src=&quot;/img/ps1.jpg&quot; alt=&quot;Philipp Sieber&quot; /&gt;
+		&lt;img src=&quot;/img/ps3.jpg&quot; alt=&quot;Philipp Sieber&quot; /&gt;
+	&lt;/div&gt;
+	&lt;div class=&quot;col-md-8&quot;&gt;
+		Philipp Sieber (ETH MSc) is announced as the new CEO of Compass Security Cyber Defense AG and as such responsible for &lt;a target=&quot;_blank&quot; href=&quot;https://www.hacking-lab.com/&quot;&gt;Hacking-Lab&lt;/a&gt; and &lt;a target=&quot;_blank&quot; href=&quot;https://www.filebox-solution.com&quot;&gt;FileBox&lt;/a&gt;, a secure file transfer solution. He is replacing co-founder and former CEO Ivan Buetler who is now stepping back and preparing for his hip replacement surgery.  
+		&lt;br /&gt;&lt;br /&gt;
+		In his previous job, Sieber was a senior software developer at Crealogix E-Banking solutions. This is a man who spent years in his former job devoting it to producing secure software. Sieber will now push Cyber Defense products to a new level.  
+		&lt;br /&gt;&lt;br /&gt;
+		&quot;&lt;strong&gt;Luck we have with Sieber, he is a big fan of the Hacking-Lab platform and therefore the best match we could think of&lt;/strong&gt;&quot;, says Ivan.
+	&lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;&lt;br /&gt;&lt;br /&gt;&lt;/p&gt;
+</description>
+        <pubDate>Tue, 03 Nov 2015 00:00:00 +0100</pubDate>
+      </item>
+    
+  </channel>
+</rss>

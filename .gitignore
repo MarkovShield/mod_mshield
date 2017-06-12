@@ -28,8 +28,8 @@
 
 # Shared objects (inc. Windows DLLs)
 *.dll
-*.so
-*.so.*
+/*.so
+/*.so.*
 *.dylib
 
 # Executables
@@ -57,3 +57,9 @@ dkms.conf
 .idea/
 CMakeLists.txt
 cmake-build-debug/
+docs/
+kafka-data/
+state-store/
+zk-data/
+zk-txt-logs/
+.libs

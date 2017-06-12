@@ -1,5 +1,5 @@
 #!/bin/bash
-sudo /opt/applic/httpd/bin/apachectl -k stop
-make -f Makefile.ivan
-rm -rf /opt/applic/httpd/logs/*
-sudo /opt/applic/httpd/bin/apachectl -k start
+/etc/init.d/apache_but stop
+make deploy
+#rm -rf /opt/applic/httpd/logs/*
+/etc/init.d/apache_but start

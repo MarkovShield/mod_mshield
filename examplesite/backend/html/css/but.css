@@ -1,0 +1,14 @@
+code {
+    padding: 2px 4px;
+    font-size: 90%;
+    color: #002080;
+    border-radius: 4px;
+}
+a {
+    color: #4F1ffF;
+    text-decoration: none;
+}
+.posts .post-teaser p a:hover, article a:hover {
+    text-decoration: underline;
+    color: #4F1ffF;
+}
