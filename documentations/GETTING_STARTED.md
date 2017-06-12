@@ -1,5 +1,5 @@
 # Getting started
-This guide will show you how to set up a MarkovShield demo setup if you want to change some reverse proxy contents. If you just want to run MarkovShield as fast as you can and without editing the demo site, have a look at the [https://github.com/MarkovShield/install](https://github.com/MarkovShield/install) repository.
+This guide will show you how to set up a MarkovShield demo setup if you want to change some reverse proxy contents. If you just want to run MarkovShield as fast as you can and without editing the demo site, have a look at the [https://github.com/MarkovShield/standalone-demo](https://github.com/MarkovShield/standalone-demo) repository.
 
 ## Content
 * [Prerequisites](#prerequisites)
