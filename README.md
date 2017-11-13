@@ -1,5 +1,7 @@
 # mod_mshield - Apache HTTPD reverse proxy module
 
+[![Build Status](https://travis-ci.org/MarkovShield/mod_mshield.svg?branch=develop)](https://travis-ci.org/MarkovShield/mod_mshield)
+
 ## Content
 * [Documentation](#documentation)
 * [Further informations](#further-informations)
