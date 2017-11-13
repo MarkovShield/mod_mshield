@@ -1,6 +1,6 @@
 #############################################
 #
-# mod_mshield Makefile V1.0 by MSHIELD
+# mod_mshield Makefile V2.0 by MSHIELD
 #
 #############################################
 
@@ -18,7 +18,7 @@ HUBPREFIX = markovshield
 #############################################
 #
 # IMPORTANT: Do not change anything below
-# here unless you excactly know what
+# here unless you exactly know what
 # you are doing!
 #
 #############################################
@@ -33,19 +33,19 @@ ifeq ($(UNAME), Linux)
 LIBS += -lrt
 endif
 
-SRC = 													\
-	mod_mshield.c 								\
-	mod_mshield_regexp.c 					\
-	mod_mshield_redirect.c 				\
-	mod_mshield_cookie.c 					\
-	mod_mshield_access_control.c 	\
-	mod_mshield_request_filter.c 	\
+SRC =								\
+	mod_mshield.c					\
+	mod_mshield_regexp.c			\
+	mod_mshield_redirect.c			\
+	mod_mshield_cookie.c			\
+	mod_mshield_access_control.c	\
+	mod_mshield_request_filter.c	\
 	mod_mshield_response_filter.c	\
-	mod_mshield_config.c 					\
-	mod_mshield_session.c 				\
-	mod_mshield_shm.c 						\
-	mod_mshield_kafka.c 					\
-	mod_mshield_redis.c 					\
+	mod_mshield_config.c			\
+	mod_mshield_session.c			\
+	mod_mshield_shm.c				\
+	mod_mshield_kafka.c				\
+	mod_mshield_redis.c				\
 	cJSON.c
 
 dev: APXSCMD = apxs
@@ -59,15 +59,15 @@ docker-compile: APXSCMD = apxs
 docker-compile: APXSFLAGS += -a -i $(APXSFLAGSEND)
 
 compile:
-	docker run --rm 								\
-	-v `pwd`:/opt 									\
-	markovshield/apache_module_compiler 	\
+	docker run --rm						\
+	-v `pwd`:/opt						\
+	markovshield/apache_module_compiler	\
 	/bin/bash -c 'make docker-compile && cp /usr/local/apache2/modules/mod_mshield.so /opt'
 
 compile-librdkafka:
-	docker run --rm 								\
-	-v `pwd`:/opt 									\
-	markovshield/librdkafka_compiler 		\
+	docker run --rm						\
+	-v `pwd`:/opt						\
+	markovshield/librdkafka_compiler	\
 	/bin/bash -c 'cp /tmp/librdkafka/src/librdkafka.so.1 /opt/'
 
 prepare-publish: compile compile-librdkafka
